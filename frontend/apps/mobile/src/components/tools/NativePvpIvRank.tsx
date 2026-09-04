@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -30,6 +30,7 @@ import {
   type OwnedPvPIvEntry,
 } from "@pokemongonexus/app-core/pvp-iv-roster";
 import { NativeUiIcon } from "../NativeUiIcon";
+import { markNativeUiPerformanceAfterPaint } from "../../observability/nativeUiInteractionTiming";
 
 type IvField = "attack" | "defense" | "stamina";
 type Scope = "catalog" | "owned";
@@ -73,6 +74,20 @@ const formatCurrentDetails = (entry: OwnedPvPIvEntry): string => {
   ].filter((value): value is string => value != null);
   return details.length ? details.join(" · ") : "Current CP and level not recorded";
 };
+
+const TypeIcons = ({ assetBaseUrl, types }: { assetBaseUrl: string; types: string[] }) => (
+  <View accessibilityLabel={types.join(" and ")} style={styles.typeIcons}>
+    {types.map((type) => (
+      <Image
+        fadeDuration={0}
+        key={type}
+        resizeMode="contain"
+        source={{ uri: absoluteUri(assetBaseUrl, `/images/types/${type.toLocaleLowerCase()}.png`) }}
+        style={styles.typeIcon}
+      />
+    ))}
+  </View>
+);
 
 const IvStepper = ({
   field,
@@ -134,6 +149,16 @@ export const NativePvpIvRank = ({
   setScope,
   signedIn,
 }: Props) => {
+  const performanceStartsRef = useRef(new Map<string, number>());
+  const beginPerformance = useCallback((event: string) => {
+    performanceStartsRef.current.set(event, Date.now());
+  }, []);
+  const finishPerformance = useCallback((event: string) => {
+    const startedAt = performanceStartsRef.current.get(event);
+    if (startedAt == null) return;
+    performanceStartsRef.current.delete(event);
+    markNativeUiPerformanceAfterPaint(event, startedAt);
+  }, []);
   const [query, setQuery] = useState("");
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
@@ -229,25 +254,38 @@ export const NativePvpIvRank = ({
     () => rankPvPIvSpread(ivRankings, deferredEvaluatedIvs),
     [deferredEvaluatedIvs, ivRankings],
   );
+  useEffect(() => finishPerformance("pvp_iv_scope_result_painted"), [finishPerformance, scope]);
+  useEffect(() => {
+    if (query === deferredQuery) finishPerformance("pvp_iv_search_result_painted");
+  }, [deferredQuery, finishPerformance, matchingCatalog, matchingOwned, query]);
+  useEffect(() => finishPerformance("pvp_iv_selection_result_painted"), [finishPerformance, result, selectedOption]);
+  useEffect(() => finishPerformance("pvp_iv_adjust_result_painted"), [deferredEvaluatedIvs, finishPerformance, result]);
+  useEffect(() => finishPerformance("pvp_iv_level_result_painted"), [deferredBestBuddy, finishPerformance, result]);
+  useEffect(() => finishPerformance("pvp_iv_copy_result_painted"), [finishPerformance, selectedOwnedCopy]);
   const changeScope = (next: Scope) => {
     if (next === "owned" && !signedIn) return;
+    beginPerformance("pvp_iv_scope_result_painted");
     setScope(next);
     setSelectedOptionId(null);
     setSelectedInstanceId(null);
     setQuery("");
   };
   const chooseCatalog = (option: PvPIvPokemonOption) => {
+    beginPerformance("pvp_iv_selection_result_painted");
     setSelectedOptionId(option.id);
     setSelectedInstanceId(null);
     setQuery(option.name);
   };
   const chooseOwned = (entry: OwnedPvPIvEntry) => {
+    beginPerformance("pvp_iv_selection_result_painted");
     setSelectedOptionId(entry.pokemon.id);
     setSelectedInstanceId(entry.instanceId);
     setQuery(entry.nickname || entry.pokemon.name);
   };
-  const updateIv = (field: IvField, value: number) =>
+  const updateIv = (field: IvField, value: number) => {
+    beginPerformance("pvp_iv_adjust_result_painted");
     setIvs((current) => ({ ...current, [field]: Math.max(0, Math.min(15, Math.round(value))) }));
+  };
   const clearSelection = () => {
     setQuery("");
     setSelectedOptionId(null);
@@ -267,10 +305,10 @@ export const NativePvpIvRank = ({
       </View>
 
       <View style={[styles.scope, light && styles.panelLight]}>
-        <Pressable accessibilityRole="button" onPress={() => changeScope("catalog")} style={[styles.scopeButton, scope === "catalog" && styles.scopeActive]}>
+        <Pressable accessibilityRole="button" accessibilityState={{ selected: scope === "catalog" }} onPress={() => changeScope("catalog")} style={[styles.scopeButton, scope === "catalog" && styles.scopeActive]}>
           <View style={styles.iconLabelRow}><NativeUiIcon color={scope === "catalog" ? '#071313' : light ? '#071d20' : '#f5ffff'} name="catalog" size={14} /><Text style={[styles.scopeText, light && styles.textLight, scope === "catalog" && styles.activeText]}>All Pokémon</Text></View>
         </Pressable>
-        <Pressable accessibilityRole="button" disabled={!signedIn} onPress={() => changeScope("owned")} style={[styles.scopeButton, scope === "owned" && styles.scopeActive, !signedIn && styles.disabled]}>
+        <Pressable accessibilityRole="button" accessibilityState={{ disabled: !signedIn, selected: scope === "owned" }} disabled={!signedIn} onPress={() => changeScope("owned")} style={[styles.scopeButton, scope === "owned" && styles.scopeActive, !signedIn && styles.disabled]}>
           <View style={styles.iconLabelRow}><NativeUiIcon color={scope === "owned" ? '#071313' : light ? '#071d20' : '#f5ffff'} name="trainers" size={14} /><Text style={[styles.scopeText, light && styles.textLight, scope === "owned" && styles.activeText]}>My Pokémon{signedIn && !isLoading ? `  ${rankedOwnedEntries.length}` : ""}</Text></View>
         </Pressable>
       </View>
@@ -289,7 +327,7 @@ export const NativePvpIvRank = ({
           <NativeUiIcon color={light ? '#4c7073' : '#9db6b8'} name="search" size={18} />
           <TextInput
             accessibilityLabel="Search IV Rank Pokémon"
-            onChangeText={(value) => { setQuery(value); if (selectedOption) { setSelectedOptionId(null); setSelectedInstanceId(null); } }}
+            onChangeText={(value) => { beginPerformance("pvp_iv_search_result_painted"); setQuery(value); if (selectedOption) { setSelectedOptionId(null); setSelectedInstanceId(null); } }}
             placeholder={scope === "owned" ? "Search species or nickname" : "Search Pokémon"}
             placeholderTextColor="#7b9092"
             style={[styles.searchInput, light && styles.textLight]}
@@ -314,12 +352,12 @@ export const NativePvpIvRank = ({
                       const { entry } = rankedEntry;
                       return <Pressable accessibilityLabel={`Check ${entry.nickname || entry.pokemon.name}, ${entry.pokemon.name}, IV ${entry.ivs.attack}/${entry.ivs.defense}/${entry.ivs.stamina}, ${entry.metaRank == null ? "not meta ranked" : `Meta rank ${entry.metaRank}`}, IV rank ${rankedEntry.ivRank}`} accessibilityRole="button" key={entry.instanceId} onPress={() => chooseOwned(entry)} style={[styles.option, light && styles.controlLight]}>
                         <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, entry.imageUrl) }} style={styles.optionImage} />
-                        <View style={styles.optionCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(entry.pokemon.pokedexNumber).padStart(4, "0")} {entry.pokemon.name}</Text><Text numberOfLines={2} style={[styles.optionName, light && styles.textLight]}>{entry.nickname || entry.pokemon.name}{entry.favorite ? "  ★" : ""}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{formatCurrentDetails(entry)}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{entry.ivs.attack}/{entry.ivs.defense}/{entry.ivs.stamina} IV</Text><View style={styles.rankPills}><Text style={[styles.rankPill, entry.metaRank == null && styles.rankPillMuted]}>{entry.metaRank == null ? "Not ranked" : `Meta #${entry.metaRank}`}</Text><Text style={styles.rankPill}>IV #{rankedEntry.ivRank}</Text></View></View>
+                        <View style={styles.optionCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(entry.pokemon.pokedexNumber).padStart(4, "0")} {entry.pokemon.name}</Text><Text numberOfLines={2} style={[styles.optionName, light && styles.textLight]}>{entry.nickname || entry.pokemon.name}{entry.favorite ? "  ★" : ""}</Text><TypeIcons assetBaseUrl={assetBaseUrl} types={entry.pokemon.types} /><Text style={[styles.optionMeta, light && styles.mutedLight]}>{formatCurrentDetails(entry)}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{entry.ivs.attack}/{entry.ivs.defense}/{entry.ivs.stamina} IV</Text><View style={styles.rankPills}><Text style={[styles.rankPill, entry.metaRank == null && styles.rankPillMuted]}>{entry.metaRank == null ? "Not ranked" : `Meta #${entry.metaRank}`}</Text><Text style={styles.rankPill}>IV #{rankedEntry.ivRank}</Text></View></View>
                       </Pressable>;
                     })
-                  : matchingCatalog.map((option) => <Pressable accessibilityRole="button" key={option.id} onPress={() => chooseCatalog(option)} style={[styles.option, light && styles.controlLight]}>
+                  : matchingCatalog.map((option) => <Pressable accessibilityLabel={`Select #${String(option.pokedexNumber).padStart(4, "0")} ${option.name}`} accessibilityRole="button" key={option.id} onPress={() => chooseCatalog(option)} style={[styles.option, light && styles.controlLight]}>
                       <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, option.imageUrl) }} style={styles.optionImage} />
-                      <View style={styles.optionCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(option.pokedexNumber).padStart(4, "0")}</Text><Text numberOfLines={2} style={[styles.optionName, light && styles.textLight]}>{option.name}</Text></View>
+                      <View style={styles.optionCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(option.pokedexNumber).padStart(4, "0")}</Text><Text numberOfLines={2} style={[styles.optionName, light && styles.textLight]}>{option.name}</Text><TypeIcons assetBaseUrl={assetBaseUrl} types={option.types} /></View>
                     </Pressable>)}
               </View>
             ) : <Text style={[styles.empty, light && styles.mutedLight]}>{scope === "owned" ? "No appraised caught Pokémon match that search." : "No Pokémon match that search."}</Text>}
@@ -328,7 +366,7 @@ export const NativePvpIvRank = ({
           <>
             <View style={[styles.selected, light && styles.controlLight]}>
               <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, selectedOwnedCopy?.entry.imageUrl ?? selectedOption.imageUrl) }} style={styles.selectedImage} />
-              <View style={styles.selectedCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(selectedOption.pokedexNumber).padStart(4, "0")}</Text><Text style={[styles.selectedName, light && styles.textLight]}>{selectedOption.name}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{selectedOption.types.join(" / ")}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{scope === "owned" ? `${rankedOwnedCopies.length} ${rankedOwnedCopies.length === 1 ? "caught copy" : "caught copies"} with complete IVs` : `${selectedOption.attack} ATK · ${selectedOption.defense} DEF · ${selectedOption.stamina} STA`}</Text></View>
+              <View style={styles.selectedCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(selectedOption.pokedexNumber).padStart(4, "0")}</Text><Text style={[styles.selectedName, light && styles.textLight]}>{selectedOption.name}</Text><TypeIcons assetBaseUrl={assetBaseUrl} types={selectedOption.types} /><Text style={[styles.optionMeta, light && styles.mutedLight]}>{scope === "owned" ? `${rankedOwnedCopies.length} ${rankedOwnedCopies.length === 1 ? "caught copy" : "caught copies"} with complete IVs` : `${selectedOption.attack} ATK · ${selectedOption.defense} DEF · ${selectedOption.stamina} STA`}</Text></View>
             </View>
             {scope === "catalog" ? <View style={styles.ivInputs}>
               <Text style={[styles.searchLabel, light && styles.accentLight]}>APPRAISAL IVS</Text>
@@ -342,7 +380,7 @@ export const NativePvpIvRank = ({
                 <View style={styles.browserSummary}><Text style={[styles.searchLabel, light && styles.accentLight]}>YOUR COPIES</Text><Text style={[styles.summaryCopy, light && styles.mutedLight]}>Best IV rank first</Text></View>
                 {rankedOwnedCopies.map(({ entry, result: copyResult }) => {
                   const active = selectedOwnedCopy?.entry.instanceId === entry.instanceId;
-                  return <Pressable accessibilityLabel={`View ${entry.nickname || entry.pokemon.name}, IV Rank ${copyResult.selected.rank}`} accessibilityRole="button" key={entry.instanceId} onPress={() => setSelectedInstanceId(entry.instanceId)} style={[styles.copy, light && styles.controlLight, active && styles.copyActive]}>
+                  return <Pressable accessibilityLabel={`View ${entry.nickname || entry.pokemon.name}, IV Rank ${copyResult.selected.rank}`} accessibilityRole="button" key={entry.instanceId} onPress={() => { beginPerformance("pvp_iv_copy_result_painted"); setSelectedInstanceId(entry.instanceId); }} style={[styles.copy, light && styles.controlLight, active && styles.copyActive]}>
                     <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, entry.imageUrl) }} style={styles.copyImage} />
                     <View style={styles.optionCopy}><Text style={[styles.optionName, light && styles.textLight]}>{entry.nickname || entry.pokemon.name}{entry.favorite ? "  ★" : ""}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{formatCurrentDetails(entry)}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{entry.ivs.attack}/{entry.ivs.defense}/{entry.ivs.stamina} IV</Text></View>
                     <Text style={styles.copyRank}>#{copyResult.selected.rank}</Text>
@@ -351,14 +389,14 @@ export const NativePvpIvRank = ({
               </View>
             ) : null}
             <View style={styles.levelControls}>
-              <Pressable accessibilityRole="button" disabled={!selectedOption} onPress={() => setBestBuddy(false)} style={[styles.levelButton, light && styles.controlLight, !bestBuddy && styles.levelActive]}><Text style={[styles.levelButtonText, light && styles.textLight, !bestBuddy && styles.activeText]}>Level 50</Text></Pressable>
-              <Pressable accessibilityRole="button" disabled={!selectedOption} onPress={() => setBestBuddy(true)} style={[styles.levelButton, light && styles.controlLight, bestBuddy && styles.levelActive]}><Text style={[styles.levelButtonText, light && styles.textLight, bestBuddy && styles.activeText]}>★ Best Buddy 51</Text></Pressable>
+              <Pressable accessibilityRole="button" accessibilityState={{ disabled: !selectedOption, selected: !bestBuddy }} disabled={!selectedOption} onPress={() => { beginPerformance("pvp_iv_level_result_painted"); setBestBuddy(false); }} style={[styles.levelButton, light && styles.controlLight, !bestBuddy && styles.levelActive]}><Text style={[styles.levelButtonText, light && styles.textLight, !bestBuddy && styles.activeText]}>Level 50</Text></Pressable>
+              <Pressable accessibilityRole="button" accessibilityState={{ disabled: !selectedOption, selected: bestBuddy }} disabled={!selectedOption} onPress={() => { beginPerformance("pvp_iv_level_result_painted"); setBestBuddy(true); }} style={[styles.levelButton, light && styles.controlLight, bestBuddy && styles.levelActive]}><Text style={[styles.levelButtonText, light && styles.textLight, bestBuddy && styles.activeText]}>★ Best Buddy 51</Text></Pressable>
             </View>
           </>
         )}
       </View>
 
-      {selectedOption && result ? <View accessibilityLiveRegion="polite" style={[styles.result, light && styles.panelLight]}>
+      {selectedOption && result ? <View accessibilityLabel="IV Rank result" accessibilityLiveRegion="polite" style={[styles.result, light && styles.panelLight]}>
         {scope === "owned" && selectedOwnedCopy ? <View style={[styles.resultContext, light && styles.controlLight]}><Text style={[styles.optionName, light && styles.textLight]}>{selectedOwnedCopy.entry.nickname || selectedOwnedCopy.entry.pokemon.name}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{selectedOwnedCopy.entry.ivs.attack}/{selectedOwnedCopy.entry.ivs.defense}/{selectedOwnedCopy.entry.ivs.stamina} IV · {formatCurrentDetails(selectedOwnedCopy.entry)}</Text></View> : null}
         <View style={styles.resultHero}>
           <View style={styles.rankBlock}><Text style={styles.topPercent}>TOP {Math.max(0.1, (result.selected.rank / result.total) * 100).toFixed(result.selected.rank / result.total < 0.01 ? 1 : 0)}%</Text><Text style={[styles.resultRank, light && styles.textLight]}>#{result.selected.rank}</Text><Text style={[styles.resultOf, light && styles.mutedLight]}>of {result.total.toLocaleString()}</Text></View>
@@ -402,6 +440,8 @@ const styles = StyleSheet.create({
   rankPills: { flexDirection: "row", flexWrap: "wrap", gap: 3, marginTop: 3 },
   rankPill: { borderRadius: 999, paddingHorizontal: 4, paddingVertical: 2, color: "#071313", backgroundColor: "#42d5c2", fontSize: 6.5, fontWeight: "900", overflow: "hidden" },
   rankPillMuted: { color: "#c5d4d4", backgroundColor: "#526264" },
+  typeIcons: { flexDirection: "row", gap: 3, marginTop: 2 },
+  typeIcon: { width: 16, height: 16 },
   selected: { minHeight: 79, flexDirection: "row", alignItems: "center", gap: 9, borderWidth: 1, borderColor: "rgba(141,192,194,0.23)", borderRadius: 6, padding: 7, backgroundColor: "#1d2425" }, selectedImage: { width: 65, height: 65 }, selectedCopy: { minWidth: 0, flex: 1 }, selectedName: { color: "#f5ffff", fontSize: 16, fontWeight: "900" },
   ivInputs: { gap: 6 }, stepperGrid: { flexDirection: "row", gap: 5 }, stepper: { minWidth: 0, flex: 1 }, stepperLabel: { marginBottom: 4, color: "#9db6b8", fontSize: 8, fontWeight: "900", textTransform: "uppercase" }, stepperControls: { flexDirection: "row", gap: 3 }, stepperButton: { width: 31, minHeight: 39, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 6, backgroundColor: "#101516" }, stepperButtonText: { color: "#f5ffff", fontSize: 18, fontWeight: "900" }, stepperInput: { minWidth: 0, flex: 1, minHeight: 39, borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 6, color: "#f5ffff", backgroundColor: "#101516", fontSize: 15, fontWeight: "900", textAlign: "center" },
   copyBrowser: { gap: 5 },

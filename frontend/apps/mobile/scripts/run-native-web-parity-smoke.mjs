@@ -774,7 +774,8 @@ const run = async () => {
           await page.getByLabel('Search IV Rank Pokémon').waitFor({ state: 'visible' });
           await page.getByRole('tab', { name: 'Rankings' }).click();
           await page.getByLabel('Search PvP rankings').fill('Bulbasaur');
-          await page.getByRole('button', { name: 'Open rank 1, Bulbasaur' }).click();
+          await page.getByRole('button', { name: 'Show details for Bulbasaur' }).click();
+          await page.getByText('Role profile', { exact: true }).waitFor({ state: 'visible' });
         }
 
         if (route === 'tools?tool=rankings') {

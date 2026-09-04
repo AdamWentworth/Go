@@ -91,30 +91,35 @@ const renderScreen = () => render(
 describe('NativePvpScreen', () => {
   it('matches the web roster default and keeps the signed-out personal roster unavailable', () => {
     renderScreen();
-    expect(screen.getByRole('button', { name: /All Pokémon/ }).props.accessibilityState).toEqual({ disabled: false });
-    expect(screen.getByRole('button', { name: /My Pokémon/ }).props.accessibilityState).toEqual({ disabled: true });
+    expect(screen.getByRole('button', { name: /All Pokémon/ }).props.accessibilityState).toMatchObject({ disabled: false, selected: true });
+    expect(screen.getByRole('button', { name: /My Pokémon/ }).props.accessibilityState).toMatchObject({ disabled: true, selected: false });
     expect(screen.getByText('3 ranked')).toBeTruthy();
   });
 
-  it('exposes all four PvP workspaces without a web fallback', () => {
+  it('exposes all four PvP workspaces without a web fallback', async () => {
     renderScreen();
     expect(screen.getByText('PvP Rankings')).toBeTruthy();
     expect(screen.getByText('Bulbasaur')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Show details for Bulbasaur'));
+    expect(screen.getByText('Role profile')).toBeTruthy();
+    expect(screen.getByText('Stat product')).toBeTruthy();
+    fireEvent.changeText(screen.getByLabelText('Search PvP rankings'), 'Bulbasaur');
     fireEvent.press(screen.getByText('Team Builder'));
     expect(screen.getByText('THREE-POKÉMON TEAM')).toBeTruthy();
     expect(screen.getByText('0 / 3')).toBeTruthy();
     expect(screen.getByLabelText('Search Team Builder Pokémon')).toBeTruthy();
-    fireEvent.press(screen.getByLabelText('Select Bulbasaur'));
+    expect(screen.getByLabelText('Select Lead with Ivysaur')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Select Lead with Bulbasaur'));
     expect(screen.getByText('1 / 3')).toBeTruthy();
     expect(screen.getByLabelText('Edit Lead, Bulbasaur')).toBeTruthy();
-    fireEvent.press(screen.getByLabelText('Select Ivysaur'));
+    fireEvent.press(screen.getByLabelText('Select Safe Swap with Ivysaur'));
     expect(screen.getByText('2 / 3')).toBeTruthy();
     expect(screen.getByLabelText('Edit Safe Swap, Ivysaur')).toBeTruthy();
-    fireEvent.press(screen.getByLabelText('Select Venusaur'));
+    fireEvent.press(screen.getByLabelText('Select Closer with Venusaur'));
     expect(screen.getByText('3 / 3')).toBeTruthy();
-    expect(screen.getByText('AVERAGE SCORE')).toBeTruthy();
+    expect(await screen.findByText('FIELD COVERAGE')).toBeTruthy();
     expect(screen.getByText('SHARED LOSSES')).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Test a matchup in Battle Lab/ })).toBeTruthy();
+    expect(screen.getByText('ROLE TESTS')).toBeTruthy();
     fireEvent.press(screen.getByText('Battle Lab'));
     expect(screen.getByText('Simulate a focused matchup')).toBeTruthy();
     expect(screen.queryByText(/web simulator/i)).toBeNull();
@@ -128,7 +133,7 @@ describe('NativePvpScreen', () => {
   it('paints pending feedback before running shared battle mechanics', async () => {
     renderScreen();
     fireEvent.press(screen.getByText('Battle Lab'));
-    fireEvent.press(screen.getByLabelText('Simulate battle'));
+    fireEvent.press(screen.getByLabelText('Run battle'));
     expect(screen.getByText('Simulating…')).toBeTruthy();
     await waitFor(() => expect(screen.getByText('SIMULATED RESULT')).toBeTruthy());
     expect(screen.getByText(/wins|draw/i)).toBeTruthy();
@@ -185,7 +190,7 @@ describe('NativePvpScreen', () => {
     expect(onCatalogNeeded).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Test Crown Bulbasaur')).toBeTruthy();
     fireEvent.press(screen.getByText('Test Crown Bulbasaur'));
-    expect(screen.getByText('grass / poison')).toBeTruthy();
+    expect(screen.getByLabelText('grass and poison')).toBeTruthy();
     expect(screen.getByText('RANK 1 SPREAD')).toBeTruthy();
   });
 
@@ -195,13 +200,91 @@ describe('NativePvpScreen', () => {
     fireEvent.press(screen.getByText('Team battle'));
     expect(screen.getByText('Switching')).toBeTruthy();
     expect(screen.getByText('Current 45-second battle clock')).toBeTruthy();
-    expect(screen.getByLabelText('Edit your Lead: Bulbasaur')).toBeTruthy();
-    expect(screen.getByLabelText('Edit opponent Lead: Ivysaur')).toBeTruthy();
+    expect(screen.getByLabelText('Edit Side A Lead: Bulbasaur')).toBeTruthy();
+    expect(screen.getByLabelText('Edit Opponent Lead: Ivysaur')).toBeTruthy();
     fireEvent.press(screen.getByLabelText('Run team battle'));
     expect(await screen.findByText('SWITCH-AWARE 3V3 RESULT')).toBeTruthy();
-    expect(screen.getByText(/Your team wins|Opponent wins|Team battle ends in a draw/)).toBeTruthy();
+    expect(screen.getByText(/Side A wins|Opponent wins|Team battle ends in a draw/)).toBeTruthy();
     fireEvent.press(screen.getByLabelText('Test meta teams'));
     expect(await screen.findByText('ROLE-BALANCED META FIELD')).toBeTruthy();
     expect(screen.getByText(/^[0-9]+-[0-9]+-[0-9]+$/)).toBeTruthy();
+  });
+
+  it('matches the Vite cup disclosure and paginates the same 50-row ranking window', () => {
+    const largeEntries = [bulbasaur, ivysaur, venusaur, ...Array.from({ length: 57 }, (_, offset) => {
+      const rank = offset + 4;
+      return {
+        ...bulbasaur,
+        rank,
+        sourceRank: rank,
+        speciesId: `meta-pokemon-${rank}`,
+        name: `Meta Pokémon ${rank}`,
+        score: 96 - rank * 0.5,
+      };
+    })];
+    const largePayload = {
+      ...payload,
+      leagues: {
+        ...payload.leagues,
+        great: { ...payload.leagues.great, entries: largeEntries },
+      },
+      formats: [{
+        key: 'jungle-cup',
+        label: 'Jungle Cup',
+        league: 'great' as const,
+        cup: 'Jungle',
+        cpLimit: 1500,
+        rules: ['Only selected Jungle types'],
+        mechanics: 'current-2026' as const,
+        entries: largeEntries.slice(0, 20),
+      }],
+    };
+    render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}>
+        <NativePvpScreen assetBaseUrl="https://pokegonexus.com" catalog={catalog} onBack={jest.fn()} onMethodology={jest.fn()} onRetry={jest.fn()} payload={largePayload} signedIn={false} />
+      </SafeAreaProvider>,
+    );
+
+    expect(screen.getByText('60 ranked')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Show next 10 PvP rankings'));
+    expect(screen.queryByLabelText('Show next 10 PvP rankings')).toBeNull();
+    fireEvent.press(screen.getByLabelText('Current PvP cup'));
+    fireEvent.press(screen.getByText('Jungle Cup'));
+    expect(screen.getByText('20 ranked')).toBeTruthy();
+    expect(screen.queryByText('Only selected Jungle types')).toBeNull();
+    fireEvent.press(screen.getByLabelText('Format rules'));
+    expect(screen.getByText('Only selected Jungle types')).toBeTruthy();
+  });
+
+  it('opens Battle Lab with the exact team and opponent selected from matchup evidence', async () => {
+    const seededEntries = [bulbasaur, ivysaur, venusaur].map((candidate) => ({
+      ...candidate,
+      counters: [{ speciesId: 'ivysaur', rating: 300 }],
+    }));
+    const seededPayload = {
+      ...payload,
+      leagues: {
+        ...payload.leagues,
+        great: { ...payload.leagues.great, entries: seededEntries },
+      },
+    };
+    render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}>
+        <NativePvpScreen assetBaseUrl="https://pokegonexus.com" catalog={catalog} onBack={jest.fn()} onMethodology={jest.fn()} onRetry={jest.fn()} payload={seededPayload} persistTeamBuilder={false} signedIn={false} />
+      </SafeAreaProvider>,
+    );
+
+    fireEvent.press(screen.getByText('Team Builder'));
+    fireEvent.press(screen.getByLabelText('Select Lead with Bulbasaur'));
+    fireEvent.press(screen.getByLabelText('Select Safe Swap with Ivysaur'));
+    fireEvent.press(screen.getByLabelText('Select Closer with Venusaur'));
+    await screen.findByText('FIELD COVERAGE');
+    fireEvent.press(screen.getByLabelText('Published matchup evidence'));
+    fireEvent.press(screen.getByLabelText('Test Ivysaur in Battle Lab'));
+
+    expect(screen.getByRole('button', { name: 'Team battle' }).props.accessibilityState)
+      .toMatchObject({ selected: true });
+    expect(screen.getByLabelText('Edit Side A Lead: Bulbasaur')).toBeTruthy();
+    expect(screen.getByLabelText('Edit Opponent Lead: Ivysaur')).toBeTruthy();
   });
 });

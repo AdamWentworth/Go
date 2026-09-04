@@ -21,6 +21,7 @@ export type E2eRouteOptions = {
   trades?: unknown;
   pokedexSpecies?: unknown[];
   pokemonCatalogDelayMs?: number;
+  pvpData?: unknown;
   raidDataDelayMs?: number;
   customTags?: unknown[];
   tagOrders?: {
@@ -174,7 +175,7 @@ const makePvPEntry = (
   statProduct: (100 + rank) * (130 - rank) * (140 + rank),
 });
 
-const pvpDataFixture = {
+export const pvpDataFixture = {
   source: {
     name: 'PvPoke',
     version: 'e2e-pvpoke',
@@ -500,7 +501,7 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
 
   for (const pathPattern of ['**/api/pokemon/pvp-data', '**/__e2e/pokemon/pvp-data']) {
     await page.route(pathPattern, async (route) => {
-      await fulfillJson(route, pvpDataFixture);
+      await fulfillJson(route, options.pvpData ?? pvpDataFixture);
     });
   }
 

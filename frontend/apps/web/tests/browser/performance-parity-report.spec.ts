@@ -12,7 +12,7 @@ import {
   type Page,
 } from '@playwright/test';
 
-import { installE2eRoutes } from './support/e2eRoutes';
+import { installE2eRoutes, pvpDataFixture } from './support/e2eRoutes';
 import { openCaughtPokemonList, openPokemonPage } from './support/pokemonApp';
 
 type ContractRoute = {
@@ -144,9 +144,50 @@ const performanceInstances = Object.fromEntries(
     return [instanceId, normalized];
   }),
 );
+const performancePvpBaseEntries = pvpDataFixture.leagues.great.entries;
+const performancePvpGreatEntries = [
+  ...performancePvpBaseEntries,
+  ...Array.from({ length: 57 }, (_, offset) => {
+    const rank = offset + 4;
+    const template = performancePvpBaseEntries[offset % performancePvpBaseEntries.length]!;
+    return {
+      ...template,
+      rank,
+      sourceRank: rank,
+      speciesId: `meta-pokemon-${rank}`,
+      name: `Meta Pokémon ${rank}`,
+      score: Math.max(35, 96 - rank * 0.75),
+      rating: Math.max(300, 700 - rank * 3),
+      categoryScores: template.categoryScores.map((score) => Math.max(25, score - rank / 4)),
+    };
+  }),
+];
+const performancePvpData = {
+  ...pvpDataFixture,
+  leagues: {
+    ...pvpDataFixture.leagues,
+    great: {
+      ...pvpDataFixture.leagues.great,
+      entries: performancePvpGreatEntries,
+    },
+  },
+  formats: [{
+    key: 'jungle-cup',
+    label: 'Jungle Cup',
+    league: 'great',
+    cup: 'Jungle',
+    cpLimit: 1_500,
+    rules: ['Only Normal, Grass, Electric, Poison, Ground, Flying, Bug, and Dark types'],
+    mechanics: 'current-2026',
+    entries: performancePvpGreatEntries.slice(0, 20),
+  }],
+};
+const performancePvpEntries = Object.values(performancePvpData.leagues)
+  .reduce((total, league) => total + league.entries.length, 0);
 const performanceRouteOptions = {
   baseUrl: webBaseUrl,
   mockImages: false,
+  pvpData: performancePvpData,
   syncInstances: performanceInstances,
   userInstances: {
     instances: performanceInstances,
@@ -427,6 +468,10 @@ const collectSharedInteractions = async (
     await collectRaidInteractions(context, sampleIndex);
     return;
   }
+  if (workflowFilter === 'pvp') {
+    await collectPvpInteractions(context, sampleIndex);
+    return;
+  }
   const home = await createMeasuredPage(context, 'signed-in', 'dark');
   try {
     await home.goto(`${webBaseUrl}/`, { waitUntil: 'domcontentloaded' });
@@ -549,6 +594,7 @@ const collectSharedInteractions = async (
 
   await collectPokedexInteractions(context, sampleIndex);
   await collectRaidInteractions(context, sampleIndex);
+  await collectPvpInteractions(context, sampleIndex);
 };
 
 const collectPokedexInteractions = async (
@@ -794,6 +840,194 @@ const collectRaidInteractions = async (
   }
 };
 
+const collectPvpInteractions = async (
+  context: BrowserContext,
+  sampleIndex: number,
+) => {
+  const page = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    await page.goto(`${webBaseUrl}/pvp`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(page);
+    await expect(page.getByRole('heading', { name: 'PvP Rankings', exact: true })).toBeVisible();
+
+    const cup = page.getByRole('combobox', { name: 'Current PvP cup' });
+    await cup.selectOption('jungle-cup');
+    await expect(page.getByText('20 ranked', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.pvp.cup-result', sampleIndex);
+    const rules = page.locator('.pvp-format-rules');
+    await rules.locator('summary').click();
+    await expect(rules).toContainText('Only Normal, Grass, Electric');
+    await recordInteraction(page, 'interaction.pvp.rules-result', sampleIndex);
+
+    await page.getByRole('button', { name: /Great/ }).click();
+    await expect(page.getByText('60 ranked', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.pvp.league-result', sampleIndex);
+
+    const myPokemon = page.getByRole('button', { name: /My Pokémon/ });
+    await myPokemon.click();
+    await expect(myPokemon).toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.pvp.scope-result', sampleIndex * 2);
+    const allPokemon = page.getByRole('button', { name: 'All Pokémon', exact: true });
+    await allPokemon.click();
+    await expect(allPokemon).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByText('60 ranked', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.pvp.scope-result', sampleIndex * 2 + 1);
+
+    await page.getByRole('button', { name: 'Lead', exact: true }).click();
+    await expect(page.getByText('Lead rankings', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.pvp.role-result', sampleIndex);
+    await page.getByRole('button', { name: 'Overall', exact: true }).click();
+    await expect(page.getByText('Overall rankings', { exact: true })).toBeVisible();
+
+    const rankingSearch = page.getByRole('searchbox', { name: 'Search PvP rankings' });
+    await rankingSearch.fill('play rough');
+    await expect(page.locator('.pvp-ranking-row').first()).toContainText('Azumarill');
+    await recordInteraction(page, 'interaction.pvp.search-result', sampleIndex);
+    await rankingSearch.fill('');
+
+    const showMore = page.getByRole('button', { name: 'Show next 10', exact: true });
+    await showMore.click();
+    await expect(page.getByText('Meta Pokémon 60', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.pvp.more-result', sampleIndex);
+
+    await page.getByRole('button', { name: 'Show details for Clodsire', exact: true }).click();
+    const strongMatchups = page.getByRole('heading', { name: 'Strong matchups', exact: true });
+    await strongMatchups.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pvp.ranking-detail', sampleIndex);
+    await captureWorkflowScreenshot(page, sampleIndex, 'pvp-ranking-detail', strongMatchups);
+
+    await page.getByRole('button', { name: 'Team Builder', exact: true }).click();
+    const teamBuilder = page.getByLabel('PvP Team Builder');
+    await teamBuilder.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pvp.workspace-result', sampleIndex * 3);
+
+    const teamSearch = page.getByRole('searchbox', { name: 'Search Team Builder Pokémon' });
+    await teamSearch.fill('Azumarill');
+    await page.getByRole('button', { name: 'Select Lead with Azumarill', exact: true })
+      .waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pvp.team.search-result', sampleIndex);
+    await teamSearch.fill('');
+
+    await page.getByRole('button', { name: 'Select Lead with Clodsire', exact: true }).click();
+    await expect(page.getByText('1 / 3', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.pvp.team.selection-result', sampleIndex * 3);
+    await page.getByRole('button', { name: 'Select Safe Swap with Azumarill', exact: true }).click();
+    await expect(page.getByText('2 / 3', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.pvp.team.selection-result', sampleIndex * 3 + 1);
+    await page.getByRole('button', { name: 'Select Closer with Bulbasaur', exact: true }).click();
+    await expect(page.getByText('3 / 3', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.pvp.team.selection-result', sampleIndex * 3 + 2);
+    await expect(page.getByText(/handled$/)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText('Field coverage', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.pvp.team.evaluation-result', sampleIndex);
+
+    await page.getByText('Published matchup evidence', { exact: true }).click();
+    await expect(page.getByText('Threatens 3 · Open', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.pvp.team.evidence-result', sampleIndex);
+    await captureWorkflowScreenshot(page, sampleIndex, 'pvp-team-builder', teamBuilder);
+
+    await page.getByRole('button', { name: 'Battle Lab', exact: true }).click();
+    await expect(page.getByText(/focused 1v1/)).toBeVisible();
+    await recordInteraction(page, 'interaction.pvp.workspace-result', sampleIndex * 3 + 1);
+
+    const battlePickers = page.locator('.pvp-battle-picker');
+    const sideA = battlePickers.nth(0);
+    const opponent = battlePickers.nth(1);
+    const sideASearch = sideA.getByRole('searchbox', { name: 'Find Side A Pokemon' });
+    await sideASearch.fill('Azumarill');
+    await sideA.getByRole('button', { name: /Azumarill/ }).waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pvp.battle.search-result', sampleIndex);
+    await sideA.getByRole('button', { name: /Azumarill/ }).click();
+    await expect(sideA.locator('header strong')).toContainText('Azumarill');
+    await recordInteraction(page, 'interaction.pvp.battle.selection-result', sampleIndex * 3);
+    await sideASearch.fill('');
+    await opponent.getByRole('button', { name: /Bulbasaur/ }).click();
+    await expect(opponent.locator('header strong')).toContainText('Bulbasaur');
+    await recordInteraction(page, 'interaction.pvp.battle.selection-result', sampleIndex * 3 + 1);
+    await page.getByRole('button', { name: 'Swap battle sides', exact: true }).click();
+    await expect(sideA.locator('header strong')).toContainText('Bulbasaur');
+    await recordInteraction(page, 'interaction.pvp.battle.selection-result', sampleIndex * 3 + 2);
+
+    const focusedConditions = page.locator('.pvp-battle-controls > div').first();
+    await focusedConditions.getByRole('button', { name: '2', exact: true }).click();
+    await expect(focusedConditions.getByRole('button', { name: '2', exact: true }))
+      .toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.pvp.battle.condition-result', sampleIndex);
+    await page.getByRole('button', { name: 'Run battle', exact: true }).click();
+    const battleResult = page.locator('.pvp-battle-result');
+    await battleResult.waitFor({ state: 'visible', timeout: 30_000 });
+    await recordInteraction(page, 'interaction.pvp.battle.simulation-result', sampleIndex);
+    await captureWorkflowScreenshot(page, sampleIndex, 'pvp-battle-focused', battleResult);
+
+    await page.getByRole('button', { name: 'Team battle', exact: true }).click();
+    const firstTeam = page.locator('.pvp-team-lineup-editor').first();
+    await firstTeam.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pvp.battle.mode-result', sampleIndex);
+    await firstTeam.getByRole('button', { name: /Edit Side A Safe Swap/ }).click();
+    await firstTeam.getByRole('button', { name: /Meta Pokémon 4/ }).click();
+    await expect(firstTeam.getByRole('button', { name: /Edit Side A Safe Swap/ }))
+      .toContainText('Meta Pokémon 4');
+    await recordInteraction(page, 'interaction.pvp.team-battle.selection-result', sampleIndex);
+    const teamBattleSearch = firstTeam.getByRole('searchbox', { name: 'Find Choose Safe Swap Pokemon' });
+    await teamBattleSearch.fill('Meta Pokémon 5');
+    await firstTeam.getByRole('button', { name: /^Meta Pokémon 5 Level/ }).waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pvp.team-battle.search-result', sampleIndex);
+    await teamBattleSearch.fill('');
+
+    await page.getByRole('button', { name: /Fixed order/ }).click();
+    await expect(page.getByRole('button', { name: /Fixed order/ }))
+      .toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.pvp.team-battle.policy-result', sampleIndex);
+    const teamConditions = page.locator('.pvp-team-battle-controls > div').first();
+    await teamConditions.getByRole('button', { name: '1', exact: true }).click();
+    await expect(teamConditions.getByRole('button', { name: '1', exact: true }))
+      .toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.pvp.team-battle.condition-result', sampleIndex);
+    await page.getByRole('button', { name: 'Run team battle', exact: true }).click();
+    const teamResult = page.locator('.pvp-team-battle-result');
+    await teamResult.waitFor({ state: 'visible', timeout: 30_000 });
+    await recordInteraction(page, 'interaction.pvp.team-battle.simulation-result', sampleIndex);
+    const fieldButton = page.getByRole('button', { name: /Test \d+ meta teams/ });
+    await fieldButton.click();
+    const fieldResult = page.locator('.pvp-meta-gauntlet-result');
+    await fieldResult.waitFor({ state: 'visible', timeout: 30_000 });
+    await recordInteraction(page, 'interaction.pvp.team-battle.field-result', sampleIndex);
+    await captureWorkflowScreenshot(page, sampleIndex, 'pvp-battle-team', fieldResult);
+
+    await page.getByRole('button', { name: 'IV Rank', exact: true }).click();
+    const ivRank = page.getByLabel('PvP IV Rank');
+    await ivRank.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pvp.workspace-result', sampleIndex * 3 + 2);
+    const ivMyPokemon = ivRank.getByRole('button', { name: /My Pokémon/ });
+    await ivMyPokemon.click();
+    await expect(ivMyPokemon).toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.pvp.iv.scope-result', sampleIndex * 2);
+    const ivAllPokemon = ivRank.getByRole('button', { name: 'All Pokémon', exact: true });
+    await ivAllPokemon.click();
+    await expect(ivAllPokemon).toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.pvp.iv.scope-result', sampleIndex * 2 + 1);
+    const ivSearch = ivRank.getByRole('searchbox', { name: 'Search IV Rank Pokémon' });
+    await ivSearch.fill('Bulbasaur');
+    const bulbasaurOption = ivRank.getByRole('button', { name: 'Select #0001 Bulbasaur' });
+    await bulbasaurOption.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pvp.iv.search-result', sampleIndex);
+    await bulbasaurOption.click();
+    const ivResult = ivRank.getByLabel('IV Rank result');
+    await ivResult.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pvp.iv.selection-result', sampleIndex);
+    await ivRank.getByRole('button', { name: 'Increase Attack IV', exact: true }).click();
+    await expect(ivRank.getByRole('spinbutton', { name: 'Attack IV' })).toHaveValue('1');
+    await recordInteraction(page, 'interaction.pvp.iv.adjust-result', sampleIndex);
+    await ivRank.getByRole('button', { name: /Best Buddy 51/ }).click();
+    await expect(ivRank.getByRole('button', { name: /Best Buddy 51/ }))
+      .toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.pvp.iv.level-result', sampleIndex);
+    await captureWorkflowScreenshot(page, sampleIndex, 'pvp-iv-rank', ivResult);
+  } finally {
+    await page.close();
+  }
+};
+
 const waitForHttp = async (url: string, timeoutMs = 20_000) => {
   const deadline = Date.now() + timeoutMs;
   let lastError: unknown = null;
@@ -970,7 +1204,7 @@ const writeReport = () => {
       workloadId: 'canonical-performance-fixtures-v1',
       catalogEntries: performanceCatalogEntries,
       instanceEntries: Object.keys(performanceInstances).length,
-      pvpEntries: 5,
+      pvpEntries: performancePvpEntries,
     },
     samples,
   }, null, 2)}\n`);

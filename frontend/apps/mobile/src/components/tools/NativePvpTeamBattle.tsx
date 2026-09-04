@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
   Pressable,
@@ -7,10 +7,10 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Slider from "@react-native-community/slider";
 import type {
   PokemonPvPBattleFighter,
   PokemonPvPBattleMechanics,
-  PokemonPvPRankingEntry,
 } from "@pokemongonexus/shared-contracts/pokemon";
 import {
   buildPvPBattleFighterFromRankingEntry,
@@ -22,15 +22,24 @@ import type {
   PvPTeamGauntletResponse,
   PvPTeamSwitchPolicy,
 } from "@pokemongonexus/shared-domain/pvp-battle-protocol";
+import {
+  buildRepresentativePvPMetaTeams,
+  type PvPTeamCandidate,
+} from "@pokemongonexus/app-core/pvp-team-builder";
 import { NativeUiIcon, type NativeUiIconName } from "../NativeUiIcon";
+import { markNativeUiPerformanceAfterPaint } from "../../observability/nativeUiInteractionTiming";
 
 type TeamKeys = [string, string, string];
 type Props = {
   assetBaseUrl: string;
-  entries: PokemonPvPRankingEntry[];
+  candidates: PvPTeamCandidate[];
+  initialLeftKeys?: string[];
+  initialRightKeys?: string[];
   light: boolean;
   mechanics: PokemonPvPBattleMechanics;
+  opponentCandidates: PvPTeamCandidate[];
   onResultLayout?: (offsetY: number) => void;
+  playerSideLabel: string;
 };
 const ROLES = ["Lead", "Safe Swap", "Closer"] as const;
 
@@ -43,28 +52,34 @@ const assetUri = (base: string, value: string): string | undefined => {
 };
 
 const initialTeam = (
-  entries: PokemonPvPRankingEntry[],
+  candidates: PvPTeamCandidate[],
+  preferred: string[] | undefined,
   offset: number,
 ): TeamKeys => {
-  const ids = entries.map((entry) => entry.speciesId);
-  const keys = Array.from({ length: 3 }, (_, index) =>
-    ids[(index + offset) % Math.max(1, ids.length)] ?? "",
-  );
+  const available = new Set(candidates.map((candidate) => candidate.key));
+  const keys = (preferred ?? []).filter((key, index, values) => available.has(key) && values.indexOf(key) === index).slice(0, 3);
+  for (let index = 0; keys.length < 3 && index < candidates.length; index += 1) {
+    const candidate = candidates[(index + offset) % candidates.length];
+    if (candidate && !keys.includes(candidate.key)) keys.push(candidate.key);
+  }
+  while (keys.length < 3) keys.push("");
   return keys as TeamKeys;
 };
 
 const toFighter = (
-  entry: PokemonPvPRankingEntry | undefined,
+  candidate: PvPTeamCandidate | undefined,
 ): PokemonPvPBattleFighter | null =>
-  entry ? buildPvPBattleFighterFromRankingEntry(entry, entry.speciesId) : null;
+  candidate ? buildPvPBattleFighterFromRankingEntry(candidate.entry, candidate.key) : null;
 
 const Choice = ({
+  accessibilityLabel,
   active,
   icon,
   label,
   light,
   onPress,
 }: {
+  accessibilityLabel?: string;
   active: boolean;
   icon?: NativeUiIconName;
   label: string;
@@ -72,6 +87,7 @@ const Choice = ({
   onPress: () => void;
 }) => (
   <Pressable
+    accessibilityLabel={accessibilityLabel}
     accessibilityRole="button"
     accessibilityState={{ selected: active }}
     onPress={onPress}
@@ -86,22 +102,38 @@ const Choice = ({
 
 export const NativePvpTeamBattle = ({
   assetBaseUrl,
-  entries,
+  candidates,
+  initialLeftKeys,
+  initialRightKeys,
   light,
   mechanics,
+  opponentCandidates,
   onResultLayout,
+  playerSideLabel,
 }: Props) => {
+  const performanceStartsRef = useRef(new Map<string, number>());
+  const beginPerformance = useCallback((event: string) => {
+    performanceStartsRef.current.set(event, Date.now());
+  }, []);
+  const finishPerformance = useCallback((event: string) => {
+    const startedAt = performanceStartsRef.current.get(event);
+    if (startedAt == null) return;
+    performanceStartsRef.current.delete(event);
+    markNativeUiPerformanceAfterPaint(event, startedAt);
+  }, []);
   const ready = useMemo(
-    () => entries.filter((entry) => toFighter(entry) != null),
-    [entries],
+    () => candidates.filter((candidate) => toFighter(candidate) != null),
+    [candidates],
   );
-  const entryById = useMemo(
-    () => new Map(ready.map((entry) => [entry.speciesId, entry])),
-    [ready],
+  const readyOpponents = useMemo(
+    () => opponentCandidates.filter((candidate) => toFighter(candidate) != null),
+    [opponentCandidates],
   );
+  const candidateByKey = useMemo(() => new Map(ready.map((candidate) => [candidate.key, candidate])), [ready]);
+  const opponentByKey = useMemo(() => new Map(readyOpponents.map((candidate) => [candidate.key, candidate])), [readyOpponents]);
   const [teams, setTeams] = useState<[TeamKeys, TeamKeys]>(() => [
-    initialTeam(ready, 0),
-    initialTeam(ready, Math.min(1, Math.max(0, ready.length - 1))),
+    initialTeam(ready, initialLeftKeys, 0),
+    initialTeam(readyOpponents, initialRightKeys, Math.min(1, Math.max(0, readyOpponents.length - 1))),
   ]);
   const [activeSide, setActiveSide] = useState<0 | 1>(0);
   const [activeSlot, setActiveSlot] = useState(0);
@@ -115,36 +147,44 @@ export const NativePvpTeamBattle = ({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<"battle" | "field" | null>(null);
   const normalized = deferredQuery.trim().toLocaleLowerCase();
+  const activeCandidates = activeSide === 0 ? ready : readyOpponents;
   const unavailable = useMemo(
     () => new Set(teams[activeSide].filter((_, index) => index !== activeSlot)),
     [activeSide, activeSlot, teams],
   );
-  const choices = useMemo(() => ready
-    .filter((entry) =>
-      (!unavailable.has(entry.speciesId) || teams[activeSide][activeSlot] === entry.speciesId) &&
+  const choices = useMemo(() => activeCandidates
+    .filter((candidate) =>
+      (!unavailable.has(candidate.key) || teams[activeSide][activeSlot] === candidate.key) &&
       (!normalized || [
-        entry.name,
-        entry.speciesId,
-        ...entry.types,
-        ...entry.moveset.map((move) => move.name),
+        candidate.entry.name,
+        candidate.nickname ?? "",
+        candidate.entry.speciesId,
+        ...candidate.entry.types,
+        ...candidate.entry.moveset.map((move) => move.name),
       ].join(" ").toLocaleLowerCase().includes(normalized)),
-    )
-    .slice(0, 40), [activeSide, activeSlot, normalized, ready, teams, unavailable]);
+    ).slice(0, 40), [activeCandidates, activeSide, activeSlot, normalized, teams, unavailable]);
   const selectedTeams = useMemo(
-    () => teams.map((team) => team.map((key) => entryById.get(key))),
-    [entryById, teams],
+    () => [teams[0].map((key) => candidateByKey.get(key)), teams[1].map((key) => opponentByKey.get(key))] as const,
+    [candidateByKey, opponentByKey, teams],
   );
   const complete = selectedTeams.every((team) =>
-    team.length === 3 && team.every(Boolean) && new Set(team.map((entry) => entry?.speciesId)).size === 3,
+    team.length === 3 && team.every(Boolean) && new Set(team.map((candidate) => candidate?.key)).size === 3,
   );
+  useEffect(() => finishPerformance("pvp_team_battle_selection_result_painted"), [finishPerformance, teams]);
+  useEffect(() => finishPerformance("pvp_team_battle_policy_result_painted"), [finishPerformance, policy]);
+  useEffect(() => finishPerformance("pvp_team_battle_condition_result_painted"), [energy, finishPerformance, shields]);
+  useEffect(() => {
+    if (query === deferredQuery) finishPerformance("pvp_team_battle_search_result_painted");
+  }, [choices, deferredQuery, finishPerformance, query]);
 
-  const changeTeamMember = (entry: PokemonPvPRankingEntry) => {
+  const changeTeamMember = (candidate: PvPTeamCandidate) => {
+    beginPerformance("pvp_team_battle_selection_result_painted");
     setTeams((current) => {
       const next: [TeamKeys, TeamKeys] = [
         [...current[0]] as TeamKeys,
         [...current[1]] as TeamKeys,
       ];
-      next[activeSide][activeSlot] = entry.speciesId;
+      next[activeSide][activeSlot] = candidate.key;
       return next;
     });
     setResult(null);
@@ -157,6 +197,7 @@ export const NativePvpTeamBattle = ({
     side: 0 | 1,
     value: number,
   ) => {
+    beginPerformance("pvp_team_battle_condition_result_painted");
     setter((current) => side === 0 ? [value, current[1]] : [current[0], value]);
     setResult(null);
     setGauntlet(null);
@@ -181,6 +222,7 @@ export const NativePvpTeamBattle = ({
       return;
     }
     setBusy("battle");
+    beginPerformance("pvp_team_battle_result_painted");
     setResult(null);
     setGauntlet(null);
     setError("");
@@ -194,6 +236,7 @@ export const NativePvpTeamBattle = ({
         startingEnergy: energy,
         switchPolicy: policy,
       }));
+      finishPerformance("pvp_team_battle_result_painted");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The team battle could not be simulated.");
     } finally {
@@ -202,18 +245,16 @@ export const NativePvpTeamBattle = ({
   };
 
   const representativeTeams = useMemo(() => {
-    const rows: { id: string; label: string; team: [PokemonPvPBattleFighter, PokemonPvPBattleFighter, PokemonPvPBattleFighter] }[] = [];
-    for (let index = 0; index + 2 < ready.length && rows.length < 6; index += 3) {
-      const teamEntries = [ready[index], ready[index + 1], ready[index + 2]];
-      const fighters = teamEntries.map(toFighter);
-      if (fighters.every(Boolean)) rows.push({
-        id: `field-${index}`,
-        label: `Meta line ${rows.length + 1}`,
+    return buildRepresentativePvPMetaTeams(readyOpponents, 6).flatMap((row) => {
+      const fighters = row.members.map(toFighter);
+      return fighters.every(Boolean) ? [{
+        id: row.id,
+        label: row.label,
+        members: row.members,
         team: fighters as [PokemonPvPBattleFighter, PokemonPvPBattleFighter, PokemonPvPBattleFighter],
-      });
-    }
-    return rows;
-  }, [ready]);
+      }] : [];
+    });
+  }, [readyOpponents]);
 
   const runField = async () => {
     const fighters = buildTeams();
@@ -222,6 +263,7 @@ export const NativePvpTeamBattle = ({
       return;
     }
     setBusy("field");
+    beginPerformance("pvp_team_field_result_painted");
     setGauntlet(null);
     setError("");
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -234,12 +276,38 @@ export const NativePvpTeamBattle = ({
         shields: shields[0],
         switchPolicy: policy,
       }));
+      finishPerformance("pvp_team_field_result_painted");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The meta team check could not be completed.");
     } finally {
       setBusy(null);
     }
   };
+
+  const resultCandidateByFighterId = new Map(
+    selectedTeams.flatMap((team) => team.filter((candidate): candidate is PvPTeamCandidate => candidate != null))
+      .map((candidate) => [candidate.key, candidate]),
+  );
+  const firstMatchup = result?.matchups[0];
+  const resultWinnerLabel = result?.winner === 0
+    ? playerSideLabel
+    : result?.winner === 1 ? "Opponent" : null;
+  const resultSummary = !result
+    ? ""
+    : result.winner < 0
+      ? "Neither lineup finished the other."
+      : firstMatchup?.winner === result.winner
+        ? `${resultWinnerLabel} held its lead advantage through the lineup.`
+        : (firstMatchup?.winner ?? -1) >= 0
+          ? `${resultWinnerLabel} recovered after losing the opening matchup.`
+          : `${resultWinnerLabel} won through its back-line depth.`;
+  const resultSequence = result
+    ? [
+        ...result.matchups.map((matchup) => ({ kind: "matchup" as const, atMs: matchup.endedAtMs, matchup })),
+        ...result.switches.map((event) => ({ kind: "switch" as const, atMs: event.atMs, event })),
+      ].sort((left, right) => left.atMs - right.atMs || (left.kind === "matchup" ? -1 : 1))
+    : [];
+  const representativeTeamById = new Map(representativeTeams.map((team) => [team.id, team]));
 
   return (
     <View style={styles.root}>
@@ -249,26 +317,27 @@ export const NativePvpTeamBattle = ({
             <View style={styles.lineupHeader}>
               <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="trainers" size={18} />
               <View>
-                <Text style={[styles.lineupTitle, light && styles.textLight]}>{side === 0 ? "Your team" : "Opponent"}</Text>
+                <Text style={[styles.lineupTitle, light && styles.textLight]}>{side === 0 ? playerSideLabel : "Opponent"}</Text>
                 <Text style={[styles.meta, light && styles.mutedLight]}>Lead, Safe Swap, and Closer</Text>
               </View>
             </View>
             <View style={styles.slots}>
               {ROLES.map((role, index) => {
-                const entry = selectedTeams[side][index];
+                const candidate = selectedTeams[side][index];
+                const label = candidate ? (candidate.nickname || candidate.entry.name) : "";
                 const active = activeSide === side && activeSlot === index;
                 return (
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Edit ${side === 0 ? "your" : "opponent"} ${role}${entry ? `: ${entry.name}` : ""}`}
+                    accessibilityLabel={`Edit ${side === 0 ? playerSideLabel : "Opponent"} ${role}${candidate ? `: ${label}` : ""}`}
                     accessibilityState={{ selected: active }}
                     key={role}
                     onPress={() => { setActiveSide(side); setActiveSlot(index); }}
                     style={[styles.slot, light && styles.controlLight, active && styles.slotActive]}
                   >
                     <Text style={[styles.role, light && styles.accentLight]}>{role}</Text>
-                    {entry ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }} style={styles.slotImage} /> : null}
-                    <Text numberOfLines={2} style={[styles.slotName, light && styles.textLight]}>{entry?.name ?? "Choose"}</Text>
+                    {candidate ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, candidate.entry.imageUrl) }} style={styles.slotImage} /> : null}
+                    <Text numberOfLines={2} style={[styles.slotName, light && styles.textLight]}>{label || "Choose"}</Text>
                   </Pressable>
                 );
               })}
@@ -286,22 +355,38 @@ export const NativePvpTeamBattle = ({
           </View>
         </View>
         <View style={styles.policyChoices}>
-          <Choice active={policy === "adaptive"} icon="trade" label="Adaptive" light={light} onPress={() => { setPolicy("adaptive"); setResult(null); }} />
-          <Choice active={policy === "fixed"} icon="trainers" label="Fixed order" light={light} onPress={() => { setPolicy("fixed"); setResult(null); }} />
+          <Choice active={policy === "adaptive"} icon="trade" label="Adaptive" light={light} onPress={() => { beginPerformance("pvp_team_battle_policy_result_painted"); setPolicy("adaptive"); setResult(null); }} />
+          <Choice active={policy === "fixed"} icon="trainers" label="Fixed order" light={light} onPress={() => { beginPerformance("pvp_team_battle_policy_result_painted"); setPolicy("fixed"); setResult(null); }} />
         </View>
         <Text style={[styles.meta, light && styles.mutedLight]}>{policy === "adaptive" ? "Escape clear losses and counter-switch." : "Lead, Safe Swap, then Closer."}</Text>
       </View>
 
       {([0, 1] as const).map((side) => (
         <View key={side} style={[styles.conditions, light && styles.panelLight]}>
-          <Text style={[styles.lineupTitle, light && styles.textLight]}>{side === 0 ? "Your conditions" : "Opponent conditions"}</Text>
+          <Text style={[styles.lineupTitle, light && styles.textLight]}>{side === 0 ? `${playerSideLabel} conditions` : "Opponent conditions"}</Text>
           <View style={styles.conditionRow}>
             <Text style={[styles.conditionLabel, light && styles.mutedLight]}>Shields</Text>
-            {[0, 1, 2].map((value) => <Choice active={shields[side] === value} key={value} label={String(value)} light={light} onPress={() => changePair(setShields, side, value)} />)}
+            {[0, 1, 2].map((value) => <Choice accessibilityLabel={`${side === 0 ? playerSideLabel : "Opponent"} shields ${value}`} active={shields[side] === value} key={value} label={String(value)} light={light} onPress={() => changePair(setShields, side, value)} />)}
           </View>
           <View style={styles.conditionRow}>
-            <Text style={[styles.conditionLabel, light && styles.mutedLight]}>Lead energy</Text>
-            {[0, 25, 50, 75, 100].map((value) => <Choice active={energy[side] === value} key={value} label={String(value)} light={light} onPress={() => changePair(setEnergy, side, value)} />)}
+            <Text style={[styles.conditionLabel, styles.energyLabel, light && styles.mutedLight]}>Lead energy {energy[side]}</Text>
+            <Slider
+              accessibilityLabel={`${side === 0 ? playerSideLabel : "Opponent"} lead energy`}
+              maximumTrackTintColor={light ? "#cbd8dc" : "#344149"}
+              maximumValue={100}
+              minimumTrackTintColor="#42d5c2"
+              minimumValue={0}
+              onSlidingStart={() => beginPerformance("pvp_team_battle_condition_result_painted")}
+              onValueChange={(value) => {
+                setEnergy((current) => side === 0 ? [value, current[1]] : [current[0], value]);
+                setResult(null);
+                setGauntlet(null);
+              }}
+              step={5}
+              style={styles.energySlider}
+              thumbTintColor="#42d5c2"
+              value={energy[side]}
+            />
           </View>
         </View>
       ))}
@@ -320,19 +405,24 @@ export const NativePvpTeamBattle = ({
       {result ? (
         <View accessibilityLiveRegion="polite" onLayout={(event) => onResultLayout?.(event.nativeEvent.layout.y)} style={[styles.result, light && styles.panelLight]}>
           <Text style={[styles.eyebrow, light && styles.accentLight]}>{result.switchPolicy === "adaptive" ? "SWITCH-AWARE 3V3 RESULT" : "FIXED-ORDER 3V3 RESULT"}</Text>
-          <Text style={[styles.resultTitle, light && styles.textLight]}>{result.winner < 0 ? "Team battle ends in a draw" : result.winner === 0 ? "Your team wins" : "Opponent wins"}</Text>
-          <Text style={[styles.meta, light && styles.mutedLight]}>{(result.timeMs / 1000).toFixed(1)} seconds · {result.switches.filter((event) => event.reason === "adaptive").length} adaptive swaps</Text>
+          <Text style={[styles.resultTitle, light && styles.textLight]}>{result.winner < 0 ? "Team battle ends in a draw" : result.winner === 0 ? `${playerSideLabel} wins` : "Opponent wins"}</Text>
+          <Text style={[styles.resultSummary, light && styles.mutedLight]}>{resultSummary}</Text>
+          <Text style={[styles.resultTime, light && styles.accentLight]}>{(result.timeMs / 1000).toFixed(1)}s</Text>
+          <View style={styles.resultOverview}>
+            {([0, 1] as const).map((side) => <View key={side} style={[styles.overviewItem, light && styles.controlLight]}><Text style={[styles.meta, light && styles.mutedLight]}>{side === 0 ? playerSideLabel : "Opponent"}</Text><Text style={[styles.overviewValue, light && styles.textLight]}>{result.teams[side].filter((member) => !member.fainted).length} standing</Text><Text style={[styles.meta, light && styles.mutedLight]}>{result.shields[side]} shields left</Text></View>)}
+            {result.switchPolicy === "adaptive" ? <View style={[styles.overviewItem, light && styles.controlLight]}><Text style={[styles.meta, light && styles.mutedLight]}>Battle switching</Text><Text style={[styles.overviewValue, light && styles.textLight]}>{result.switches.filter((event) => event.reason === "adaptive").length} adaptive</Text><Text style={[styles.meta, light && styles.mutedLight]}>{result.switchClockMs / 1000}s clock</Text></View> : null}
+          </View>
           {([0, 1] as const).map((side) => (
             <View key={side} style={styles.resultTeam}>
-              <Text style={[styles.lineupTitle, light && styles.textLight]}>{side === 0 ? "Your team" : "Opponent"} · {result.teams[side].filter((member) => !member.fainted).length} standing</Text>
+              <Text style={[styles.lineupTitle, light && styles.textLight]}>{side === 0 ? playerSideLabel : "Opponent"} · {result.teams[side].filter((member) => !member.fainted).length} standing</Text>
               {result.teams[side].map((member, index) => {
-                const entry = selectedTeams[side][index];
+                const candidate = selectedTeams[side][index];
                 const hp = member.maxHp ? Math.max(0, (member.hp / member.maxHp) * 100) : 0;
                 return (
                   <View key={member.fighterId} style={[styles.resultMember, member.fainted && styles.fainted]}>
-                    {entry ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }} style={styles.resultImage} /> : null}
+                    {candidate ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, candidate.entry.imageUrl) }} style={styles.resultImage} /> : null}
                     <View style={styles.resultCopy}>
-                      <Text style={[styles.resultName, light && styles.textLight]}>{entry?.name ?? ROLES[index]}</Text>
+                      <Text style={[styles.resultName, light && styles.textLight]}>{candidate ? (candidate.nickname || candidate.entry.name) : ROLES[index]}</Text>
                       <View style={[styles.hpTrack, light && styles.hpTrackLight]}><View style={[styles.hpFill, { width: `${hp}%` }]} /></View>
                       <Text style={[styles.meta, light && styles.mutedLight]}>{member.hp}/{member.maxHp} HP · {member.energy} energy · {member.knockouts} KOs</Text>
                     </View>
@@ -341,6 +431,21 @@ export const NativePvpTeamBattle = ({
               })}
             </View>
           ))}
+          <View style={[styles.sequence, light && styles.controlLight]}>
+            <Text style={[styles.lineupTitle, light && styles.textLight]}>Battle sequence</Text>
+            {resultSequence.map((item) => {
+              if (item.kind === "switch") {
+                const from = resultCandidateByFighterId.get(item.event.fromFighterId);
+                const to = resultCandidateByFighterId.get(item.event.toFighterId);
+                return <View key={`switch-${item.event.index}-${item.event.side}`} style={styles.sequenceRow}><NativeUiIcon color="#42d5c2" name="trade" size={14} /><View style={styles.sequenceCopy}><Text style={[styles.sequenceTitle, light && styles.textLight]}>{item.event.reason === "adaptive" ? `${item.event.side === 0 ? playerSideLabel : "Opponent"} swaps ${from ? (from.nickname || from.entry.name) : "out"} for ${to ? (to.nickname || to.entry.name) : "its bench"}` : `${item.event.side === 0 ? playerSideLabel : "Opponent"} sends in ${to ? (to.nickname || to.entry.name) : "its next Pokémon"}`}</Text><Text style={[styles.meta, light && styles.mutedLight]}>{(item.event.atMs / 1000).toFixed(1)}s · {item.event.reason === "adaptive" ? `switch ready again at ${(item.event.switchReadyAtMs / 1000).toFixed(1)}s` : "forced replacement"}</Text></View></View>;
+              }
+              const first = resultCandidateByFighterId.get(item.matchup.fighterIds[0]);
+              const second = resultCandidateByFighterId.get(item.matchup.fighterIds[1]);
+              const winner = item.matchup.winner < 0 ? null : item.matchup.winner === 0 ? first : second;
+              const loser = item.matchup.winner < 0 ? null : item.matchup.winner === 0 ? second : first;
+              return <View key={`matchup-${item.matchup.index}-${item.matchup.fighterIds.join("-")}`} style={styles.sequenceRow}><Text style={styles.sequenceIndex}>{item.matchup.index + 1}</Text><View style={styles.sequenceCopy}><Text style={[styles.sequenceTitle, light && styles.textLight]}>{winner && loser ? `${winner.nickname || winner.entry.name} defeats ${loser.nickname || loser.entry.name}` : item.matchup.endedBy === "switch" ? `${first?.nickname || first?.entry.name || playerSideLabel} pressures ${second?.nickname || second?.entry.name || "Opponent"} into a decision` : `${first?.nickname || first?.entry.name || playerSideLabel} and ${second?.nickname || second?.entry.name || "Opponent"} draw`}</Text><Text style={[styles.meta, light && styles.mutedLight]}>{(item.matchup.startedAtMs / 1000).toFixed(1)}-{(item.matchup.endedAtMs / 1000).toFixed(1)}s · {item.matchup.shieldsAfter[0]}-{item.matchup.shieldsAfter[1]} shields</Text></View></View>;
+            })}
+          </View>
         </View>
       ) : null}
 
@@ -349,17 +454,27 @@ export const NativePvpTeamBattle = ({
           <Text style={[styles.eyebrow, light && styles.accentLight]}>ROLE-BALANCED META FIELD</Text>
           <Text style={[styles.resultTitle, light && styles.textLight]}>{gauntlet.wins}-{gauntlet.losses}-{gauntlet.draws}</Text>
           <Text style={[styles.meta, light && styles.mutedLight]}>Wins, losses, and draws against current top role combinations.</Text>
-          {gauntlet.results.map((row) => <View key={row.opponentId} style={styles.fieldRow}><Text style={row.result.winner === 0 ? styles.win : row.result.winner === 1 ? styles.loss : styles.draw}>{row.result.winner === 0 ? "✓" : row.result.winner === 1 ? "×" : "–"}</Text><Text style={[styles.fieldLabel, light && styles.textLight]}>{row.opponentLabel}</Text></View>)}
+          {gauntlet.results.map((row) => {
+            const representative = representativeTeamById.get(row.opponentId);
+            const won = row.result.winner === 0;
+            const draw = row.result.winner < 0;
+            const standing = row.result.teams[won ? 0 : 1].filter((member) => !member.fainted).length;
+            const lead = row.result.matchups[0];
+            const swaps = row.result.switches.filter((event) => event.reason === "adaptive").length;
+            return <View key={row.opponentId} style={styles.fieldRow}><Text style={draw ? styles.draw : won ? styles.win : styles.loss}>{draw ? "–" : won ? "✓" : "×"}</Text><View style={styles.fieldImages}>{representative?.members.map((candidate) => <Image fadeDuration={0} key={candidate.key} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, candidate.entry.imageUrl) }} style={styles.fieldImage} />)}</View><View style={styles.fieldCopy}><Text style={[styles.fieldLabel, light && styles.textLight]}>{row.opponentLabel}</Text><Text style={[styles.meta, light && styles.mutedLight]}>{draw ? "Even result" : `${won ? "Clear" : "Loss"} · ${standing} standing`}{lead?.winner === 1 ? " · lost lead" : ""} · {swaps} swaps</Text></View></View>;
+          })}
+          <Text style={[styles.fieldFooter, light && styles.mutedLight]}>These are deterministic Lead, Switch, and Closer combinations generated from the current ranking snapshot, not claimed historical player teams.</Text>
         </View>
       ) : null}
 
       <View style={styles.pickerSection}>
-        <Text style={[styles.eyebrow, light && styles.accentLight]}>CHOOSE {activeSide === 0 ? "YOUR" : "OPPONENT"} {ROLES[activeSlot].toLocaleUpperCase()}</Text>
-        <View style={[styles.search, light && styles.inputLight]}><NativeUiIcon color={light ? '#4c7073' : '#9db6b8'} name="search" size={18} /><TextInput accessibilityLabel="Search Team Battle Pokémon" onChangeText={setQuery} placeholder="Find a Pokémon" placeholderTextColor="#78868e" style={[styles.searchInput, light && styles.textLight]} value={query} /></View>
+        <Text style={[styles.eyebrow, light && styles.accentLight]}>CHOOSE {activeSide === 0 ? playerSideLabel.toLocaleUpperCase() : "OPPONENT"} {ROLES[activeSlot].toLocaleUpperCase()}</Text>
+        <View style={[styles.search, light && styles.inputLight]}><NativeUiIcon color={light ? '#4c7073' : '#9db6b8'} name="search" size={18} /><TextInput accessibilityLabel="Search Team Battle Pokémon" onChangeText={(value) => { beginPerformance("pvp_team_battle_search_result_painted"); setQuery(value); }} placeholder="Find a Pokémon" placeholderTextColor="#78868e" style={[styles.searchInput, light && styles.textLight]} value={query} /></View>
         <View style={styles.candidateGrid}>
-          {choices.map((entry) => {
-            const active = teams[activeSide][activeSlot] === entry.speciesId;
-            return <Pressable accessibilityRole="button" accessibilityLabel={`Choose ${entry.name} for ${activeSide === 0 ? "your" : "opponent"} ${ROLES[activeSlot]}`} key={entry.speciesId} onPress={() => changeTeamMember(entry)} style={[styles.candidate, light && styles.controlLight, active && styles.candidateActive]}><Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }} style={styles.candidateImage} /><View style={styles.candidateCopy}><Text numberOfLines={1} style={[styles.candidateName, light && styles.textLight]}>{entry.name}</Text><Text style={[styles.meta, light && styles.mutedLight]}>Level {entry.recommendedLevel}</Text></View><Text style={[styles.check, active && styles.checkActive]}>{active ? "✓" : "+"}</Text></Pressable>;
+          {choices.map((candidate) => {
+            const active = teams[activeSide][activeSlot] === candidate.key;
+            const label = candidate.nickname || candidate.entry.name;
+            return <Pressable accessibilityRole="button" accessibilityLabel={`Choose ${label} for ${activeSide === 0 ? playerSideLabel : "Opponent"} ${ROLES[activeSlot]}`} key={candidate.key} onPress={() => changeTeamMember(candidate)} style={[styles.candidate, light && styles.controlLight, active && styles.candidateActive]}><Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, candidate.entry.imageUrl) }} style={styles.candidateImage} /><View style={styles.candidateCopy}><Text numberOfLines={1} style={[styles.candidateName, light && styles.textLight]}>{label}</Text><Text style={[styles.meta, light && styles.mutedLight]}>Level {candidate.entry.recommendedLevel}{candidate.cp != null ? ` · CP ${candidate.cp.toLocaleString()}` : ""}</Text></View><Text style={[styles.check, active && styles.checkActive]}>{active ? "✓" : "+"}</Text></Pressable>;
           })}
         </View>
       </View>
@@ -394,6 +509,8 @@ const styles = StyleSheet.create({
   conditions: { gap: 7, borderWidth: 1, borderColor: "rgba(115,204,204,0.28)", borderRadius: 8, padding: 8, backgroundColor: "#151a1b" },
   conditionRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   conditionLabel: { width: 66, color: "#9db6b8", fontSize: 8, fontWeight: "900", textTransform: "uppercase" },
+  energyLabel: { width: 86 },
+  energySlider: { minWidth: 0, flex: 1, height: 36 },
   actions: { flexDirection: "row", gap: 6 },
   actionLabel: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5 },
   primary: { minHeight: 48, flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 7, backgroundColor: "#42d5c2" },
@@ -407,6 +524,11 @@ const styles = StyleSheet.create({
   result: { gap: 8, borderWidth: 1, borderColor: "#42d5c2", borderRadius: 8, padding: 10, backgroundColor: "rgba(66,213,194,0.06)" },
   eyebrow: { color: "#8fc6cb", fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
   resultTitle: { color: "#f5ffff", fontSize: 19, fontWeight: "900" },
+  resultSummary: { color: "#9db6b8", fontSize: 10, lineHeight: 15 },
+  resultTime: { alignSelf: "flex-end", marginTop: -28, color: "#42d5c2", fontSize: 14, fontWeight: "900" },
+  resultOverview: { flexDirection: "row", gap: 5 },
+  overviewItem: { minWidth: 0, flex: 1, gap: 2, borderWidth: 1, borderColor: "rgba(115,204,204,0.2)", borderRadius: 6, padding: 6, backgroundColor: "#101516" },
+  overviewValue: { color: "#f5ffff", fontSize: 10, fontWeight: "900" },
   resultTeam: { gap: 5, paddingTop: 5, borderTopWidth: 1, borderColor: "rgba(115,204,204,0.2)" },
   resultMember: { flexDirection: "row", alignItems: "center", gap: 7 },
   fainted: { opacity: 0.45 },
@@ -416,8 +538,17 @@ const styles = StyleSheet.create({
   hpTrack: { height: 6, marginVertical: 3, overflow: "hidden", borderRadius: 999, backgroundColor: "#344149" },
   hpTrackLight: { backgroundColor: "#d5dee2" },
   hpFill: { height: "100%", borderRadius: 999, backgroundColor: "#42d5c2" },
-  fieldRow: { minHeight: 36, flexDirection: "row", alignItems: "center", gap: 8, borderTopWidth: 1, borderColor: "rgba(115,204,204,0.18)" },
+  sequence: { gap: 5, borderWidth: 1, borderColor: "rgba(115,204,204,0.2)", borderRadius: 6, padding: 8, backgroundColor: "#101516" },
+  sequenceRow: { minHeight: 38, flexDirection: "row", alignItems: "center", gap: 7, borderTopWidth: 1, borderColor: "rgba(115,204,204,0.14)", paddingTop: 5 },
+  sequenceIndex: { width: 22, height: 22, paddingTop: 3, borderRadius: 999, color: "#071313", backgroundColor: "#42d5c2", fontSize: 9, fontWeight: "900", textAlign: "center", overflow: "hidden" },
+  sequenceCopy: { minWidth: 0, flex: 1 },
+  sequenceTitle: { color: "#f5ffff", fontSize: 9, lineHeight: 13, fontWeight: "800" },
+  fieldRow: { minHeight: 52, flexDirection: "row", alignItems: "center", gap: 7, borderTopWidth: 1, borderColor: "rgba(115,204,204,0.18)" },
+  fieldImages: { width: 66, flexDirection: "row" },
+  fieldImage: { width: 28, height: 28, marginRight: -6 },
+  fieldCopy: { minWidth: 0, flex: 1 },
   fieldLabel: { color: "#f5ffff", fontSize: 10, fontWeight: "800" },
+  fieldFooter: { color: "#9db6b8", fontSize: 8.5, lineHeight: 13, textAlign: "center" },
   win: { color: "#42d5c2", fontSize: 17, fontWeight: "900" },
   loss: { color: "#ed6fa5", fontSize: 17, fontWeight: "900" },
   draw: { color: "#d5b46b", fontSize: 17, fontWeight: "900" },

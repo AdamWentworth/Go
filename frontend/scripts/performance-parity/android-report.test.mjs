@@ -65,7 +65,7 @@ test('builds interaction, frame, jank, and memory evidence from Android diagnost
       '--workload-id', 'canonical-performance-fixtures-v1',
       '--catalog-entries', '1097',
       '--instance-entries', '180',
-      '--pvp-entries', '5',
+      '--pvp-entries', '62',
       '--logcat', logcat,
       '--gfxinfo', gfxinfo,
       '--meminfo', meminfo,

@@ -292,6 +292,79 @@ const CANONICAL_PVP_IDENTITIES = [
   { chargedMove: "Play Rough", name: "Azumarill", pokemonId: 184, speciesId: "azumarill", type: "water" },
   { chargedMove: "Seed Bomb", name: "Bulbasaur", pokemonId: 1, speciesId: "bulbasaur", type: "grass" },
 ] as const;
+const canonicalPvpBaseEntries = pvpPayload.leagues.great.entries.map((entry, index) => {
+  const identity = CANONICAL_PVP_IDENTITIES[index] ?? CANONICAL_PVP_IDENTITIES[0];
+  const rank = index + 1;
+  return {
+    ...entry,
+    attackIv: 0,
+    battleAttack: 100 + rank,
+    battleDefense: 130 - rank,
+    battleHp: 140 + rank,
+    categoryScores: rank === 1 ? [70, 72, 74, 76, 78, 80] : [90, 88, 86, 84, 82, 81],
+    counters: [{ speciesId: "lanturn", rating: 310 + rank }],
+    defenseIv: 15,
+    imageUrl: `/images/default/pokemon_${identity.pokemonId}.png`,
+    matchups: [{ speciesId: "talonflame", rating: 740 - rank }],
+    moveUsage: [{
+      id: `${identity.speciesId}-fast`,
+      kind: "fast" as const,
+      name: "Quick Attack",
+      type: "normal",
+      uses: 120,
+    }],
+    moveset: [
+      {
+        ...entry.moveset[0],
+        id: `${identity.speciesId}-fast`,
+        name: "Quick Attack",
+        type: "normal",
+        power: 5,
+        energyGain: 8,
+        energyCost: 0,
+        turns: 2,
+      },
+      {
+        ...entry.moveset[1],
+        id: `${identity.speciesId}-charged`,
+        name: identity.chargedMove,
+        type: identity.type,
+        power: 80,
+        energyGain: 0,
+        energyCost: 50,
+        turns: 1,
+      },
+    ],
+    name: identity.name,
+    pokemonId: identity.pokemonId,
+    rank,
+    rating: 700,
+    recommendedLevel: 20 + rank / 2,
+    score: 96 - rank,
+    sourceRank: rank,
+    speciesId: identity.speciesId,
+    staminaIv: 15,
+    statProduct: (100 + rank) * (130 - rank) * (140 + rank),
+    types: [identity.type],
+  };
+});
+const canonicalPvpGreatEntries = [
+  ...canonicalPvpBaseEntries,
+  ...Array.from({ length: 57 }, (_, offset) => {
+    const rank = offset + 4;
+    const template = canonicalPvpBaseEntries[offset % canonicalPvpBaseEntries.length];
+    return {
+      ...template,
+      rank,
+      sourceRank: rank,
+      speciesId: `meta-pokemon-${rank}`,
+      name: `Meta Pokémon ${rank}`,
+      score: Math.max(35, 96 - rank * 0.75),
+      rating: Math.max(300, 700 - rank * 3),
+      categoryScores: template.categoryScores.map((score) => Math.max(25, score - rank / 4)),
+    };
+  }),
+];
 const canonicalPvpPayload: PokemonPvPRankingsPayload = {
   ...pvpPayload,
   source: {
@@ -307,64 +380,19 @@ const canonicalPvpPayload: PokemonPvPRankingsPayload = {
     great: {
       ...pvpPayload.leagues.great,
       label: "Great League",
-      entries: pvpPayload.leagues.great.entries.map((entry, index) => {
-        const identity = CANONICAL_PVP_IDENTITIES[index] ?? CANONICAL_PVP_IDENTITIES[0];
-        const rank = index + 1;
-        return {
-          ...entry,
-          attackIv: 0,
-          battleAttack: 100 + rank,
-          battleDefense: 130 - rank,
-          battleHp: 140 + rank,
-          categoryScores: rank === 1 ? [70, 72, 74, 76, 78, 80] : [90, 88, 86, 84, 82, 81],
-          counters: [{ speciesId: "lanturn", rating: 310 + rank }],
-          defenseIv: 15,
-          imageUrl: `/images/default/pokemon_${identity.pokemonId}.png`,
-          matchups: [{ speciesId: "talonflame", rating: 740 - rank }],
-          moveUsage: [{
-            id: `${identity.speciesId}-fast`,
-            kind: "fast",
-            name: "Quick Attack",
-            type: "normal",
-            uses: 120,
-          }],
-          moveset: [
-            {
-              ...entry.moveset[0],
-              id: `${identity.speciesId}-fast`,
-              name: "Quick Attack",
-              type: "normal",
-              power: 5,
-              energyGain: 8,
-              energyCost: 0,
-              turns: 2,
-            },
-            {
-              ...entry.moveset[1],
-              id: `${identity.speciesId}-charged`,
-              name: identity.chargedMove,
-              type: identity.type,
-              power: 80,
-              energyGain: 0,
-              energyCost: 50,
-              turns: 1,
-            },
-          ],
-          name: identity.name,
-          pokemonId: identity.pokemonId,
-          rank,
-          rating: 700,
-          recommendedLevel: 20 + rank / 2,
-          score: 96 - rank,
-          sourceRank: rank,
-          speciesId: identity.speciesId,
-          staminaIv: 15,
-          statProduct: (100 + rank) * (130 - rank) * (140 + rank),
-          types: [identity.type],
-        };
-      }),
+      entries: canonicalPvpGreatEntries,
     },
   },
+  formats: [{
+    key: "jungle-cup",
+    label: "Jungle Cup",
+    league: "great",
+    cup: "Jungle",
+    cpLimit: 1_500,
+    rules: ["Only Normal, Grass, Electric, Poison, Ground, Flying, Bug, and Dark types"],
+    mechanics: "current-2026",
+    entries: canonicalPvpGreatEntries.slice(0, 20),
+  }],
 };
 const pokedexEntry = {
   id: "0001-shiny",

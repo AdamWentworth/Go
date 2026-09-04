@@ -23,6 +23,8 @@
     "./max-roster": "./src/pages/Max/utils/maxRoster.ts",
     "./pvp-roster": "./src/pages/Pvp/utils/pvpRoster.ts",
     "./pvp-roster-evaluation": "./src/pages/Pvp/utils/pvpRosterEvaluation.ts",
+    "./pvp-battle-mechanics": "./src/pages/Pvp/utils/pvpBattleMechanics.ts",
+    "./pvp-team-builder": "./src/pages/Pvp/utils/pvpTeamBuilder.ts",
     "./pvp-iv-pokemon": "./src/pages/Pvp/utils/pvpIvPokemon.ts",
     "./pvp-iv-rank": "./src/pages/Pvp/utils/pvpIvRank.ts",
     "./pvp-iv-roster": "./src/pages/Pvp/utils/pvpIvRoster.ts",

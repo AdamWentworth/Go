@@ -724,7 +724,7 @@ if [[ "${smoke_performance}" == "true" ]]; then
     --workload-id "canonical-performance-fixtures-v1"
     --catalog-entries "1097"
     --instance-entries "180"
-    --pvp-entries "5"
+    --pvp-entries "62"
   )
   for performance_log in "${performance_device_logs[@]}"; do
     report_args+=(--logcat "${performance_log}")

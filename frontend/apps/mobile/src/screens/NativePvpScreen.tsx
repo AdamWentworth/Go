@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -20,6 +20,10 @@ import type {
   PokemonPvPRosterEvaluationResponse,
 } from "@pokemongonexus/shared-contracts/pokemon";
 import { evaluatePvPRosterLocally } from "@pokemongonexus/shared-domain/pvp-battle";
+import {
+  formatPvPSpeciesName,
+  type PvPTeamCandidate,
+} from "@pokemongonexus/app-core/pvp-team-builder";
 import { NativePvpBattleLab } from "../components/tools/NativePvpBattleLab";
 import { NativePvpIvRank } from "../components/tools/NativePvpIvRank";
 import { NativePvpTeamBuilder } from "../components/tools/NativePvpTeamBuilder";
@@ -33,6 +37,7 @@ import {
 } from "../features/tools/nativePvpModel";
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import { NativeUiIcon, type NativeUiIconName } from '../components/NativeUiIcon';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
 
 type Props = {
   assetBaseUrl: string;
@@ -48,6 +53,13 @@ type Props = {
   payload: PokemonPvPRankingsPayload | null;
   persistTeamBuilder?: boolean;
   signedIn: boolean;
+};
+type PvpBattleSeed = {
+  mode?: "single" | "team";
+  leftKey: string;
+  rightKey: string;
+  leftTeamKeys?: string[];
+  rightTeamKeys?: string[];
 };
 const WORKSPACES: [NativePvpWorkspace, string, NativeUiIconName][] = [
   ["rankings", "Rankings", "list"],
@@ -79,19 +91,23 @@ const uri = (base: string, value: string) => {
 const PvpEntryCard = ({
   assetBaseUrl,
   entry,
+  entriesBySpeciesId,
   cp,
   expanded,
   nickname,
   onPress,
+  personalBuild,
   rank,
   role,
 }: {
   assetBaseUrl: string;
   entry: PokemonPvPRankingEntry;
+  entriesBySpeciesId: Map<string, PokemonPvPRankingEntry>;
   cp?: number;
   expanded: boolean;
   nickname?: string | null;
   onPress: () => void;
+  personalBuild: boolean;
   rank: number;
   role: NativePvpRole;
 }) => {
@@ -101,7 +117,8 @@ const PvpEntryCard = ({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open rank ${rank}, ${entry.name}`}
+      accessibilityLabel={`${expanded ? "Hide" : "Show"} details for ${entry.name}`}
+      accessibilityState={{ expanded }}
       onPress={onPress}
       style={[
         styles.rankingCard,
@@ -186,38 +203,56 @@ const PvpEntryCard = ({
         </View>
         {expanded ? (
           <View style={styles.expanded}>
-            <Text style={[styles.detailTitle, light && styles.textLight]}>
-              Battle build
-            </Text>
-            <Text style={[styles.detailBody, light && styles.mutedLight]}>
-              Attack {entry.battleAttack?.toFixed(1) ?? "—"} · Defense{" "}
-              {entry.battleDefense?.toFixed(1) ?? "—"} · HP{" "}
-              {entry.battleHp ?? "—"}
-            </Text>
-            <Text style={[styles.detailTitle, light && styles.textLight]}>
-              Strong matchups
-            </Text>
-            <Text style={[styles.detailBody, light && styles.mutedLight]}>
-              {entry.matchups
-                ?.slice(0, 4)
-                .map(
-                  (matchup) =>
-                    `${matchup.speciesId} (${matchup.rating.toFixed(0)})`,
-                )
-                .join(" · ") || "Not available in this snapshot."}
-            </Text>
-            <Text style={[styles.detailTitle, light && styles.textLight]}>
-              Key threats
-            </Text>
-            <Text style={[styles.detailBody, light && styles.mutedLight]}>
-              {entry.counters
-                ?.slice(0, 4)
-                .map(
-                  (counter) =>
-                    `${counter.speciesId} (${counter.rating.toFixed(0)})`,
-                )
-                .join(" · ") || "Not available in this snapshot."}
-            </Text>
+            <View style={styles.detailSummary}>
+              <View style={[styles.detailPanel, light && styles.detailPanelLight]}>
+                <Text style={[styles.detailTitle, light && styles.textLight]}>Role profile</Text>
+                {ROLES.slice(1).map(([roleKey, label]) => {
+                  const score = pvpRoleScore(entry, roleKey);
+                  return <View key={roleKey} style={styles.roleProfileRow}>
+                    <Text style={[styles.roleProfileLabel, light && styles.mutedLight]}>{label}</Text>
+                    <View style={[styles.roleProfileTrack, light && styles.roleProfileTrackLight]}><View style={[styles.roleProfileFill, { width: `${Math.max(0, Math.min(100, score))}%` }]} /></View>
+                    <Text style={[styles.roleProfileScore, light && styles.textLight]}>{score.toFixed(1)}</Text>
+                  </View>;
+                })}
+              </View>
+              <View style={[styles.detailPanel, light && styles.detailPanelLight]}>
+                <Text style={[styles.detailTitle, light && styles.textLight]}>Battle build</Text>
+                <View style={styles.battleStatGrid}>
+                  {[
+                    ['Attack', entry.battleAttack?.toFixed(1) ?? '---'],
+                    ['Defense', entry.battleDefense?.toFixed(1) ?? '---'],
+                    ['HP', entry.battleHp == null ? '---' : String(entry.battleHp)],
+                    ['Stat product', entry.statProduct?.toLocaleString() ?? '---'],
+                  ].map(([label, value]) => <View key={label} style={[styles.battleStat, light && styles.battleStatLight]}><Text style={[styles.battleStatLabel, light && styles.mutedLight]}>{label}</Text><Text style={[styles.battleStatValue, light && styles.textLight]}>{value}</Text></View>)}
+                </View>
+              </View>
+            </View>
+            <View style={styles.matchupGrid}>
+              {([
+                [personalBuild ? 'Strong species matchups' : 'Strong matchups', entry.matchups ?? [], 'strong'],
+                [personalBuild ? 'Species threats' : 'Key threats', entry.counters ?? [], 'threat'],
+              ] as const).map(([title, matchups, kind]) => <View accessibilityLabel={title} key={kind} style={[styles.matchupPanel, kind === 'strong' ? styles.matchupStrong : styles.matchupThreat, light && styles.detailPanelLight]}>
+                <Text style={[styles.detailTitle, light && styles.textLight]}>{title}</Text>
+                {matchups.length ? matchups.map((matchup) => {
+                  const opponent = entriesBySpeciesId.get(matchup.speciesId);
+                  return <View key={matchup.speciesId} style={styles.matchupRow}>
+                    {opponent?.imageUrl ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: uri(assetBaseUrl, opponent.imageUrl) }} style={styles.matchupImage} /> : null}
+                    <View style={styles.matchupCopy}><Text style={[styles.matchupName, light && styles.textLight]}>{opponent?.name ?? formatPvPSpeciesName(matchup.speciesId)}</Text><Text style={[styles.matchupRating, light && styles.mutedLight]}>{matchup.rating.toFixed(0)} battle rating</Text></View>
+                  </View>;
+                }) : <Text style={[styles.detailBody, light && styles.mutedLight]}>Matchup details are not available in this snapshot.</Text>}
+              </View>)}
+            </View>
+            {(entry.moveUsage?.length ?? 0) > 0 ? <View style={[styles.moveOptions, light && styles.detailPanelLight]}>
+              <Text style={[styles.detailTitle, light && styles.textLight]}>Simulated move options</Text>
+              {entry.moveUsage!.map((move) => {
+                const selected = entry.moveset.some((selectedMove) => selectedMove.id === move.id);
+                const maxUses = Math.max(1, ...entry.moveUsage!.map((option) => option.uses));
+                return <View key={`${move.kind}-${move.id}`} style={[styles.moveOption, selected && styles.moveOptionSelected]}>
+                  <Image fadeDuration={0} source={{ uri: typeIcon(move.type) }} style={styles.moveIcon} />
+                  <View style={styles.moveOptionCopy}><Text style={[styles.matchupName, light && styles.textLight]}>{move.name}</Text><Text style={[styles.matchupRating, light && styles.mutedLight]}>{move.kind === 'fast' ? 'Fast' : 'Charged'}</Text><View style={[styles.moveUseTrack, light && styles.roleProfileTrackLight]}><View style={[styles.moveUseFill, { width: `${(move.uses / maxUses) * 100}%` }]} /></View></View>
+                </View>;
+              })}
+            </View> : null}
           </View>
         ) : null}
       </View>
@@ -243,6 +278,16 @@ export const NativePvpScreen = ({
   const light = useNativeColorScheme() === "light";
   const insets = useSafeAreaInsets();
   const workspaceScrollRef = useRef<ScrollView>(null);
+  const performanceStartsRef = useRef(new Map<string, number>());
+  const beginPerformance = useCallback((event: string) => {
+    performanceStartsRef.current.set(event, Date.now());
+  }, []);
+  const finishPerformance = useCallback((event: string) => {
+    const startedAt = performanceStartsRef.current.get(event);
+    if (startedAt == null) return;
+    performanceStartsRef.current.delete(event);
+    markNativeUiPerformanceAfterPaint(event, startedAt);
+  }, []);
   const formats = useMemo(() => buildNativePvpFormats(payload), [payload]);
   const [workspace, setWorkspace] = useState<NativePvpWorkspace>("rankings");
   const [formatKey, setFormatKey] = useState("great");
@@ -258,9 +303,12 @@ export const NativePvpScreen = ({
   const league = (format?.league ?? "great") as PokemonPvPLeagueKey;
   const [scope, setScope] = useState<"catalog" | "owned">("catalog");
   const [cupOpen, setCupOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const [role, setRole] = useState<NativePvpRole>("overall");
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [visibleLimit, setVisibleLimit] = useState(50);
+  const [battleSeed, setBattleSeed] = useState<PvpBattleSeed | null>(null);
   useEffect(() => {
     if (workspace === "iv-rank" || scope === "owned") onCatalogNeeded?.();
     if (scope === "owned") onOwnedDataNeeded?.();
@@ -363,7 +411,25 @@ export const NativePvpScreen = ({
     scope: deferredScope,
   }), [activeOwnedEvaluation.response, catalog, deferredFormat, deferredQuery, deferredRole, deferredScope, instances]);
   const rankingRows = roster.rows;
-  const entries = useMemo(() => rankingRows.map(({ entry }) => entry), [rankingRows]);
+  const toolRoster = useMemo(() => buildNativePvpRankingRows({
+    catalog,
+    cpLimit: deferredFormat?.cpLimit ?? null,
+    entries: deferredFormat?.entries ?? [],
+    evaluation: activeOwnedEvaluation.response,
+    instances,
+    role: "overall",
+    scope: deferredScope,
+  }), [activeOwnedEvaluation.response, catalog, deferredFormat, deferredScope, instances]);
+  const fieldRoster = useMemo(() => buildNativePvpRankingRows({
+    catalog: [],
+    cpLimit: deferredFormat?.cpLimit ?? null,
+    entries: deferredFormat?.entries ?? [],
+    role: "overall",
+    scope: "catalog",
+  }), [deferredFormat]);
+  const toolCandidates = useMemo<PvPTeamCandidate[]>(() => toolRoster.rows.map(({ cp, entry, key, nickname }) => ({ cp, entry, key, nickname })), [toolRoster.rows]);
+  const fieldCandidates = useMemo<PvPTeamCandidate[]>(() => fieldRoster.rows.map(({ entry, key }) => ({ entry, key, nickname: null })), [fieldRoster.rows]);
+  const entriesBySpeciesId = useMemo(() => new Map((deferredFormat?.entries ?? []).map((entry) => [entry.speciesId, entry])), [deferredFormat]);
   const rosterDetails = [
     `${roster.summary.eligibleCount} fully detailed from ${roster.summary.caughtCount} caught`,
     activeOwnedEvaluation.loading
@@ -379,16 +445,69 @@ export const NativePvpScreen = ({
     roster.summary.missingMoveCount > 0 ? `${roster.summary.missingMoveCount} need a Fast and Charged Move` : '',
     roster.summary.unmatchedCount > 0 ? `${roster.summary.unmatchedCount} unavailable in this format ranking` : '',
   ].filter(Boolean).join(' · ');
+  useEffect(() => finishPerformance("pvp_workspace_result_painted"), [deferredWorkspace, finishPerformance]);
+  useEffect(() => {
+    finishPerformance("pvp_league_result_painted");
+    finishPerformance("pvp_cup_result_painted");
+  }, [deferredFormat, finishPerformance]);
+  useEffect(() => finishPerformance("pvp_scope_result_painted"), [deferredScope, finishPerformance, toolRoster.rows]);
+  useEffect(() => finishPerformance("pvp_role_result_painted"), [deferredRole, finishPerformance, rankingRows]);
+  useEffect(() => {
+    if (query === deferredQuery) finishPerformance("pvp_search_result_painted");
+  }, [deferredQuery, finishPerformance, query, rankingRows]);
+  useEffect(() => finishPerformance("pvp_ranking_detail_painted"), [expanded, finishPerformance]);
+  useEffect(() => finishPerformance("pvp_rules_result_painted"), [finishPerformance, rulesOpen]);
+  useEffect(() => finishPerformance("pvp_more_result_painted"), [finishPerformance, visibleLimit]);
   const updateWorkspace = (next: NativePvpWorkspace) => {
+    beginPerformance("pvp_workspace_result_painted");
+    if (next === "battle") setBattleSeed(null);
+    if (next === "iv-rank") setFormatKey(league);
     setWorkspace(next);
     setExpanded(null);
+    setVisibleLimit(50);
     setCupOpen(false);
+    setRulesOpen(false);
+  };
+  const openSeededBattle = (memberKeys: string[], opponentKey: string) => {
+    beginPerformance("pvp_workspace_result_painted");
+    setBattleSeed({
+      mode: "team",
+      leftKey: memberKeys[0] ?? "",
+      rightKey: opponentKey,
+      leftTeamKeys: memberKeys,
+      rightTeamKeys: [opponentKey],
+    });
+    setWorkspace("battle");
+    setExpanded(null);
+    setVisibleLimit(50);
+    setCupOpen(false);
+    setRulesOpen(false);
+  };
+  const selectFormat = (key: string) => {
+    beginPerformance(["great", "ultra", "master"].includes(key)
+      ? "pvp_league_result_painted"
+      : "pvp_cup_result_painted");
+    setFormatKey(key);
+    setExpanded(null);
+    setVisibleLimit(50);
+    setCupOpen(false);
+    setRulesOpen(false);
+  };
+  const selectScope = (value: "catalog" | "owned") => {
+    beginPerformance("pvp_scope_result_painted");
+    setScope(value);
+    setExpanded(null);
+    setVisibleLimit(50);
   };
   const cupFormats = formats.filter(
     (item) => !["great", "ultra", "master"].includes(item.key),
   );
   const activeCup = cupFormats.find((item) => item.key === format?.key) ?? null;
-  const rankedCount = workspace === "iv-rank" ? 4096 : rankingRows.length;
+  const rankedCount = workspace === "iv-rank"
+    ? 4096
+    : scope === "owned"
+      ? toolRoster.summary.eligibleCount
+      : (format?.entries.length ?? 0);
   const header = (
     <View>
       <View style={styles.topbar}>
@@ -460,12 +579,11 @@ export const NativePvpScreen = ({
       <View style={[styles.leagueTabs, light && styles.sectionLight]}>
         {LEAGUES.map(([key, label, detail]) => (
           <Pressable
+            accessibilityLabel={`${label}, ${detail}`}
             accessibilityRole="button"
+            accessibilityState={{ selected: format?.league === key && !activeCup }}
             key={key}
-            onPress={() => {
-              setFormatKey(key);
-              setCupOpen(false);
-            }}
+            onPress={() => selectFormat(key)}
             style={[
               styles.league,
               format?.league === key && !activeCup && styles.leagueActive,
@@ -495,6 +613,7 @@ export const NativePvpScreen = ({
       {workspace !== "iv-rank" ? (
         <View>
           <Pressable
+            accessibilityLabel="Current PvP cup"
             accessibilityRole="button"
             accessibilityState={{ expanded: cupOpen }}
             onPress={() => setCupOpen((open) => !open)}
@@ -510,7 +629,7 @@ export const NativePvpScreen = ({
           {cupOpen && cupFormats.length ? (
             <View style={[styles.cupOptions, light && styles.panelLight]}>
               {cupFormats.map((item) => (
-                <Pressable accessibilityRole="button" key={item.key} onPress={() => { setFormatKey(item.key); setCupOpen(false); }} style={styles.cupOption}>
+                <Pressable accessibilityRole="button" key={item.key} onPress={() => selectFormat(item.key)} style={styles.cupOption}>
                   <Text style={[styles.cupOptionText, light && styles.textLight]}>{item.label}</Text>
                 </Pressable>
               ))}
@@ -518,12 +637,24 @@ export const NativePvpScreen = ({
           ) : null}
         </View>
       ) : null}
-      {format?.rules.length ? (
+      {workspace !== "iv-rank" && activeCup && format?.rules.length ? (
         <View style={[styles.rules, light && styles.panelLight]}>
-          <Text style={[styles.eyebrow, light && styles.accentLight]}>FORMAT RULES</Text>
-          <Text style={[styles.ruleText, light && styles.mutedLight]}>
+          <Pressable
+            accessibilityLabel="Format rules"
+            accessibilityRole="button"
+            accessibilityState={{ expanded: rulesOpen }}
+            onPress={() => {
+              beginPerformance("pvp_rules_result_painted");
+              setRulesOpen((open) => !open);
+            }}
+            style={styles.rulesSummary}
+          >
+            <Text style={[styles.eyebrow, light && styles.accentLight]}>FORMAT RULES</Text>
+            <Text style={[styles.cupChevron, light && styles.mutedLight]}>{rulesOpen ? "⌃" : "⌄"}</Text>
+          </Pressable>
+          {rulesOpen ? <Text style={[styles.ruleText, light && styles.mutedLight]}>
             {format.rules.join(" · ")}
-          </Text>
+          </Text> : null}
         </View>
       ) : null}
       {workspace !== "iv-rank" ? (
@@ -536,9 +667,10 @@ export const NativePvpScreen = ({
           ).map(([value, label]) => (
             <Pressable
               accessibilityRole="button"
+              accessibilityState={{ disabled: value === "owned" && !signedIn, selected: scope === value }}
               disabled={value === "owned" && !signedIn}
               key={value}
-              onPress={() => setScope(value)}
+              onPress={() => selectScope(value)}
               style={[
                 styles.scopeButton,
                 scope === value && styles.scopeActive,
@@ -601,7 +733,7 @@ export const NativePvpScreen = ({
             paddingTop: 8 + insets.top,
             paddingBottom: 96 + insets.bottom,
           }}
-          data={rankingRows.slice(0, 100)}
+          data={rankingRows.slice(0, visibleLimit)}
           keyExtractor={(row) => row.key}
           keyboardShouldPersistTaps="always"
           nestedScrollEnabled
@@ -612,8 +744,14 @@ export const NativePvpScreen = ({
                 {ROLES.map(([value, label, icon]) => (
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityState={{ selected: role === value }}
                     key={value}
-                    onPress={() => setRole(value)}
+                    onPress={() => {
+                      beginPerformance("pvp_role_result_painted");
+                      setRole(value);
+                      setExpanded(null);
+                      setVisibleLimit(50);
+                    }}
                     style={[
                       styles.role,
                       light && styles.controlLight,
@@ -645,7 +783,12 @@ export const NativePvpScreen = ({
                   <NativeUiIcon color={light ? '#4c7073' : '#9db6b8'} name="search" size={18} />
                   <TextInput
                     accessibilityLabel="Search PvP rankings"
-                    onChangeText={setQuery}
+                    onChangeText={(value) => {
+                      beginPerformance("pvp_search_result_painted");
+                      setQuery(value);
+                      setExpanded(null);
+                      setVisibleLimit(50);
+                    }}
                     placeholder="Pokémon, type, or move"
                     placeholderTextColor="#78868e"
                     style={[styles.search, light && styles.textLight]}
@@ -672,17 +815,25 @@ export const NativePvpScreen = ({
               assetBaseUrl={assetBaseUrl}
               cp={item.cp}
               entry={item.entry}
+              entriesBySpeciesId={entriesBySpeciesId}
               expanded={expanded === item.key}
               nickname={item.nickname}
-              onPress={() =>
+              onPress={() => {
+                beginPerformance("pvp_ranking_detail_painted");
                 setExpanded((current) =>
                   current === item.key ? null : item.key,
                 )
-              }
+              }}
+              personalBuild={item.personalBuild}
               rank={index + 1}
               role={role}
             />
           )}
+          ListFooterComponent={visibleLimit < rankingRows.length ? (
+            <Pressable accessibilityLabel={`Show next ${Math.min(50, rankingRows.length - visibleLimit)} PvP rankings`} accessibilityRole="button" onPress={() => { beginPerformance("pvp_more_result_painted"); setVisibleLimit((current) => current + 50); }} style={styles.showMore}>
+              <Text style={styles.showMoreText}>Show next {Math.min(50, rankingRows.length - visibleLimit)}</Text>
+            </Pressable>
+          ) : null}
         />
       </View>
     );
@@ -702,26 +853,39 @@ export const NativePvpScreen = ({
       {deferredWorkspace === "team" ? (
         <NativePvpTeamBuilder
           assetBaseUrl={assetBaseUrl}
-          entries={entries}
+          candidates={toolCandidates}
+          entriesBySpeciesId={entriesBySpeciesId}
+          fieldCandidates={fieldCandidates}
           key={`${format?.key ?? "great"}:${scope}`}
           light={light}
-          onOpenBattleLab={() => updateWorkspace("battle")}
+          mechanics={mechanics}
+          onTestMatchup={openSeededBattle}
           persistSelection={persistTeamBuilder}
           storageKey={`${format?.key ?? "great"}:${scope}`}
         />
       ) : deferredWorkspace === "battle" ? (
         <NativePvpBattleLab
           assetBaseUrl={assetBaseUrl}
-          entries={entries}
+          candidates={toolCandidates}
           formatLabel={format?.label ?? "Great League"}
+          initialSelection={battleSeed}
+          key={[
+            format?.key ?? "great",
+            scope,
+            battleSeed?.mode ?? "single",
+            battleSeed?.leftTeamKeys?.join(",") ?? battleSeed?.leftKey ?? "",
+            battleSeed?.rightTeamKeys?.join(",") ?? battleSeed?.rightKey ?? "",
+          ].join(":")}
           light={light}
           mechanics={mechanics}
+          opponentCandidates={scope === "owned" ? fieldCandidates : toolCandidates}
           onResultLayout={(offsetY) =>
             workspaceScrollRef.current?.scrollTo({
               animated: true,
               y: Math.max(0, offsetY - 16),
             })
           }
+          playerSideLabel={scope === "owned" ? "Your team" : "Side A"}
         />
       ) : (
         <NativePvpIvRank
@@ -734,7 +898,7 @@ export const NativePvpScreen = ({
           light={light}
           rankings={format?.entries ?? []}
           scope={scope}
-          setScope={setScope}
+          setScope={selectScope}
           signedIn={signedIn}
         />
       )}
@@ -884,6 +1048,7 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: "#151b20",
   },
+  rulesSummary: { minHeight: 28, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   ruleText: { color: "#9eabb2", fontSize: 10, lineHeight: 15 },
   scopeRow: {
     flexDirection: "row",
@@ -1007,8 +1172,39 @@ const styles = StyleSheet.create({
     borderColor: "rgba(115,204,204,0.28)",
     paddingTop: 8,
   },
+  detailSummary: { gap: 7 },
+  detailPanel: { gap: 6, borderWidth: 1, borderColor: "rgba(115,204,204,0.22)", borderRadius: 7, padding: 8, backgroundColor: "#101516" },
+  detailPanelLight: { borderColor: "#d5e7e7", backgroundColor: "#fbffff" },
   detailTitle: { marginTop: 4, color: "#f5ffff", fontSize: 10, fontWeight: "900" },
   detailBody: { color: "#9db6b8", fontSize: 9.5, lineHeight: 14 },
+  roleProfileRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  roleProfileLabel: { width: 65, color: "#9db6b8", fontSize: 8, fontWeight: "800" },
+  roleProfileTrack: { flex: 1, height: 6, overflow: "hidden", borderRadius: 999, backgroundColor: "#344149" },
+  roleProfileTrackLight: { backgroundColor: "#d5dee2" },
+  roleProfileFill: { height: "100%", borderRadius: 999, backgroundColor: "#42d5c2" },
+  roleProfileScore: { width: 34, color: "#f5ffff", fontSize: 8, fontWeight: "900", textAlign: "right" },
+  battleStatGrid: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
+  battleStat: { width: "48.8%", gap: 2, borderLeftWidth: 2, borderColor: "#54a9ef", paddingHorizontal: 6, paddingVertical: 4, backgroundColor: "rgba(84,169,239,0.07)" },
+  battleStatLight: { backgroundColor: "#f5fbff" },
+  battleStatLabel: { color: "#9db6b8", fontSize: 7.5, fontWeight: "800" },
+  battleStatValue: { color: "#f5ffff", fontSize: 11, fontWeight: "900" },
+  matchupGrid: { gap: 7, marginTop: 4 },
+  matchupPanel: { gap: 6, borderWidth: 1, borderRadius: 7, padding: 8, backgroundColor: "#101516" },
+  matchupStrong: { borderColor: "rgba(66,213,194,0.35)" },
+  matchupThreat: { borderColor: "rgba(237,111,165,0.35)" },
+  matchupRow: { minHeight: 37, flexDirection: "row", alignItems: "center", gap: 7, borderTopWidth: 1, borderColor: "rgba(115,204,204,0.14)" },
+  matchupImage: { width: 34, height: 34 },
+  matchupCopy: { minWidth: 0, flex: 1 },
+  matchupName: { color: "#f5ffff", fontSize: 9, fontWeight: "900" },
+  matchupRating: { color: "#9db6b8", fontSize: 8 },
+  moveOptions: { gap: 6, marginTop: 4, borderWidth: 1, borderColor: "rgba(115,204,204,0.22)", borderRadius: 7, padding: 8, backgroundColor: "#101516" },
+  moveOption: { flexDirection: "row", alignItems: "center", gap: 7, borderWidth: 1, borderColor: "transparent", borderRadius: 6, padding: 5 },
+  moveOptionSelected: { borderColor: "rgba(66,213,194,0.42)", backgroundColor: "rgba(66,213,194,0.08)" },
+  moveOptionCopy: { minWidth: 0, flex: 1, gap: 2 },
+  moveUseTrack: { height: 4, overflow: "hidden", borderRadius: 999, backgroundColor: "#344149" },
+  moveUseFill: { height: "100%", borderRadius: 999, backgroundColor: "#ed6fa5" },
+  showMore: { minHeight: 46, alignItems: "center", justifyContent: "center", marginVertical: 6, borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 7, backgroundColor: "rgba(66,213,194,0.06)" },
+  showMoreText: { color: "#42d5c2", fontSize: 11, fontWeight: "900" },
   workspacePanel: {
     gap: 10,
     borderWidth: 1,
