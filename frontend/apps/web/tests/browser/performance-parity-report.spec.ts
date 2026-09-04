@@ -62,6 +62,7 @@ const reportPath = path.resolve(
 const repetitions = Math.max(1, Number(process.env.POKEGONEXUS_PERFORMANCE_SAMPLES ?? 3));
 const workflowsOnly = process.env.POKEGONEXUS_PERFORMANCE_WORKFLOWS_ONLY === 'true';
 const workflowFilter = process.env.POKEGONEXUS_PERFORMANCE_WORKFLOW_FILTER?.trim().toLocaleLowerCase() ?? '';
+const workflowScreenshotDirectory = process.env.POKEGONEXUS_PERFORMANCE_SCREENSHOT_DIR?.trim() ?? '';
 const routeFilter = process.env.POKEGONEXUS_PERFORMANCE_ROUTE_FILTER?.trim() ?? '';
 const samples: MetricSample[] = [];
 const androidDeviceId = process.env.POKEGONEXUS_ANDROID_DEVICE_ID?.trim() ?? '';
@@ -71,6 +72,21 @@ const androidCdpUrl = process.env.POKEGONEXUS_ANDROID_CDP_URL?.trim()
   || 'http://127.0.0.1:9222';
 const webBaseUrl = (process.env.E2E_BASE_URL?.trim()
   || `http://127.0.0.1:${process.env.E2E_PORT?.trim() || '3100'}`).replace(/\/+$/, '');
+
+const captureWorkflowScreenshot = async (
+  page: Page,
+  sampleIndex: number,
+  name: string,
+  focus?: ReturnType<Page['locator']>,
+) => {
+  if (!workflowScreenshotDirectory || sampleIndex !== 0) return;
+  if (focus) await focus.scrollIntoViewIfNeeded();
+  mkdirSync(workflowScreenshotDirectory, { recursive: true });
+  await page.screenshot({
+    animations: 'disabled',
+    path: path.resolve(workflowScreenshotDirectory, `vite-${name}.png`),
+  });
+};
 
 const adbPath = process.env.ADB_BIN?.trim()
   || path.resolve(
@@ -572,6 +588,7 @@ const collectPokedexInteractions = async (
     const bulbasaurCell = page.locator('.pokedex-category-panel[aria-hidden="false"] .pokedex-region-grid__cell').filter({ hasText: /Bulbasaur/i }).first();
     await bulbasaurCell.waitFor({ state: 'visible' });
     await recordInteraction(page, 'interaction.pokedex.search-result', sampleIndex);
+    await captureWorkflowScreenshot(page, sampleIndex, 'pokedex-region-index', kantoSection);
 
     const kantoFolder = page.getByRole('button', { name: /Collapse Kanto/i });
     await kantoFolder.click();
@@ -610,6 +627,7 @@ const collectPokedexInteractions = async (
     await female.click();
     await expect(female).toHaveAttribute('aria-pressed', 'true');
     await recordInteraction(page, 'interaction.pokedex.detail.gender-result', sampleIndex);
+    await captureWorkflowScreenshot(page, sampleIndex, 'pokedex-detail-registered', shinySlot);
 
     await detail.getByLabel('Registered tab bulk actions').getByRole('button', { name: 'Register all', exact: true }).click();
     const detailConfirmation = page.getByRole('dialog', { name: 'Confirm action' });
@@ -631,12 +649,16 @@ const collectPokedexInteractions = async (
 
     const infoTab = detail.getByRole('tab', { name: 'Info', exact: true });
     await infoTab.click();
-    await detail.getByRole('heading', { name: 'Size ranges', exact: true }).waitFor({ state: 'visible' });
+    const sizeRanges = detail.getByRole('heading', { name: 'Size ranges', exact: true });
+    await sizeRanges.waitFor({ state: 'visible' });
     await recordInteraction(page, 'interaction.pokedex.detail.tab-result', sampleIndex * 3);
+    await captureWorkflowScreenshot(page, sampleIndex, 'pokedex-detail-info', sizeRanges);
     const battleTab = detail.getByRole('tab', { name: 'Battle', exact: true });
     await battleTab.click();
-    await detail.getByRole('heading', { name: 'Type effectiveness', exact: true }).waitFor({ state: 'visible' });
+    const typeEffectiveness = detail.getByRole('heading', { name: 'Type effectiveness', exact: true });
+    await typeEffectiveness.waitFor({ state: 'visible' });
     await recordInteraction(page, 'interaction.pokedex.detail.tab-result', sampleIndex * 3 + 1);
+    await captureWorkflowScreenshot(page, sampleIndex, 'pokedex-detail-battle', typeEffectiveness);
     const moreTab = detail.getByRole('tab', { name: /More/i });
     await moreTab.click();
     let openComboSection = detail.locator('.pokedex-pokemon-detail__combo-section.is-open').first();
@@ -664,6 +686,7 @@ const collectPokedexInteractions = async (
     await recordInteraction(page, 'interaction.pokedex.detail.combo-query', sampleIndex);
     await openComboSection.getByRole('button', { name: 'Clear', exact: true }).click();
     await expect(openComboSection.getByText('Showing 60 of 60', { exact: true })).toBeVisible();
+    await captureWorkflowScreenshot(page, sampleIndex, 'pokedex-detail-more', openComboSection);
 
     await openComboSection.getByLabel('Shown combination actions').getByRole('button', { name: 'Register all', exact: true }).click();
     await page.getByRole('dialog', { name: 'Confirm action' }).waitFor({ state: 'visible' });
