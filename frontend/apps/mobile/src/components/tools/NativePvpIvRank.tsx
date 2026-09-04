@@ -34,6 +34,34 @@ import { markNativeUiPerformanceAfterPaint } from "../../observability/nativeUiI
 type IvField = "attack" | "defense" | "stamina";
 type Scope = "catalog" | "owned";
 
+const IV_RANKING_CACHE_LIMIT = 12;
+const ivRankingCache = new Map<string, ReturnType<typeof buildPvPIvRankings>>();
+
+const cachedPvPIvRankings = (
+  option: PvPIvPokemonOption,
+  league: PokemonPvPLeagueKey,
+  maxLevel: 50 | 51,
+) => {
+  const key = [option.attack, option.defense, option.stamina, league, maxLevel].join(":");
+  const cached = ivRankingCache.get(key);
+  if (cached) {
+    ivRankingCache.delete(key);
+    ivRankingCache.set(key, cached);
+    return cached;
+  }
+  const rankings = buildPvPIvRankings(
+    { attack: option.attack, defense: option.defense, stamina: option.stamina },
+    league,
+    maxLevel,
+  );
+  ivRankingCache.set(key, rankings);
+  if (ivRankingCache.size > IV_RANKING_CACHE_LIMIT) {
+    const oldest = ivRankingCache.keys().next().value;
+    if (oldest) ivRankingCache.delete(oldest);
+  }
+  return rankings;
+};
+
 type Props = {
   assetBaseUrl: string;
   catalog: BasePokemon[];
@@ -163,6 +191,7 @@ export const NativePvpIvRank = ({
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const [ivs, setIvs] = useState({ attack: 0, defense: 15, stamina: 15 });
   const [bestBuddy, setBestBuddy] = useState(false);
+  const deferredBestBuddy = useDeferredValue(bestBuddy);
   const deferredQuery = useDeferredValue(query);
   const variants = useMemo(
     () => createPokemonVariants(catalog),
@@ -187,11 +216,11 @@ export const NativePvpIvRank = ({
       ? rankOwnedPvPIvEntries(
           ownedRoster.entries,
           league,
-          bestBuddy ? 51 : 50,
+          deferredBestBuddy ? 51 : 50,
           cpLimit,
         )
       : [],
-    [bestBuddy, cpLimit, league, ownedRoster.entries, scope],
+    [cpLimit, deferredBestBuddy, league, ownedRoster.entries, scope],
   );
   const ownedOptions = useMemo(() => {
     const unique = new Map<string, PvPIvPokemonOption>();
@@ -202,6 +231,7 @@ export const NativePvpIvRank = ({
   const selectedOption = selectedOptionId == null
     ? null
     : availableOptions.find((option) => option.id === selectedOptionId) ?? null;
+  const deferredSelectedOption = useDeferredValue(selectedOption);
   const normalizedQuery = deferredQuery.trim().toLocaleLowerCase();
   const matchingCatalog = useMemo(
     () => pokemonOptions
@@ -223,19 +253,28 @@ export const NativePvpIvRank = ({
     [normalizedQuery, rankedOwnedEntries],
   );
   const ivRankings = useMemo(
-    () => selectedOption
-      ? buildPvPIvRankings(
-          {
-            attack: selectedOption.attack,
-            defense: selectedOption.defense,
-            stamina: selectedOption.stamina,
-          },
+    () => deferredSelectedOption?.id === selectedOption?.id && deferredSelectedOption
+      ? cachedPvPIvRankings(
+          deferredSelectedOption,
           league,
-          bestBuddy ? 51 : 50,
+          deferredBestBuddy ? 51 : 50,
         )
       : [],
-    [bestBuddy, league, selectedOption],
+    [deferredBestBuddy, deferredSelectedOption, league, selectedOption?.id],
   );
+  useEffect(() => {
+    if (!selectedOption) return undefined;
+    const alternateLevel = deferredBestBuddy ? 50 : 51;
+    const warmAlternateLevel = () => {
+      cachedPvPIvRankings(selectedOption, league, alternateLevel);
+    };
+    if (typeof requestIdleCallback === "function") {
+      const task = requestIdleCallback(warmAlternateLevel);
+      return () => cancelIdleCallback(task);
+    }
+    const timer = setTimeout(warmAlternateLevel, 0);
+    return () => clearTimeout(timer);
+  }, [deferredBestBuddy, league, selectedOption]);
   const rankedOwnedCopies = useMemo(() => {
     if (!selectedOption || scope !== "owned") return [];
     return rankedOwnedEntries
@@ -254,17 +293,18 @@ export const NativePvpIvRank = ({
   const evaluatedIvs = scope === "owned" && selectedOwnedCopy
     ? selectedOwnedCopy.entry.ivs
     : ivs;
+  const deferredEvaluatedIvs = useDeferredValue(evaluatedIvs);
   const result = useMemo(
-    () => rankPvPIvSpread(ivRankings, evaluatedIvs),
-    [evaluatedIvs, ivRankings],
+    () => rankPvPIvSpread(ivRankings, deferredEvaluatedIvs),
+    [deferredEvaluatedIvs, ivRankings],
   );
   useEffect(() => finishPerformance("pvp_iv_scope_result_painted"), [finishPerformance, scope]);
   useEffect(() => {
     if (query === deferredQuery) finishPerformance("pvp_iv_search_result_painted");
   }, [deferredQuery, finishPerformance, matchingCatalog, matchingOwned, query]);
   useEffect(() => finishPerformance("pvp_iv_selection_result_painted"), [finishPerformance, result, selectedOption]);
-  useEffect(() => finishPerformance("pvp_iv_adjust_result_painted"), [evaluatedIvs, finishPerformance, result]);
-  useEffect(() => finishPerformance("pvp_iv_level_result_painted"), [bestBuddy, finishPerformance, result]);
+  useEffect(() => finishPerformance("pvp_iv_adjust_result_painted"), [deferredEvaluatedIvs, finishPerformance, result]);
+  useEffect(() => finishPerformance("pvp_iv_level_result_painted"), [deferredBestBuddy, finishPerformance, result]);
   useEffect(() => finishPerformance("pvp_iv_copy_result_painted"), [finishPerformance, selectedOwnedCopy]);
   const changeScope = (next: Scope) => {
     if (next === "owned" && !signedIn) return;

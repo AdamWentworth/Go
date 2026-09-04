@@ -869,7 +869,6 @@ export const NativePvpScreen = ({
         { paddingTop: 8 + insets.top, paddingBottom: 96 + insets.bottom },
       ]}
       keyboardShouldPersistTaps="always"
-      removeClippedSubviews
       ref={workspaceScrollRef}
       nestedScrollEnabled
       style={[styles.root, light && styles.rootLight]}
