@@ -62,6 +62,34 @@ test('fails slower and missing native evidence', () => {
   assert.ok(result.failures.some((failure) => failure.includes('missing native evidence')));
 });
 
+test('can enforce one bounded feature without requiring unrelated evidence', () => {
+  const reference = report('vite', [sample('interaction.menu', 'interaction_ready_ms', 50)]);
+  const candidate = report('native-web', [sample('interaction.menu', 'interaction_ready_ms', 45)]);
+  const result = compareReports({
+    reference,
+    candidate,
+    contract,
+    profile: 'browser-proxy',
+    scenarioPrefix: 'interaction.',
+  });
+  assert.equal(result.status, 'pass');
+  assert.deepEqual(result.rows.map(({ scenarioId }) => scenarioId), ['interaction.menu']);
+});
+
+test('rejects a bounded feature prefix that matches no contract scenarios', () => {
+  const reference = report('vite', []);
+  const candidate = report('native-web', []);
+  const result = compareReports({
+    reference,
+    candidate,
+    contract,
+    profile: 'browser-proxy',
+    scenarioPrefix: 'interaction.missing.',
+  });
+  assert.equal(result.status, 'fail');
+  assert.ok(result.failures.some((failure) => failure.includes('no required scenarios')));
+});
+
 test('rejects malformed samples instead of comparing them', () => {
   const malformed = report('vite', [sample('route.home', 'route_ready_ms', Number.NaN)]);
   assert.ok(validateReport(malformed).some((failure) => failure.includes('finite')));

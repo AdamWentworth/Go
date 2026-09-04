@@ -41,6 +41,10 @@ Run `npm run performance:parity:compare -- --reference <vite.json> --candidate
 The command writes a human-readable Markdown table next to the JSON result and
 exits non-zero on slower, missing, or invalid evidence.
 
+For a focused audit, add `--scenario-prefix interaction.pokedex.`. The same
+strict median, p95, environment, and minimum-sample rules apply, but unrelated
+routes and interactions are intentionally excluded from that result.
+
 The reports and device artifacts are generated evidence and remain ignored by
 Git. CI should upload them as workflow artifacts so a result is auditable
 without growing the repository.

@@ -34,7 +34,7 @@ const parseArgs = (args) => {
 const format = (value, unit) => value == null ? 'missing' : `${value.toFixed(value >= 100 ? 1 : 2)} ${unit}`;
 const outcomeIcon = (status) => status === 'pass' ? 'PASS' : 'FAIL';
 
-export const compareReports = ({ reference, candidate, contract, profile }) => {
+export const compareReports = ({ reference, candidate, contract, profile, scenarioPrefix = '' }) => {
   const failures = [
     ...validateReport(reference).map((failure) => `reference: ${failure}`),
     ...validateReport(candidate).map((failure) => `candidate: ${failure}`),
@@ -74,14 +74,22 @@ export const compareReports = ({ reference, candidate, contract, profile }) => {
   if (minimumSamplesKey && (!Number.isInteger(minimumSamples) || minimumSamples < 1)) {
     failures.push(`environment.${minimumSamplesKey} must be a positive integer sample count`);
   }
+  const includesScenario = (scenarioId) => !scenarioPrefix || scenarioId.startsWith(scenarioPrefix);
   for (const route of contract.routes ?? []) {
+    if (!includesScenario(route.id)) continue;
     for (const metric of requiredRouteMetrics) requirements.push({ scenarioId: route.id, metric, phase: '' });
   }
   for (const interaction of contract.interactions ?? []) {
+    if (!includesScenario(interaction.id)) continue;
     for (const metric of requiredInteractionMetrics) requirements.push({ scenarioId: interaction.id, metric, phase: '' });
   }
-  for (const metric of profileContract?.requiredGlobalMetrics ?? []) {
-    requirements.push({ scenarioId: 'global.runtime', metric, phase: '' });
+  if (includesScenario('global.runtime')) {
+    for (const metric of profileContract?.requiredGlobalMetrics ?? []) {
+      requirements.push({ scenarioId: 'global.runtime', metric, phase: '' });
+    }
+  }
+  if (scenarioPrefix && requirements.length === 0) {
+    failures.push(`contract has no required scenarios beginning with ${scenarioPrefix}`);
   }
 
   const rows = [];
@@ -165,7 +173,7 @@ if (isMain) {
   try {
     const args = parseArgs(process.argv.slice(2));
     if (!args.reference || !args.candidate || !args.profile) {
-      throw new Error('Usage: compare.mjs --reference vite.json --candidate native.json --profile browser-proxy [--contract contract.json] [--output result.json]');
+      throw new Error('Usage: compare.mjs --reference vite.json --candidate native.json --profile browser-proxy [--scenario-prefix interaction.pokedex.] [--contract contract.json] [--output result.json]');
     }
     const contract = readJson(resolve(args.contract ?? defaultContractPath));
     const result = compareReports({
@@ -173,6 +181,7 @@ if (isMain) {
       candidate: readJson(resolve(args.candidate)),
       contract,
       profile: args.profile,
+      scenarioPrefix: args['scenario-prefix'] ?? '',
     });
     const output = resolve(args.output ?? 'performance-parity-result.json');
     mkdirSync(dirname(output), { recursive: true });
