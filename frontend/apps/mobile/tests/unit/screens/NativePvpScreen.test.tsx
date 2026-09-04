@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type {
   BasePokemon,
@@ -40,7 +40,14 @@ const bulbasaur = entry('bulbasaur', 'Bulbasaur', 1, 121);
 const ivysaur = entry('ivysaur', 'Ivysaur', 2, 119);
 const venusaur = entry('venusaur', 'Venusaur', 3, 117);
 const payload = {
-  source: null,
+  source: {
+    name: 'PvPoke',
+    version: 'test',
+    url: 'https://github.com/pvpoke/pvpoke',
+    license: 'MIT',
+    importedAt: '2026-07-23T00:00:00Z',
+    metadata: {},
+  },
   leagues: {
     great: { key: 'great', label: 'Great', cpLimit: 1500, entries: [bulbasaur, ivysaur, venusaur] },
     ultra: { key: 'ultra', label: 'Ultra', cpLimit: 2500, entries: [] },
@@ -88,12 +95,21 @@ const renderScreen = () => render(
   </SafeAreaProvider>,
 );
 
+beforeEach(() => jest.useFakeTimers());
+afterEach(() => {
+  act(() => jest.runOnlyPendingTimers());
+  cleanup();
+  jest.clearAllTimers();
+  jest.useRealTimers();
+});
+
 describe('NativePvpScreen', () => {
   it('matches the web roster default and keeps the signed-out personal roster unavailable', () => {
     renderScreen();
     expect(screen.getByRole('button', { name: /All Pokémon/ }).props.accessibilityState).toMatchObject({ disabled: false, selected: true });
     expect(screen.getByRole('button', { name: /My Pokémon/ }).props.accessibilityState).toMatchObject({ disabled: true, selected: false });
     expect(screen.getByText('3 ranked')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'PvPoke' })).toBeTruthy();
   });
 
   it('exposes all four PvP workspaces without a web fallback', async () => {

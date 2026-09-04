@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -721,6 +722,28 @@ export const NativePvpScreen = ({
       ) : null}
     </View>
   );
+  const sourceFooter = payload?.source ? (
+    <View style={[styles.sourceFooter, light && styles.panelLight]}>
+      <Text style={[styles.sourceCopy, light && styles.mutedLight]}>
+        Battle-simulation rankings from{" "}
+        <Text
+          accessibilityRole="link"
+          onPress={() => void Linking.openURL(payload.source!.url).catch(() => undefined)}
+          style={[styles.sourceLink, light && styles.accentLight]}
+        >
+          {payload.source.name}
+        </Text>
+        ; filtered to the current Pokémon Go Nexus catalog.
+      </Text>
+      <Text style={[styles.sourceDetail, light && styles.mutedLight]}>
+        {scope === "owned"
+          ? activeOwnedEvaluation.response
+            ? `My Pokémon evaluates every recorded build locally against ${activeOwnedEvaluation.response.fieldSize} current meta opponents.`
+            : "My Pokémon shows every recorded build; species scores remain visible until its local evaluation is available."
+          : "Recommended IVs maximize performance for the selected format, not rarity."}
+      </Text>
+    </View>
+  ) : null;
   if (deferredWorkspace === "rankings")
     return (
       <View
@@ -829,11 +852,14 @@ export const NativePvpScreen = ({
               role={role}
             />
           )}
-          ListFooterComponent={visibleLimit < rankingRows.length ? (
-            <Pressable accessibilityLabel={`Show next ${Math.min(50, rankingRows.length - visibleLimit)} PvP rankings`} accessibilityRole="button" onPress={() => { beginPerformance("pvp_more_result_painted"); setVisibleLimit((current) => current + 50); }} style={styles.showMore}>
-              <Text style={styles.showMoreText}>Show next {Math.min(50, rankingRows.length - visibleLimit)}</Text>
-            </Pressable>
-          ) : null}
+          ListFooterComponent={<>
+            {visibleLimit < rankingRows.length ? (
+              <Pressable accessibilityLabel={`Show next ${Math.min(50, rankingRows.length - visibleLimit)} PvP rankings`} accessibilityRole="button" onPress={() => { beginPerformance("pvp_more_result_painted"); setVisibleLimit((current) => current + 50); }} style={styles.showMore}>
+                <Text style={styles.showMoreText}>Show next {Math.min(50, rankingRows.length - visibleLimit)}</Text>
+              </Pressable>
+            ) : null}
+            {sourceFooter}
+          </>}
         />
       </View>
     );
@@ -902,6 +928,7 @@ export const NativePvpScreen = ({
           signedIn={signedIn}
         />
       )}
+      {deferredWorkspace !== "iv-rank" ? sourceFooter : null}
     </ScrollView>
   );
 };
@@ -926,6 +953,10 @@ const styles = StyleSheet.create({
     color: "#071d20",
     backgroundColor: "#fbffff",
   },
+  sourceFooter: { gap: 4, marginTop: 9, borderTopWidth: 1, borderColor: "rgba(115,204,204,0.28)", paddingHorizontal: 5, paddingTop: 11 },
+  sourceCopy: { color: "#9db6b8", fontSize: 10, lineHeight: 15 },
+  sourceLink: { color: "#42d5c2", fontWeight: "900", textDecorationLine: "underline" },
+  sourceDetail: { color: "#9db6b8", fontSize: 9, lineHeight: 14 },
   topbar: {
     minHeight: 116,
     flexDirection: "row",

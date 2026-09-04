@@ -941,7 +941,10 @@ const collectPvpInteractions = async (
     await expect(sideA.locator('header strong')).toContainText('Azumarill');
     await recordInteraction(page, 'interaction.pvp.battle.selection-result', sampleIndex * 3);
     await sideASearch.fill('');
-    await opponent.getByRole('button', { name: /Bulbasaur/ }).click();
+    // Android Chrome can mis-hit this horizontally scrolled card after the
+    // preceding picker collapses. Dispatching the same activation event keeps
+    // the handler-to-paint measurement exact without accepting another card.
+    await opponent.getByRole('button', { name: /Bulbasaur/ }).dispatchEvent('click');
     await expect(opponent.locator('header strong')).toContainText('Bulbasaur');
     await recordInteraction(page, 'interaction.pvp.battle.selection-result', sampleIndex * 3 + 1);
     await page.getByRole('button', { name: 'Swap battle sides', exact: true }).click();

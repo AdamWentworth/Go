@@ -125,6 +125,7 @@ const eventSampleSelection = {
   raid_search_result_painted: 'last',
   raid_boss_search_result_painted: 'last',
   pvp_search_result_painted: 'last',
+  pvp_role_result_painted: 'first',
   pvp_team_search_result_painted: 'last',
   pvp_battle_picker_search_result_painted: 'last',
   pvp_team_battle_search_result_painted: 'last',
