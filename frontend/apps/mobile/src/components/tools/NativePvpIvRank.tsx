@@ -257,14 +257,14 @@ export const NativePvpIvRank = ({
       ? cachedPvPIvRankings(
           deferredSelectedOption,
           league,
-          deferredBestBuddy ? 51 : 50,
+          bestBuddy ? 51 : 50,
         )
       : [],
-    [deferredBestBuddy, deferredSelectedOption, league, selectedOption?.id],
+    [bestBuddy, deferredSelectedOption, league, selectedOption?.id],
   );
   useEffect(() => {
     if (!selectedOption) return undefined;
-    const alternateLevel = deferredBestBuddy ? 50 : 51;
+    const alternateLevel = bestBuddy ? 50 : 51;
     const warmAlternateLevel = () => {
       cachedPvPIvRankings(selectedOption, league, alternateLevel);
     };
@@ -274,7 +274,7 @@ export const NativePvpIvRank = ({
     }
     const timer = setTimeout(warmAlternateLevel, 0);
     return () => clearTimeout(timer);
-  }, [deferredBestBuddy, league, selectedOption]);
+  }, [bestBuddy, league, selectedOption]);
   const rankedOwnedCopies = useMemo(() => {
     if (!selectedOption || scope !== "owned") return [];
     return rankedOwnedEntries
@@ -293,18 +293,17 @@ export const NativePvpIvRank = ({
   const evaluatedIvs = scope === "owned" && selectedOwnedCopy
     ? selectedOwnedCopy.entry.ivs
     : ivs;
-  const deferredEvaluatedIvs = useDeferredValue(evaluatedIvs);
   const result = useMemo(
-    () => rankPvPIvSpread(ivRankings, deferredEvaluatedIvs),
-    [deferredEvaluatedIvs, ivRankings],
+    () => rankPvPIvSpread(ivRankings, evaluatedIvs),
+    [evaluatedIvs, ivRankings],
   );
   useEffect(() => finishPerformance("pvp_iv_scope_result_painted"), [finishPerformance, scope]);
   useEffect(() => {
     if (query === deferredQuery) finishPerformance("pvp_iv_search_result_painted");
   }, [deferredQuery, finishPerformance, matchingCatalog, matchingOwned, query]);
   useEffect(() => finishPerformance("pvp_iv_selection_result_painted"), [finishPerformance, result, selectedOption]);
-  useEffect(() => finishPerformance("pvp_iv_adjust_result_painted"), [deferredEvaluatedIvs, finishPerformance, result]);
-  useEffect(() => finishPerformance("pvp_iv_level_result_painted"), [deferredBestBuddy, finishPerformance, result]);
+  useEffect(() => finishPerformance("pvp_iv_adjust_result_painted"), [evaluatedIvs, finishPerformance, result]);
+  useEffect(() => finishPerformance("pvp_iv_level_result_painted"), [bestBuddy, finishPerformance, result]);
   useEffect(() => finishPerformance("pvp_iv_copy_result_painted"), [finishPerformance, selectedOwnedCopy]);
   const changeScope = (next: Scope) => {
     if (next === "owned" && !signedIn) return;
