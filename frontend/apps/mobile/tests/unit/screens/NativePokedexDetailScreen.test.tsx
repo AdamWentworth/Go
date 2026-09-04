@@ -81,6 +81,7 @@ describe('NativePokedexDetailScreen', () => {
     render(<SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}><NativePokedexDetailScreen allEntries={[baseEntry, genderEntry]} allPokemon={[pokemon]} assetBaseUrl="https://pokegonexus.com" entry={genderEntry} onBack={jest.fn()} onOpenEntry={jest.fn()} onSetRegistrations={jest.fn()} onToggleRegistration={jest.fn()} pokemon={pokemon} signedIn /></SafeAreaProvider>);
 
     fireEvent.press(screen.getByLabelText('View Shiny'));
+    expect(screen.getByText('#0001 Shiny Bulbasaur')).toBeTruthy();
     fireEvent.press(screen.getByLabelText('Show Female Bulbasaur'));
     expect(screen.getByTestId('native-pokedex-detail-hero-image').props.source).toEqual({
       uri: 'https://pokegonexus.com/female-shiny-bulbasaur.png',
@@ -112,6 +113,9 @@ describe('NativePokedexDetailScreen', () => {
 
     fireEvent.press(screen.getByText('Info'));
     expect(screen.getByText('Base stats')).toBeTruthy();
+    expect(screen.getByLabelText('Attack 118')).toBeTruthy();
+    expect(screen.getByLabelText('Defense 111')).toBeTruthy();
+    expect(screen.getByLabelText('Stamina 128')).toBeTruthy();
     expect(screen.getByText('Max CP')).toBeTruthy();
     expect(screen.getByText('Size ranges')).toBeTruthy();
     expect(screen.getByText('See all Bulbasaur')).toBeTruthy();

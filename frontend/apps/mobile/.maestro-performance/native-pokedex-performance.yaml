@@ -29,7 +29,12 @@ tags:
 - tapOn: Lucky
 - tapOn: Kanto
 - extendedWaitUntil:
-    visible: All regions · Shiny
+    visible: Kanto region section
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      text: Search Pokédex
+    direction: UP
     timeout: 30000
 - tapOn: Search Pokédex
 - inputText: bulba
@@ -105,12 +110,18 @@ tags:
       text: SEARCH COMBINATIONS
     direction: DOWN
     timeout: 30000
-- tapOn: Filter Lucky
+- scrollUntilVisible:
+    element:
+      text: Combination filters
+    direction: DOWN
+    centerElement: true
+    timeout: 30000
+- tapOn: Filter Female
 - extendedWaitUntil:
-    visible: Showing 30 of 60
+    visible: Showing 20 of 60
     timeout: 15000
 - tapOn: Search combinations
-- inputText: female
+- inputText: lucky
 - hideKeyboard
 - extendedWaitUntil:
     visible: Showing 10 of 60
