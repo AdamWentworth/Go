@@ -14,7 +14,7 @@ for (let index = 0; index < args.length; index += 1) {
   const value = args[index + 1];
   if (!value || value.startsWith('--')) throw new Error(`Missing value for ${name}`);
   index += 1;
-  if (['--logcat', '--gfxinfo', '--meminfo'].includes(name)) {
+  if (['--logcat', '--gfxinfo', '--frame-timeline', '--meminfo'].includes(name)) {
     listArgs.set(name, [...(listArgs.get(name) ?? []), value]);
   } else {
     valueArgs.set(name, value);
@@ -27,7 +27,7 @@ const runtime = valueArgs.get('--runtime') ?? null;
 const refreshHz = Number(valueArgs.get('--refresh-hz') ?? 60);
 const frameBudgetMs = Number.isFinite(refreshHz) && refreshHz > 0 ? 1_000 / refreshHz : 16.67;
 if (!output) {
-  console.error('Usage: build-android-performance-report.mjs --output report.json [--profile physical-android] [--logcat file] [--gfxinfo file] [--meminfo file]');
+  console.error('Usage: build-android-performance-report.mjs --output report.json [--profile physical-android] [--logcat file] [--frame-timeline file] [--gfxinfo file] [--meminfo file]');
   process.exit(2);
 }
 if (profile === 'physical-android' && (
@@ -206,15 +206,32 @@ const percentile = (values, fraction) => {
   return sorted[Math.max(0, Math.ceil(sorted.length * fraction) - 1)];
 };
 
-for (const gfxPath of listArgs.get('--gfxinfo') ?? []) {
-  const frames = parseFrameStats(readFileSync(resolve(gfxPath), 'utf8'));
-  if (!frames.length) continue;
-  const p95 = percentile(frames.map((frame) => frame.durationMs), 0.95);
-  const jankyPercent = frames.filter(
-    (frame) => frame.durationMs > (frame.budgetMs ?? frameBudgetMs),
-  ).length / frames.length * 100;
-  addSample('global.runtime', 'frame_time_p95_ms', p95);
-  addSample('global.runtime', 'janky_frames_percent', jankyPercent, 'percent');
+const frameTimelinePaths = listArgs.get('--frame-timeline') ?? [];
+for (const frameTimelinePath of frameTimelinePaths) {
+  const timeline = JSON.parse(readFileSync(resolve(frameTimelinePath), 'utf8'));
+  addSample('global.runtime', 'frame_time_p95_ms', Number(timeline.frameTimeP95Ms));
+  addSample(
+    'global.runtime',
+    'janky_frames_percent',
+    Number(timeline.jankyFramesPercent),
+    'percent',
+  );
+}
+
+// Preserve gfxinfo as a compatibility fallback for older diagnostic runs.
+// Authoritative physical runs provide SurfaceFlinger FrameTimeline evidence,
+// which observes the real content surface in both Chrome and React Native.
+if (!frameTimelinePaths.length) {
+  for (const gfxPath of listArgs.get('--gfxinfo') ?? []) {
+    const frames = parseFrameStats(readFileSync(resolve(gfxPath), 'utf8'));
+    if (!frames.length) continue;
+    const p95 = percentile(frames.map((frame) => frame.durationMs), 0.95);
+    const jankyPercent = frames.filter(
+      (frame) => frame.durationMs > (frame.budgetMs ?? frameBudgetMs),
+    ).length / frames.length * 100;
+    addSample('global.runtime', 'frame_time_p95_ms', p95);
+    addSample('global.runtime', 'janky_frames_percent', jankyPercent, 'percent');
+  }
 }
 
 const parseTotalPssBytes = (text) => {
@@ -252,9 +269,12 @@ const report = {
     deviceKind: valueArgs.get('--device-kind') ?? null,
     runtime,
     repetitions: Number(valueArgs.get('--repetitions')) || null,
-    source: 'adb-logcat-gfxinfo-meminfo',
+    source: frameTimelinePaths.length
+      ? 'adb-logcat-surfaceflinger-frametimeline-meminfo'
+      : 'adb-logcat-gfxinfo-meminfo',
     refreshHz,
     workloadId: valueArgs.get('--workload-id') ?? null,
+    frameWorkloadId: valueArgs.get('--frame-workload-id') ?? null,
     catalogEntries: Number(valueArgs.get('--catalog-entries')) || null,
     instanceEntries: Number(valueArgs.get('--instance-entries')) || null,
     pvpEntries: Number(valueArgs.get('--pvp-entries')) || null,

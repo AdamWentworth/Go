@@ -26,6 +26,7 @@
         "repetitions",
         "deviceIdentity",
         "workloadId",
+        "frameWorkloadId",
         "catalogEntries",
         "instanceEntries",
         "pvpEntries"

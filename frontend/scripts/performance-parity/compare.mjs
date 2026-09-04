@@ -107,8 +107,7 @@ export const compareReports = ({ reference, candidate, contract, profile, scenar
       continue;
     }
     if (
-      requirement.scenarioId !== 'global.runtime'
-      && Number.isInteger(minimumSamples)
+      Number.isInteger(minimumSamples)
       && minimumSamples > 0
       && (baseline.values.length < minimumSamples || native.values.length < minimumSamples)
     ) {

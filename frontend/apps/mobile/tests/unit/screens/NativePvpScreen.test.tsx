@@ -151,7 +151,7 @@ describe('NativePvpScreen', () => {
     fireEvent.press(screen.getByText('Battle Lab'));
     fireEvent.press(screen.getByLabelText('Run battle'));
     expect(screen.getByText('Simulating…')).toBeTruthy();
-    await waitFor(() => expect(screen.getByText('SIMULATED RESULT')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Simulated result')).toBeTruthy());
     expect(screen.getByText(/wins|draw/i)).toBeTruthy();
     expect(screen.getAllByText(/rating/)).toHaveLength(2);
   });

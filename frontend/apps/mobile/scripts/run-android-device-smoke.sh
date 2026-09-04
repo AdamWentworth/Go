@@ -3,6 +3,7 @@ set -euo pipefail
 
 script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mobile_directory="$(cd "${script_directory}/.." && pwd)"
+frontend_directory="$(cd "${mobile_directory}/../.." && pwd)"
 cd "${mobile_directory}"
 
 user_home="$(getent passwd "$(id -u)" | cut -d: -f6)"
@@ -608,6 +609,16 @@ run_maestro_flow() {
       wait "${performance_logcat_pid}" 2>/dev/null || true
     fi
     performance_logcat_pid=""
+    if [[ "$(basename "${flow}")" == "native-pvp-performance.yaml" ]]; then
+      # SurfaceFlinger's FrameTimeline measures the same warmed physical scroll
+      # against the actual Chrome and React Native content surfaces. gfxinfo
+      # does not expose Chrome's child surface and is retained only as a raw
+      # native diagnostic.
+      node "${frontend_directory}/scripts/performance-parity/capture-android-frame-timeline.mjs" \
+        --device "${device_id}" \
+        --layer-match "${app_id}" \
+        --output "${artifact_dir}/maestro/${output_name}-frame-timeline.json"
+    fi
     "${adb_bin}" -s "${device_id}" shell dumpsys gfxinfo "${app_id}" framestats \
       >"${artifact_dir}/maestro/${output_name}-gfxinfo.txt" 2>&1 || true
     "${adb_bin}" -s "${device_id}" shell dumpsys meminfo "${app_id}" \
@@ -689,10 +700,17 @@ if [[ "${smoke_performance}" == "true" ]]; then
   performance_device_logs=()
   performance_gfx_logs=()
   performance_memory_logs=()
+  performance_frame_timeline_logs=()
   for successful_output in "${successful_smoke_outputs[@]}"; do
     performance_device_logs+=("${artifact_dir}/maestro/${successful_output}-logcat.txt")
     performance_gfx_logs+=("${artifact_dir}/maestro/${successful_output}-gfxinfo.txt")
-    performance_memory_logs+=("${artifact_dir}/maestro/${successful_output}-meminfo.txt")
+    performance_frame_timeline="${artifact_dir}/maestro/${successful_output}-frame-timeline.json"
+    if [[ -f "${performance_frame_timeline}" ]]; then
+      performance_frame_timeline_logs+=("${performance_frame_timeline}")
+      # Memory is sampled at the same canonical PvP endpoint as Vite instead
+      # of pooling unrelated screens into a misleading global distribution.
+      performance_memory_logs+=("${artifact_dir}/maestro/${successful_output}-meminfo.txt")
+    fi
   done
   collection_performance_flow="false"
   if [[ -d "${smoke_flow}" && -f "${smoke_flow}/native-collection-performance.yaml" ]]; then
@@ -722,6 +740,7 @@ if [[ "${smoke_performance}" == "true" ]]; then
     --repetitions "${performance_samples}"
     --refresh-hz "${refresh_rate}"
     --workload-id "canonical-performance-fixtures-v1"
+    --frame-workload-id "physical-scroll-v1"
     --catalog-entries "1097"
     --instance-entries "180"
     --pvp-entries "62"
@@ -731,6 +750,9 @@ if [[ "${smoke_performance}" == "true" ]]; then
   done
   for performance_gfx in "${performance_gfx_logs[@]}"; do
     report_args+=(--gfxinfo "${performance_gfx}")
+  done
+  for performance_frame_timeline in "${performance_frame_timeline_logs[@]}"; do
+    report_args+=(--frame-timeline "${performance_frame_timeline}")
   done
   for performance_memory in "${performance_memory_logs[@]}"; do
     report_args+=(--meminfo "${performance_memory}")

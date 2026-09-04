@@ -521,8 +521,8 @@ const OWNED_PVP_INSTANCE = {
   attack_iv: 0,
   defense_iv: 15,
   stamina_iv: 15,
-  fast_move_id: 1,
-  charged_move1_id: 2,
+  fast_move_id: 15,
+  charged_move1_id: 155,
   dynamax: false,
   max_attack: null,
   max_guard: null,
@@ -656,7 +656,7 @@ export default function DeviceSmokeToolsRoute() {
   const tool = Array.isArray(params.tool) ? params.tool[0] : params.tool;
   const ownedParam = Array.isArray(params.owned) ? params.owned[0] : params.owned;
   const ownedFixture = ownedParam === "1";
-  const needsCatalog = tool === "pokedex" || tool === "raid" || tool === "max";
+  const needsCatalog = tool === "pokedex" || tool === "raid" || tool === "pvp" || tool === "max";
   const [catalog, setCatalog] = useState<BasePokemon[]>(FALLBACK_BATTLE_CATALOG);
   const [catalogReady, setCatalogReady] = useState(false);
   useEffect(() => {
@@ -714,7 +714,7 @@ export default function DeviceSmokeToolsRoute() {
       <DeviceSmokeToolChrome currentPath="/pvp" ready={!needsCatalog || catalogReady}>
         <NativePvpScreen
           assetBaseUrl={ASSET_BASE_URL}
-          catalog={FALLBACK_BATTLE_CATALOG}
+          catalog={catalog}
           instances={ownedFixture ? { "0001-default_demo-pvp-leafy": OWNED_PVP_INSTANCE } : {}}
           onBack={noOp}
           onMethodology={noOp}

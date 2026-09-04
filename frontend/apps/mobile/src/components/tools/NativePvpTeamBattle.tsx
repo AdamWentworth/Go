@@ -393,7 +393,8 @@ export const NativePvpTeamBattle = ({
 
       <View style={styles.actions}>
         <Pressable accessibilityRole="button" accessibilityLabel="Run team battle" disabled={!complete || busy != null} onPress={() => void simulate()} style={[styles.primary, (!complete || busy != null) && styles.disabled]}>
-          <Text style={styles.primaryText}>▶ {busy === "battle" ? "Simulating team…" : "Run team battle"}</Text>
+          {busy !== "battle" ? <NativeUiIcon color="#071313" name="play" size={13} /> : null}
+          <Text style={styles.primaryText}>{busy === "battle" ? "Simulating team…" : "Run team battle"}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Test meta teams" disabled={!complete || !representativeTeams.length || busy != null} onPress={() => void runField()} style={[styles.secondary, light && styles.secondaryLight, (!complete || !representativeTeams.length || busy != null) && styles.disabled]}>
           <View style={styles.actionLabel}><NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="trophy" size={14} /><Text style={[styles.secondaryText, light && styles.accentLight]}>{busy === "field" ? "Testing field…" : `Test ${representativeTeams.length} meta teams`}</Text></View>
@@ -419,7 +420,7 @@ export const NativePvpTeamBattle = ({
                 const candidate = selectedTeams[side][index];
                 const hp = member.maxHp ? Math.max(0, (member.hp / member.maxHp) * 100) : 0;
                 return (
-                  <View key={member.fighterId} style={[styles.resultMember, member.fainted && styles.fainted]}>
+                  <View key={member.fighterId} style={[styles.resultMember, light && styles.controlLight, member.fainted && styles.fainted]}>
                     {candidate ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, candidate.entry.imageUrl) }} style={styles.resultImage} /> : null}
                     <View style={styles.resultCopy}>
                       <Text style={[styles.resultName, light && styles.textLight]}>{candidate ? (candidate.nickname || candidate.entry.name) : ROLES[index]}</Text>
@@ -437,7 +438,7 @@ export const NativePvpTeamBattle = ({
               if (item.kind === "switch") {
                 const from = resultCandidateByFighterId.get(item.event.fromFighterId);
                 const to = resultCandidateByFighterId.get(item.event.toFighterId);
-                return <View key={`switch-${item.event.index}-${item.event.side}`} style={styles.sequenceRow}><NativeUiIcon color="#42d5c2" name="trade" size={14} /><View style={styles.sequenceCopy}><Text style={[styles.sequenceTitle, light && styles.textLight]}>{item.event.reason === "adaptive" ? `${item.event.side === 0 ? playerSideLabel : "Opponent"} swaps ${from ? (from.nickname || from.entry.name) : "out"} for ${to ? (to.nickname || to.entry.name) : "its bench"}` : `${item.event.side === 0 ? playerSideLabel : "Opponent"} sends in ${to ? (to.nickname || to.entry.name) : "its next Pokémon"}`}</Text><Text style={[styles.meta, light && styles.mutedLight]}>{(item.event.atMs / 1000).toFixed(1)}s · {item.event.reason === "adaptive" ? `switch ready again at ${(item.event.switchReadyAtMs / 1000).toFixed(1)}s` : "forced replacement"}</Text></View></View>;
+                return <View key={`switch-${item.event.index}-${item.event.side}`} style={[styles.sequenceRow, styles.sequenceSwitch]}><NativeUiIcon color="#f2ca58" name="trade" size={14} /><View style={styles.sequenceCopy}><Text style={[styles.sequenceTitle, light && styles.textLight]}>{item.event.reason === "adaptive" ? `${item.event.side === 0 ? playerSideLabel : "Opponent"} swaps ${from ? (from.nickname || from.entry.name) : "out"} for ${to ? (to.nickname || to.entry.name) : "its bench"}` : `${item.event.side === 0 ? playerSideLabel : "Opponent"} sends in ${to ? (to.nickname || to.entry.name) : "its next Pokémon"}`}</Text><Text style={[styles.meta, light && styles.mutedLight]}>{(item.event.atMs / 1000).toFixed(1)}s · {item.event.reason === "adaptive" ? `switch ready again at ${(item.event.switchReadyAtMs / 1000).toFixed(1)}s` : "forced replacement"}</Text></View></View>;
               }
               const first = resultCandidateByFighterId.get(item.matchup.fighterIds[0]);
               const second = resultCandidateByFighterId.get(item.matchup.fighterIds[1]);
@@ -461,7 +462,7 @@ export const NativePvpTeamBattle = ({
             const standing = row.result.teams[won ? 0 : 1].filter((member) => !member.fainted).length;
             const lead = row.result.matchups[0];
             const swaps = row.result.switches.filter((event) => event.reason === "adaptive").length;
-            return <View key={row.opponentId} style={styles.fieldRow}><Text style={draw ? styles.draw : won ? styles.win : styles.loss}>{draw ? "–" : won ? "✓" : "×"}</Text><View style={styles.fieldImages}>{representative?.members.map((candidate) => <Image fadeDuration={0} key={candidate.key} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, candidate.entry.imageUrl) }} style={styles.fieldImage} />)}</View><View style={styles.fieldCopy}><Text style={[styles.fieldLabel, light && styles.textLight]}>{row.opponentLabel}</Text><Text style={[styles.meta, light && styles.mutedLight]}>{draw ? "Even result" : `${won ? "Clear" : "Loss"} · ${standing} standing`}{lead?.winner === 1 ? " · lost lead" : ""} · {swaps} swaps</Text></View></View>;
+            return <View key={row.opponentId} style={[styles.fieldRow, light && styles.controlLight, draw ? styles.fieldRowDraw : won ? styles.fieldRowWin : styles.fieldRowLoss]}><Text style={draw ? styles.draw : won ? styles.win : styles.loss}>{draw ? "–" : won ? "✓" : "×"}</Text><View style={styles.fieldImages}>{representative?.members.map((candidate) => <Image fadeDuration={0} key={candidate.key} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, candidate.entry.imageUrl) }} style={styles.fieldImage} />)}</View><View style={styles.fieldCopy}><Text style={[styles.fieldLabel, light && styles.textLight]}>{row.opponentLabel}</Text><Text style={[styles.meta, light && styles.mutedLight]}>{draw ? "Even result" : `${won ? "Clear" : "Loss"} · ${standing} standing`}{lead?.winner === 1 ? " · lost lead" : ""} · {swaps} swaps</Text></View></View>;
           })}
           <Text style={[styles.fieldFooter, light && styles.mutedLight]}>These are deterministic Lead, Switch, and Closer combinations generated from the current ranking snapshot, not claimed historical player teams.</Text>
         </View>
@@ -513,7 +514,7 @@ const styles = StyleSheet.create({
   energySlider: { minWidth: 0, flex: 1, height: 36 },
   actions: { flexDirection: "row", gap: 6 },
   actionLabel: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5 },
-  primary: { minHeight: 48, flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 7, backgroundColor: "#42d5c2" },
+  primary: { minHeight: 48, flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, borderRadius: 7, backgroundColor: "#42d5c2" },
   primaryText: { color: "#071313", fontSize: 10, fontWeight: "900" },
   secondary: { minHeight: 48, flex: 1, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 7, backgroundColor: "rgba(66,213,194,0.06)" },
   secondaryLight: { backgroundColor: "#f8ffff" },
@@ -521,7 +522,7 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.4 },
   error: { color: "#ff9ebd", fontSize: 10, lineHeight: 15, textAlign: "center" },
   status: { color: "#9db6b8", fontSize: 10, lineHeight: 15, textAlign: "center" },
-  result: { gap: 8, borderWidth: 1, borderColor: "#42d5c2", borderRadius: 8, padding: 10, backgroundColor: "rgba(66,213,194,0.06)" },
+  result: { gap: 8, borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 8, padding: 10, backgroundColor: "#101516" },
   eyebrow: { color: "#8fc6cb", fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
   resultTitle: { color: "#f5ffff", fontSize: 19, fontWeight: "900" },
   resultSummary: { color: "#9db6b8", fontSize: 10, lineHeight: 15 },
@@ -530,7 +531,7 @@ const styles = StyleSheet.create({
   overviewItem: { minWidth: 0, flex: 1, gap: 2, borderWidth: 1, borderColor: "rgba(115,204,204,0.2)", borderRadius: 6, padding: 6, backgroundColor: "#101516" },
   overviewValue: { color: "#f5ffff", fontSize: 10, fontWeight: "900" },
   resultTeam: { gap: 5, paddingTop: 5, borderTopWidth: 1, borderColor: "rgba(115,204,204,0.2)" },
-  resultMember: { flexDirection: "row", alignItems: "center", gap: 7 },
+  resultMember: { minHeight: 54, flexDirection: "row", alignItems: "center", gap: 7, borderWidth: 1, borderColor: "rgba(115,204,204,0.2)", borderRadius: 6, padding: 6, backgroundColor: "#151a1b" },
   fainted: { opacity: 0.45 },
   resultImage: { width: 39, height: 39 },
   resultCopy: { minWidth: 0, flex: 1 },
@@ -538,12 +539,16 @@ const styles = StyleSheet.create({
   hpTrack: { height: 6, marginVertical: 3, overflow: "hidden", borderRadius: 999, backgroundColor: "#344149" },
   hpTrackLight: { backgroundColor: "#d5dee2" },
   hpFill: { height: "100%", borderRadius: 999, backgroundColor: "#42d5c2" },
-  sequence: { gap: 5, borderWidth: 1, borderColor: "rgba(115,204,204,0.2)", borderRadius: 6, padding: 8, backgroundColor: "#101516" },
-  sequenceRow: { minHeight: 38, flexDirection: "row", alignItems: "center", gap: 7, borderTopWidth: 1, borderColor: "rgba(115,204,204,0.14)", paddingTop: 5 },
+  sequence: { gap: 5, borderTopWidth: 1, borderColor: "rgba(115,204,204,0.28)", paddingTop: 8 },
+  sequenceRow: { minHeight: 38, flexDirection: "row", alignItems: "center", gap: 7, borderLeftWidth: 2, borderColor: "#54a9ef", paddingHorizontal: 7, paddingVertical: 5, backgroundColor: "rgba(84,169,239,0.05)" },
+  sequenceSwitch: { borderColor: "#f2ca58", backgroundColor: "rgba(242,202,88,0.08)" },
   sequenceIndex: { width: 22, height: 22, paddingTop: 3, borderRadius: 999, color: "#071313", backgroundColor: "#42d5c2", fontSize: 9, fontWeight: "900", textAlign: "center", overflow: "hidden" },
   sequenceCopy: { minWidth: 0, flex: 1 },
   sequenceTitle: { color: "#f5ffff", fontSize: 9, lineHeight: 13, fontWeight: "800" },
-  fieldRow: { minHeight: 52, flexDirection: "row", alignItems: "center", gap: 7, borderTopWidth: 1, borderColor: "rgba(115,204,204,0.18)" },
+  fieldRow: { minHeight: 52, flexDirection: "row", alignItems: "center", gap: 7, borderWidth: 1, borderLeftWidth: 3, borderColor: "rgba(115,204,204,0.28)", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 5, backgroundColor: "#151a1b" },
+  fieldRowWin: { borderLeftColor: "#42d5c2" },
+  fieldRowLoss: { borderLeftColor: "#ed6f7d" },
+  fieldRowDraw: { borderLeftColor: "#f2ca58" },
   fieldImages: { width: 66, flexDirection: "row" },
   fieldImage: { width: 28, height: 28, marginRight: -6 },
   fieldCopy: { minWidth: 0, flex: 1 },

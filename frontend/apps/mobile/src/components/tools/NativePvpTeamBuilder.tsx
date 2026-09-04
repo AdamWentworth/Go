@@ -333,7 +333,7 @@ export const NativePvpTeamBuilder = ({
         <View style={[styles.analysis, light && styles.analysisLight]}>
           <View style={styles.builderHeader}>
             <View style={styles.headingIdentity}>
-              <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="chart" size={20} />
+              <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="shield" size={20} />
               <View>
                 <Text style={[styles.eyebrow, light && styles.accentLight]}>LOCAL ROLE FIELD TEST</Text>
                 <Text style={[styles.analysisHeading, light && styles.textLight]}>Team check</Text>
@@ -506,14 +506,14 @@ const styles = StyleSheet.create({
   analysisValue: { color: "#42d5c2", fontSize: 14, fontWeight: "900" },
   evaluationError: { color: "#ff9ebd", fontSize: 10, lineHeight: 15 },
   roleResults: { gap: 5 },
-  roleResult: { minHeight: 52, flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: "rgba(115,204,204,0.22)", borderRadius: 6, padding: 7, backgroundColor: "#101516" },
+  roleResult: { minHeight: 52, flexDirection: "row", alignItems: "center", gap: 8, borderLeftWidth: 3, borderColor: "#42d5c2", padding: 7, backgroundColor: "rgba(66,213,194,0.06)" },
   roleRecord: { alignItems: "flex-end" },
   fieldLosses: { gap: 5 },
   fieldLoss: { minHeight: 54, flexDirection: "row", alignItems: "center", gap: 7, borderWidth: 1, borderColor: "rgba(237,111,165,0.35)", borderRadius: 6, padding: 6, backgroundColor: "rgba(237,111,165,0.05)" },
-  evidence: { borderWidth: 1, borderColor: "rgba(115,204,204,0.28)", borderRadius: 7, overflow: "hidden" },
-  evidenceSummary: { minHeight: 45, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, paddingHorizontal: 9, backgroundColor: "rgba(66,213,194,0.05)" },
-  threatList: { gap: 5, padding: 7 },
-  threat: { minHeight: 49, flexDirection: "row", alignItems: "center", gap: 7, borderLeftWidth: 3, borderRadius: 5, padding: 5, backgroundColor: "#101516" },
+  evidence: { borderTopWidth: 1, borderColor: "rgba(115,204,204,0.28)", paddingTop: 6 },
+  evidenceSummary: { minHeight: 34, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  threatList: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
+  threat: { width: "49.3%", minHeight: 49, flexDirection: "row", alignItems: "center", gap: 7, borderLeftWidth: 3, padding: 5, backgroundColor: "#101516" },
   threatCovered: { borderLeftColor: "#42d5c2" },
   threatOpen: { borderLeftColor: "#ed6fa5" },
   evidenceButton: { width: 34, height: 34, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 17 },

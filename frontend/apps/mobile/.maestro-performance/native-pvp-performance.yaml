@@ -71,8 +71,10 @@ tags:
     visible: Meta Pokémon 60
     timeout: 30000
 - tapOn: Show details for Meta Pokémon 60
-- extendedWaitUntil:
-    visible: Role profile
+- scrollUntilVisible:
+    element:
+      text: Role profile
+    direction: DOWN
     timeout: 15000
 - assertVisible: Battle build
 - scrollUntilVisible:
@@ -127,6 +129,9 @@ tags:
       text: FIELD COVERAGE
     direction: UP
     timeout: 30000
+- assertVisible: "^12-0$"
+- assertVisible: "^4-4$"
+- assertVisible: "^8-4$"
 - scrollUntilVisible:
     element:
       text: Published matchup evidence
@@ -182,8 +187,12 @@ tags:
     timeout: 30000
 - tapOn: Run battle
 - extendedWaitUntil:
-    visible: SIMULATED RESULT
+    visible: Simulated result
     timeout: 30000
+- assertVisible: "^Bulbasaur wins$"
+- assertVisible: "^70.0s$"
+- assertVisible: "^804$"
+- assertVisible: "^195$"
 - takeScreenshot: pvp-battle-focused
 
 # Team Battle lineup editing, policy, conditions, simulation, and meta field.
@@ -244,6 +253,7 @@ tags:
       text: ROLE-BALANCED META FIELD
     direction: DOWN
     timeout: 60000
+- assertVisible: "^6-0-0$"
 - takeScreenshot: pvp-battle-team
 
 # IV source, query, selection, appraisal, and level-ceiling interactions.

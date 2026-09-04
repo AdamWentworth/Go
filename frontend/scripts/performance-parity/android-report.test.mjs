@@ -16,6 +16,7 @@ test('builds interaction, frame, jank, and memory evidence from Android diagnost
   try {
     const logcat = resolve(directory, 'device-logcat.txt');
     const gfxinfo = resolve(directory, 'flow-gfxinfo.txt');
+    const frameTimeline = resolve(directory, 'flow-frame-timeline.json');
     const meminfo = resolve(directory, 'flow-meminfo.txt');
     const output = resolve(directory, 'report.json');
     writeFileSync(logcat, [
@@ -51,6 +52,12 @@ test('builds interaction, frame, jank, and memory evidence from Android diagnost
       '0,2000000000,25000000,2020000000',
       '---PROFILEDATA---',
     ].join('\n'));
+    writeFileSync(frameTimeline, JSON.stringify({
+      frameCount: 720,
+      frameTimeP95Ms: 3.5,
+      jankyFramesPercent: 0,
+      layerName: 'com.pokegonexus.mobile/MainActivity',
+    }));
     writeFileSync(meminfo, 'TOTAL PSS: 123,456 KB\n');
 
     execFileSync(process.execPath, [
@@ -63,11 +70,13 @@ test('builds interaction, frame, jank, and memory evidence from Android diagnost
       '--repetitions', '5',
       '--refresh-hz', '60',
       '--workload-id', 'canonical-performance-fixtures-v1',
+      '--frame-workload-id', 'physical-scroll-v1',
       '--catalog-entries', '1097',
       '--instance-entries', '180',
       '--pvp-entries', '62',
       '--logcat', logcat,
       '--gfxinfo', gfxinfo,
+      '--frame-timeline', frameTimeline,
       '--meminfo', meminfo,
     ]);
     const report = JSON.parse(readFileSync(output, 'utf8'));
@@ -76,6 +85,8 @@ test('builds interaction, frame, jank, and memory evidence from Android diagnost
     assert.equal(report.environment.runtime, 'standalone');
     assert.equal(report.environment.repetitions, 5);
     assert.equal(report.environment.instanceEntries, 180);
+    assert.equal(report.environment.frameWorkloadId, 'physical-scroll-v1');
+    assert.equal(report.environment.source, 'adb-logcat-surfaceflinger-frametimeline-meminfo');
     assert.ok(report.samples.some(({ scenarioId, metric, value }) => (
       scenarioId === 'interaction.action-menu.open'
         && metric === 'interaction_ready_ms'
@@ -104,10 +115,10 @@ test('builds interaction, frame, jank, and memory evidence from Android diagnost
       [29],
     );
     assert.ok(report.samples.some(({ metric, value }) => (
-      metric === 'frame_time_p95_ms' && value === 20
+      metric === 'frame_time_p95_ms' && value === 3.5
     )));
     assert.ok(report.samples.some(({ metric, value }) => (
-      metric === 'janky_frames_percent' && value === 50
+      metric === 'janky_frames_percent' && value === 0
     )));
     assert.ok(report.samples.some(({ metric, value }) => (
       metric === 'memory_pss_bytes' && value === 123_456 * 1024

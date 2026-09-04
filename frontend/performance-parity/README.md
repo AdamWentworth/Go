@@ -28,8 +28,9 @@ can stand in for Android's renderer and scheduler:
 Reports use `report.schema.json`. The comparator is deliberately strict:
 
 - every required scenario and metric must exist in both reports;
-- every non-global scenario must contain at least the declared repetition
-  count, so a one-off observation cannot masquerade as a p95 result;
+- every required scenario, including the global frame and memory metrics, must
+  contain at least the declared repetition count, so a one-off observation
+  cannot masquerade as a median or p95 result;
 - lower-is-better metrics require both the native median and p95 to be no
   greater than Vite;
 - higher-is-better metrics use the inverse rule;
@@ -67,11 +68,15 @@ From `frontend/`:
 
 Native performance events are streamed from logcat for the duration of each
 flow instead of relying on Maestro's end-of-flow ring-buffer dump. This keeps
-early search and sort measurements intact during long collection flows. Jank
-uses each Android frame's `WorkloadTarget` when available, rather than assuming
-the panel's maximum refresh rate is every app frame's deadline. Chrome memory
-is the summed PSS of its browser, renderer, GPU/privileged, and zygote
-processes; comparing only Chrome's main process would undercount the Vite app.
+early search and sort measurements intact during long collection flows. Frame
+pacing comes from Android SurfaceFlinger FrameTimeline while both runtimes
+perform the same warmed six-cycle physical scroll on the PvP IV result. This
+captures Chrome's real child content surface, which `dumpsys gfxinfo` omits,
+and uses Android's own jank classification for both implementations. The
+runner downloads the pinned, checksum-verified Perfetto v58.2 Trace Processor
+once under `frontend/.artifacts/`. Chrome memory is the summed PSS of its
+browser, renderer, GPU/privileged, and zygote processes; native memory is
+sampled at that same PvP endpoint instead of pooling unrelated pages.
 
 The second command is the hard release gate: it exits non-zero if any required
 native median or p95 is slower than Vite, or if evidence is missing or invalid.
@@ -94,7 +99,8 @@ thread blocking, maximum frame gap, transferred bytes, DOM nodes, and JS heap.
 
 The physical profile currently gates the operations that can be defined the
 same way in Chrome and React Native: handler-to-visible interaction latency,
-aggregate frame p95, janky-frame percentage, and process PSS. Route-transition
+SurfaceFlinger frame p95, Android-classified janky-frame percentage, and
+process PSS. Route-transition
 diagnostics remain exhaustive in the browser proxy; Android route startup is
 not mislabeled as parity evidence because `am start`, Expo Router path commit,
 and fully populated screen paint are three different milestones. A future

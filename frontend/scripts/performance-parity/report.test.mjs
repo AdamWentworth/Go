@@ -163,3 +163,43 @@ test('rejects fewer samples than the declared repetition count', () => {
   assert.equal(result.status, 'fail');
   assert.ok(result.failures.some((failure) => failure.includes('insufficient evidence')));
 });
+
+test('requires the declared repetition count for global physical evidence', () => {
+  const physicalContract = {
+    profiles: {
+      'physical-android': {
+        referenceImplementation: 'vite',
+        candidateImplementation: 'native-android',
+        requiredEnvironmentMatches: ['repetitions'],
+        minimumSamplesFromEnvironment: 'repetitions',
+        requiredGlobalMetrics: ['frame_time_p95_ms'],
+      },
+    },
+    routes: [],
+    interactions: [],
+  };
+  const reference = {
+    ...makeReport({
+      implementation: 'vite',
+      profile: 'physical-android',
+      samples: [sample('global.runtime', 'frame_time_p95_ms', 5)],
+    }),
+    environment: { repetitions: 2 },
+  };
+  const candidate = {
+    ...makeReport({
+      implementation: 'native-android',
+      profile: 'physical-android',
+      samples: [sample('global.runtime', 'frame_time_p95_ms', 4)],
+    }),
+    environment: { repetitions: 2 },
+  };
+  const result = compareReports({
+    reference,
+    candidate,
+    contract: physicalContract,
+    profile: 'physical-android',
+  });
+  assert.equal(result.status, 'fail');
+  assert.ok(result.failures.some((failure) => failure.includes('insufficient evidence')));
+});

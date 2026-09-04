@@ -24,6 +24,7 @@
     "./pvp-roster": "./src/pages/Pvp/utils/pvpRoster.ts",
     "./pvp-roster-evaluation": "./src/pages/Pvp/utils/pvpRosterEvaluation.ts",
     "./pvp-battle-mechanics": "./src/pages/Pvp/utils/pvpBattleMechanics.ts",
+    "./pvp-move-hydration": "./src/pages/Pvp/utils/pvpMoveHydration.ts",
     "./pvp-team-builder": "./src/pages/Pvp/utils/pvpTeamBuilder.ts",
     "./pvp-iv-pokemon": "./src/pages/Pvp/utils/pvpIvPokemon.ts",
     "./pvp-iv-rank": "./src/pages/Pvp/utils/pvpIvRank.ts",

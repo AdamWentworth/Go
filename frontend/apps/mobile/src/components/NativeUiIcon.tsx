@@ -30,6 +30,7 @@ export type NativeUiIconName =
   | 'ruler'
   | 'scale'
   | 'share'
+  | 'shield'
   | 'sliders'
   | 'target'
   | 'trophy'
@@ -224,6 +225,9 @@ export const NativeUiIcon = ({ color = '#ffffff', name, size = 16 }: Props) => (
         <Circle cx={19} cy={5} fill={color} r={3} />
         <Circle cx={19} cy={19} fill={color} r={3} />
       </>
+    ) : null}
+    {name === 'shield' ? (
+      <Path d="M12 2.5 20 5v6.2c0 5-3.1 8.6-8 10.3-4.9-1.7-8-5.3-8-10.3V5l8-2.5Zm0 2.1L6 6.5v4.7c0 3.8 2.2 6.6 6 8.1 3.8-1.5 6-4.3 6-8.1V6.5l-6-1.9Z" fill={color} />
     ) : null}
   </Svg>
 );

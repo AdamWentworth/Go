@@ -25,6 +25,10 @@ import {
   formatPvPSpeciesName,
   type PvPTeamCandidate,
 } from "@pokemongonexus/app-core/pvp-team-builder";
+import {
+  buildPvPMoveMechanicsLookupFromChunk,
+  hydratePvPRankingEntry,
+} from "@pokemongonexus/app-core/pvp-move-hydration";
 import { NativePvpBattleLab } from "../components/tools/NativePvpBattleLab";
 import { NativePvpIvRank } from "../components/tools/NativePvpIvRank";
 import { NativePvpTeamBuilder } from "../components/tools/NativePvpTeamBuilder";
@@ -127,19 +131,20 @@ const PvpEntryCard = ({
         expanded && styles.rankingExpanded,
       ]}
     >
-      <View
-        style={[
-          styles.rank,
-          rank === 1 && styles.rankGold,
-          rank === 2 && styles.rankSilver,
-          rank === 3 && styles.rankBronze,
-        ]}
-      >
-        <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop]}>
-          {rank}
-        </Text>
-      </View>
-      <View style={styles.rankingCopy}>
+      <View style={styles.rankingHeader}>
+        <View
+          style={[
+            styles.rank,
+            rank === 1 && styles.rankGold,
+            rank === 2 && styles.rankSilver,
+            rank === 3 && styles.rankBronze,
+          ]}
+        >
+          <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop]}>
+            {rank}
+          </Text>
+        </View>
+        <View style={styles.rankingCopy}>
         <View style={styles.buildRow}>
           <Image fadeDuration={0}
             resizeMode="contain"
@@ -202,61 +207,64 @@ const PvpEntryCard = ({
             </View>
           </View>
         </View>
-        {expanded ? (
-          <View style={styles.expanded}>
-            <View style={styles.detailSummary}>
-              <View style={[styles.detailPanel, light && styles.detailPanelLight]}>
-                <Text style={[styles.detailTitle, light && styles.textLight]}>Role profile</Text>
-                {ROLES.slice(1).map(([roleKey, label]) => {
-                  const score = pvpRoleScore(entry, roleKey);
-                  return <View key={roleKey} style={styles.roleProfileRow}>
-                    <Text style={[styles.roleProfileLabel, light && styles.mutedLight]}>{label}</Text>
-                    <View style={[styles.roleProfileTrack, light && styles.roleProfileTrackLight]}><View style={[styles.roleProfileFill, { width: `${Math.max(0, Math.min(100, score))}%` }]} /></View>
-                    <Text style={[styles.roleProfileScore, light && styles.textLight]}>{score.toFixed(1)}</Text>
-                  </View>;
-                })}
-              </View>
-              <View style={[styles.detailPanel, light && styles.detailPanelLight]}>
-                <Text style={[styles.detailTitle, light && styles.textLight]}>Battle build</Text>
-                <View style={styles.battleStatGrid}>
-                  {[
-                    ['Attack', entry.battleAttack?.toFixed(1) ?? '---'],
-                    ['Defense', entry.battleDefense?.toFixed(1) ?? '---'],
-                    ['HP', entry.battleHp == null ? '---' : String(entry.battleHp)],
-                    ['Stat product', entry.statProduct?.toLocaleString() ?? '---'],
-                  ].map(([label, value]) => <View key={label} style={[styles.battleStat, light && styles.battleStatLight]}><Text style={[styles.battleStatLabel, light && styles.mutedLight]}>{label}</Text><Text style={[styles.battleStatValue, light && styles.textLight]}>{value}</Text></View>)}
-                </View>
-              </View>
-            </View>
-            <View style={styles.matchupGrid}>
-              {([
-                [personalBuild ? 'Strong species matchups' : 'Strong matchups', entry.matchups ?? [], 'strong'],
-                [personalBuild ? 'Species threats' : 'Key threats', entry.counters ?? [], 'threat'],
-              ] as const).map(([title, matchups, kind]) => <View accessibilityLabel={title} key={kind} style={[styles.matchupPanel, kind === 'strong' ? styles.matchupStrong : styles.matchupThreat, light && styles.detailPanelLight]}>
-                <Text style={[styles.detailTitle, light && styles.textLight]}>{title}</Text>
-                {matchups.length ? matchups.map((matchup) => {
-                  const opponent = entriesBySpeciesId.get(matchup.speciesId);
-                  return <View key={matchup.speciesId} style={styles.matchupRow}>
-                    {opponent?.imageUrl ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: uri(assetBaseUrl, opponent.imageUrl) }} style={styles.matchupImage} /> : null}
-                    <View style={styles.matchupCopy}><Text style={[styles.matchupName, light && styles.textLight]}>{opponent?.name ?? formatPvPSpeciesName(matchup.speciesId)}</Text><Text style={[styles.matchupRating, light && styles.mutedLight]}>{matchup.rating.toFixed(0)} battle rating</Text></View>
-                  </View>;
-                }) : <Text style={[styles.detailBody, light && styles.mutedLight]}>Matchup details are not available in this snapshot.</Text>}
-              </View>)}
-            </View>
-            {(entry.moveUsage?.length ?? 0) > 0 ? <View style={[styles.moveOptions, light && styles.detailPanelLight]}>
-              <Text style={[styles.detailTitle, light && styles.textLight]}>Simulated move options</Text>
-              {entry.moveUsage!.map((move) => {
-                const selected = entry.moveset.some((selectedMove) => selectedMove.id === move.id);
-                const maxUses = Math.max(1, ...entry.moveUsage!.map((option) => option.uses));
-                return <View key={`${move.kind}-${move.id}`} style={[styles.moveOption, selected && styles.moveOptionSelected]}>
-                  <Image fadeDuration={0} source={{ uri: typeIcon(move.type) }} style={styles.moveIcon} />
-                  <View style={styles.moveOptionCopy}><Text style={[styles.matchupName, light && styles.textLight]}>{move.name}</Text><Text style={[styles.matchupRating, light && styles.mutedLight]}>{move.kind === 'fast' ? 'Fast' : 'Charged'}</Text><View style={[styles.moveUseTrack, light && styles.roleProfileTrackLight]}><View style={[styles.moveUseFill, { width: `${(move.uses / maxUses) * 100}%` }]} /></View></View>
+        </View>
+      </View>
+      {expanded ? (
+        <View style={styles.expanded}>
+          <View style={styles.detailSummary}>
+            <View style={styles.detailPanel}>
+              <Text style={[styles.detailTitle, light && styles.accentLight]}>Role profile</Text>
+              <View style={styles.roleProfileGrid}>
+              {ROLES.slice(1).map(([roleKey, label]) => {
+                const score = pvpRoleScore(entry, roleKey);
+                return <View key={roleKey} style={styles.roleProfileRow}>
+                  <Text style={[styles.roleProfileLabel, light && styles.mutedLight]}>{label}</Text>
+                  <View style={[styles.roleProfileTrack, light && styles.roleProfileTrackLight]}><View style={[styles.roleProfileFill, { width: `${Math.max(0, Math.min(100, score))}%` }]} /></View>
+                  <Text style={[styles.roleProfileScore, light && styles.textLight]}>{score.toFixed(1)}</Text>
                 </View>;
               })}
-            </View> : null}
+              </View>
+            </View>
+            <View style={styles.detailPanel}>
+              <Text style={[styles.detailTitle, light && styles.accentLight]}>Battle build</Text>
+              <View style={styles.battleStatGrid}>
+                {[
+                  ['Attack', entry.battleAttack?.toFixed(1) ?? '---'],
+                  ['Defense', entry.battleDefense?.toFixed(1) ?? '---'],
+                  ['HP', entry.battleHp == null ? '---' : String(entry.battleHp)],
+                  ['Stat product', entry.statProduct?.toLocaleString() ?? '---'],
+                ].map(([label, value]) => <View key={label} style={styles.battleStat}><Text style={[styles.battleStatLabel, light && styles.mutedLight]}>{label}</Text><Text style={[styles.battleStatValue, light && styles.textLight]}>{value}</Text></View>)}
+              </View>
+            </View>
           </View>
-        ) : null}
-      </View>
+          <View style={styles.matchupGrid}>
+            {([
+              [personalBuild ? 'Strong species matchups' : 'Strong matchups', entry.matchups ?? [], 'strong'],
+              [personalBuild ? 'Species threats' : 'Key threats', entry.counters ?? [], 'threat'],
+            ] as const).map(([title, matchups, kind]) => <View accessibilityLabel={title} key={kind} style={[styles.matchupPanel, kind === 'strong' ? styles.matchupStrong : styles.matchupThreat]}>
+              <Text style={[styles.detailTitle, light && styles.accentLight]}>{title}</Text>
+              {matchups.length ? matchups.map((matchup) => {
+                const opponent = entriesBySpeciesId.get(matchup.speciesId);
+                return <View key={matchup.speciesId} style={styles.matchupRow}>
+                  {opponent?.imageUrl ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: uri(assetBaseUrl, opponent.imageUrl) }} style={styles.matchupImage} /> : null}
+                  <View style={styles.matchupCopy}><Text style={[styles.matchupName, light && styles.textLight]}>{opponent?.name ?? formatPvPSpeciesName(matchup.speciesId)}</Text><Text style={[styles.matchupRating, light && styles.mutedLight]}>{matchup.rating.toFixed(0)} battle rating</Text></View>
+                </View>;
+              }) : <Text style={[styles.detailBody, light && styles.mutedLight]}>Matchup details are not available in this snapshot.</Text>}
+            </View>)}
+          </View>
+          {(entry.moveUsage?.length ?? 0) > 0 ? <View style={styles.moveOptions}>
+            <Text style={[styles.detailTitle, light && styles.accentLight]}>Simulated move options</Text>
+            {entry.moveUsage!.map((move) => {
+              const selected = entry.moveset.some((selectedMove) => selectedMove.id === move.id);
+              const maxUses = Math.max(1, ...entry.moveUsage!.map((option) => option.uses));
+              return <View key={`${move.kind}-${move.id}`} style={[styles.moveOption, selected && styles.moveOptionSelected]}>
+                <Image fadeDuration={0} source={{ uri: typeIcon(move.type) }} style={styles.moveIcon} />
+                <View style={styles.moveOptionCopy}><Text style={[styles.matchupName, light && styles.textLight]}>{move.name}</Text><Text style={[styles.matchupRating, light && styles.mutedLight]}>{move.kind === 'fast' ? 'Fast' : 'Charged'}</Text><View style={[styles.moveUseTrack, light && styles.roleProfileTrackLight]}><View style={[styles.moveUseFill, { width: `${(move.uses / maxUses) * 100}%` }]} /></View></View>
+              </View>;
+            })}
+          </View> : null}
+        </View>
+      ) : null}
     </Pressable>
   );
 };
@@ -411,22 +419,32 @@ export const NativePvpScreen = ({
     scope: deferredScope,
   }), [activeOwnedEvaluation.response, catalog, deferredFormat, deferredQuery, deferredScope, instances, role]);
   const rankingRows = roster.rows;
+  const pvpMoveLookup = useMemo(
+    () => buildPvPMoveMechanicsLookupFromChunk(catalog),
+    [catalog],
+  );
+  const hydratedToolEntries = useMemo(
+    () => (deferredFormat?.entries ?? []).map((entry) => (
+      hydratePvPRankingEntry(entry, pvpMoveLookup)
+    )),
+    [deferredFormat, pvpMoveLookup],
+  );
   const toolRoster = useMemo(() => buildNativePvpRankingRows({
     catalog,
     cpLimit: deferredFormat?.cpLimit ?? null,
-    entries: deferredFormat?.entries ?? [],
+    entries: hydratedToolEntries,
     evaluation: activeOwnedEvaluation.response,
     instances,
     role: "overall",
     scope: deferredScope,
-  }), [activeOwnedEvaluation.response, catalog, deferredFormat, deferredScope, instances]);
+  }), [activeOwnedEvaluation.response, catalog, deferredFormat, deferredScope, hydratedToolEntries, instances]);
   const fieldRoster = useMemo(() => buildNativePvpRankingRows({
     catalog: [],
     cpLimit: deferredFormat?.cpLimit ?? null,
-    entries: deferredFormat?.entries ?? [],
+    entries: hydratedToolEntries,
     role: "overall",
     scope: "catalog",
-  }), [deferredFormat]);
+  }), [deferredFormat, hydratedToolEntries]);
   const toolCandidates = useMemo<PvPTeamCandidate[]>(() => toolRoster.rows.map(({ cp, entry, key, nickname }) => ({ cp, entry, key, nickname })), [toolRoster.rows]);
   const fieldCandidates = useMemo<PvPTeamCandidate[]>(() => fieldRoster.rows.map(({ entry, key }) => ({ entry, key, nickname: null })), [fieldRoster.rows]);
   const entriesBySpeciesId = useMemo(() => new Map((deferredFormat?.entries ?? []).map((entry) => [entry.speciesId, entry])), [deferredFormat]);
@@ -1145,10 +1163,7 @@ const styles = StyleSheet.create({
   resultsTitle: { color: "#f5ffff", fontSize: 14, fontWeight: "900" },
   resultsMeta: { color: "#8d9ba2", fontSize: 10 },
   rankingCard: {
-    minHeight: 128,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    minHeight: 104,
     marginBottom: 8,
     borderWidth: 1,
     borderColor: "rgba(141,192,194,0.17)",
@@ -1157,6 +1172,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#151a1b",
   },
   rankingExpanded: { borderColor: "rgba(115,204,204,0.5)" },
+  rankingHeader: { minWidth: 0, minHeight: 86, flexDirection: "row", alignItems: "center", gap: 8 },
   rank: {
     width: 39,
     height: 39,
@@ -1171,7 +1187,7 @@ const styles = StyleSheet.create({
   rankBronze: { borderColor: "#d88b51", backgroundColor: "#d88b51" },
   rankText: { color: "#f5ffff", fontSize: 13, fontWeight: "900" },
   rankTextTop: { color: "#142025" },
-  pokemonImage: { width: 58, height: 58 },
+  pokemonImage: { width: 50, height: 50 },
   rankingCopy: { minWidth: 0, flex: 1 },
   buildRow: { minWidth: 0, flexDirection: "row", alignItems: "center", gap: 7 },
   identity: { minWidth: 0, flex: 1 },
@@ -1196,38 +1212,40 @@ const styles = StyleSheet.create({
   detailPill: { marginTop: 5, borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 999, paddingHorizontal: 7, paddingVertical: 4 },
   detailPillText: { color: "#f5ffff", fontSize: 8, fontWeight: "900" },
   expanded: {
-    gap: 3,
-    marginTop: 9,
+    gap: 12,
+    marginTop: 8,
     borderTopWidth: 1,
     borderColor: "rgba(115,204,204,0.28)",
-    paddingTop: 8,
+    paddingHorizontal: 2,
+    paddingTop: 11,
   },
-  detailSummary: { gap: 7 },
-  detailPanel: { gap: 6, borderWidth: 1, borderColor: "rgba(115,204,204,0.22)", borderRadius: 7, padding: 8, backgroundColor: "#101516" },
+  detailSummary: { gap: 13 },
+  detailPanel: { gap: 7 },
   detailPanelLight: { borderColor: "#d5e7e7", backgroundColor: "#fbffff" },
-  detailTitle: { marginTop: 4, color: "#f5ffff", fontSize: 10, fontWeight: "900" },
+  detailTitle: { color: "#8fc6cb", fontSize: 10, fontWeight: "900", textTransform: "uppercase" },
   detailBody: { color: "#9db6b8", fontSize: 9.5, lineHeight: 14 },
-  roleProfileRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  roleProfileLabel: { width: 65, color: "#9db6b8", fontSize: 8, fontWeight: "800" },
-  roleProfileTrack: { flex: 1, height: 6, overflow: "hidden", borderRadius: 999, backgroundColor: "#344149" },
+  roleProfileGrid: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  roleProfileRow: { width: "49%", alignItems: "stretch", gap: 3 },
+  roleProfileLabel: { color: "#9db6b8", fontSize: 8, fontWeight: "800", textAlign: "center" },
+  roleProfileTrack: { width: "100%", height: 4, overflow: "hidden", borderRadius: 999, backgroundColor: "#344149" },
   roleProfileTrackLight: { backgroundColor: "#d5dee2" },
   roleProfileFill: { height: "100%", borderRadius: 999, backgroundColor: "#42d5c2" },
-  roleProfileScore: { width: 34, color: "#f5ffff", fontSize: 8, fontWeight: "900", textAlign: "right" },
+  roleProfileScore: { color: "#f5ffff", fontSize: 8, fontWeight: "900", textAlign: "center" },
   battleStatGrid: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
-  battleStat: { width: "48.8%", gap: 2, borderLeftWidth: 2, borderColor: "#54a9ef", paddingHorizontal: 6, paddingVertical: 4, backgroundColor: "rgba(84,169,239,0.07)" },
+  battleStat: { width: "24%", gap: 2, borderLeftWidth: 2, borderColor: "#54a9ef", paddingLeft: 6, paddingVertical: 3 },
   battleStatLight: { backgroundColor: "#f5fbff" },
   battleStatLabel: { color: "#9db6b8", fontSize: 7.5, fontWeight: "800" },
   battleStatValue: { color: "#f5ffff", fontSize: 11, fontWeight: "900" },
   matchupGrid: { gap: 7, marginTop: 4 },
-  matchupPanel: { gap: 6, borderWidth: 1, borderRadius: 7, padding: 8, backgroundColor: "#101516" },
-  matchupStrong: { borderColor: "rgba(66,213,194,0.35)" },
-  matchupThreat: { borderColor: "rgba(237,111,165,0.35)" },
-  matchupRow: { minHeight: 37, flexDirection: "row", alignItems: "center", gap: 7, borderTopWidth: 1, borderColor: "rgba(115,204,204,0.14)" },
+  matchupPanel: { gap: 6, borderLeftWidth: 3, paddingLeft: 9 },
+  matchupStrong: { borderColor: "#42d5c2" },
+  matchupThreat: { borderColor: "#ed6fa5" },
+  matchupRow: { minHeight: 37, flexDirection: "row", alignItems: "center", gap: 7 },
   matchupImage: { width: 34, height: 34 },
   matchupCopy: { minWidth: 0, flex: 1 },
   matchupName: { color: "#f5ffff", fontSize: 9, fontWeight: "900" },
   matchupRating: { color: "#9db6b8", fontSize: 8 },
-  moveOptions: { gap: 6, marginTop: 4, borderWidth: 1, borderColor: "rgba(115,204,204,0.22)", borderRadius: 7, padding: 8, backgroundColor: "#101516" },
+  moveOptions: { gap: 6, marginTop: 4 },
   moveOption: { flexDirection: "row", alignItems: "center", gap: 7, borderWidth: 1, borderColor: "transparent", borderRadius: 6, padding: 5 },
   moveOptionSelected: { borderColor: "rgba(66,213,194,0.42)", backgroundColor: "rgba(66,213,194,0.08)" },
   moveOptionCopy: { minWidth: 0, flex: 1, gap: 2 },

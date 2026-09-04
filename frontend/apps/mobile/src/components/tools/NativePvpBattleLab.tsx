@@ -421,40 +421,40 @@ export const NativePvpBattleLab = ({
               key={label}
               style={[styles.battleSide, light && styles.controlLight]}
             >
-              <Text style={styles.eyebrow}>{label.toUpperCase()}</Text>
               <Image fadeDuration={0}
                 resizeMode="contain"
                 source={{ uri: assetUri(assetBaseUrl, entry.entry.imageUrl) }}
                 style={styles.battleImage}
               />
-              <Text
-                numberOfLines={2}
-                style={[styles.pokemonName, light && styles.textLight]}
-              >
-                {entry.nickname || entry.entry.name}
-              </Text>
-              <Text
-                numberOfLines={2}
-                style={[styles.moves, light && styles.mutedLight]}
-              >
-                {entry.entry.moveset.map((move) => move.name).join(" · ")}
-              </Text>
+              <View style={styles.battleSideCopy}>
+                <Text style={styles.eyebrow}>{label.toUpperCase()}</Text>
+                <Text
+                  numberOfLines={2}
+                  style={[styles.pokemonName, light && styles.textLight]}
+                >
+                  {entry.nickname || entry.entry.name}
+                </Text>
+                <Text
+                  numberOfLines={2}
+                  style={[styles.moves, light && styles.mutedLight]}
+                >
+                  {entry.entry.moveset.map((move) => move.name).join(" · ")}
+                </Text>
+              </View>
             </View>
           ))}
         </View>
 
         {([0, 1] as const).map((side) => (
-          <View
-            key={side}
-            style={[styles.conditions, light && styles.conditionsLight]}
-          >
-            <Text style={[styles.conditionTitle, light && styles.textLight]}>
-              {side === 0 ? `${playerSideLabel} conditions` : "Opponent conditions"}
-            </Text>
-            <View style={styles.conditionRow}>
-              <Text style={[styles.conditionLabel, light && styles.mutedLight]}>
-                Shields
-              </Text>
+          <View key={side} style={styles.conditions}>
+            <View style={[styles.conditionPanel, light && styles.conditionsLight]}>
+              <View style={styles.conditionHeading}>
+                <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="shield" size={14} />
+                <Text style={[styles.conditionTitle, light && styles.accentLight]}>
+                  {side === 0 ? playerSideLabel : "Opponent"} shields
+                </Text>
+              </View>
+              <View style={styles.shieldChoices}>
               {[0, 1, 2].map((value) => (
                 <Choice
                   accessibilityLabel={`${side === 0 ? playerSideLabel : "Opponent"} shields ${value}`}
@@ -465,11 +465,16 @@ export const NativePvpBattleLab = ({
                   onPress={() => setPairValue(setShields, side, value)}
                 />
               ))}
+              </View>
             </View>
-            <View style={styles.conditionRow}>
-              <Text style={[styles.conditionLabel, styles.energyLabel, light && styles.mutedLight]}>
-                Energy {energy[side]}
-              </Text>
+            <View style={[styles.conditionPanel, light && styles.conditionsLight]}>
+              <View style={styles.conditionHeading}>
+                <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="bolt" size={14} />
+                <Text style={[styles.conditionTitle, light && styles.accentLight]}>
+                  {side === 0 ? playerSideLabel : "Opponent"} energy
+                </Text>
+                <Text style={[styles.conditionValue, light && styles.textLight]}>{energy[side]}</Text>
+              </View>
               <Slider
                 accessibilityLabel={`${side === 0 ? playerSideLabel : "Opponent"} energy`}
                 maximumTrackTintColor={light ? "#cbd8dc" : "#344149"}
@@ -498,6 +503,7 @@ export const NativePvpBattleLab = ({
           onPress={() => void simulate()}
           style={[styles.primary, simulating && styles.disabled]}
         >
+          {!simulating ? <NativeUiIcon color="#071313" name="play" size={16} /> : null}
           <Text style={styles.primaryText}>{simulating ? 'Simulating…' : 'Run battle'}</Text>
         </Pressable>
         {error ? (
@@ -513,32 +519,34 @@ export const NativePvpBattleLab = ({
           onLayout={(event) => onResultLayout?.(event.nativeEvent.layout.y)}
           style={[styles.result, light && styles.panelLight]}
         >
-          <Text style={styles.eyebrow}>SIMULATED RESULT</Text>
-          <Text style={[styles.winner, light && styles.textLight]}>
-            {winner ? `${winner.nickname || winner.entry.name} wins` : "Battle ends in a draw"}
-          </Text>
-          <Text style={[styles.resultTime, light && styles.accentLight]}>
-            {(result.timeMs / 1000).toFixed(1)}s
-          </Text>
+          <View style={styles.resultHeader}>
+            <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="flask" size={20} />
+            <View style={styles.resultHeadingCopy}>
+              <Text style={[styles.resultEyebrow, light && styles.accentLight]}>Simulated result</Text>
+              <Text style={[styles.winner, light && styles.textLight]}>
+                {winner ? `${winner.nickname || winner.entry.name} wins` : "Battle ends in a draw"}
+              </Text>
+            </View>
+            <Text style={[styles.resultTime, light && styles.accentLight]}>
+              {(result.timeMs / 1000).toFixed(1)}s
+            </Text>
+          </View>
           <ResultSide assetBaseUrl={assetBaseUrl} candidate={left} entry={left.entry} index={0} light={light} result={result} />
           <ResultSide assetBaseUrl={assetBaseUrl} candidate={right} entry={right.entry} index={1} light={light} result={result} />
           {keyEvents.length ? (
-            <View style={[styles.timeline, light && styles.conditionsLight]}>
-              <Text style={[styles.conditionTitle, light && styles.textLight]}>
-                Battle flow
-              </Text>
+            <View style={styles.timeline}>
+              <Text style={[styles.timelineTitle, light && styles.accentLight]}>BATTLE FLOW</Text>
               {keyEvents.map((event, index) => (
-                <Text
+                <View
                   key={`${event.turn}-${event.actor}-${index}`}
-                  style={[styles.timelineEvent, light && styles.mutedLight]}
+                  style={[styles.timelineEvent, light && styles.timelineEventLight]}
                 >
-                  {(event.turn * 0.5).toFixed(1)}s ·{" "}
-                  {event.actor === 0 ? (left.nickname || left.entry.name) : (right.nickname || right.entry.name)} used{" "}
-                  {event.moveId}
-                  {event.shielded ? " · shielded" : ""}
-                  {!event.shielded ? ` · ${event.damage} damage` : ""}
-                  {event.buffed ? " · stat change" : ""}
-                </Text>
+                  <Text style={[styles.timelineTime, light && styles.accentLight]}>{(event.turn * 0.5).toFixed(1)}s</Text>
+                  <View style={styles.timelineCopy}>
+                    <Text style={[styles.timelineMove, light && styles.textLight]}><Text style={styles.timelineActor}>{event.actor === 0 ? (left.nickname || left.entry.name) : (right.nickname || right.entry.name)}</Text> used {event.moveId}</Text>
+                    <Text style={[styles.timelineDetail, light && styles.mutedLight]}>{event.shielded ? "Shielded" : `${event.damage} damage`}{event.buffed ? " · stat change" : ""}</Text>
+                  </View>
+                </View>
               ))}
             </View>
           ) : null}
@@ -577,13 +585,8 @@ const styles = StyleSheet.create({
   modeTextActive: { color: "#071313" },
   panel: {
     gap: 10,
-    borderWidth: 1,
-    borderColor: "#34434b",
-    borderRadius: 15,
-    padding: 13,
-    backgroundColor: "#151b20",
   },
-  panelLight: { borderColor: "#c0ccd2", backgroundColor: "#fff" },
+  panelLight: { borderColor: "#b2d2d2", backgroundColor: "#fff" },
   controlLight: { borderColor: "#bdc9cf", backgroundColor: "#fff" },
   textLight: { color: "#14232a" },
   mutedLight: { color: "#5d6e76" },
@@ -596,60 +599,63 @@ const styles = StyleSheet.create({
   },
   heading: { color: "#fff", fontSize: 18, fontWeight: "900" },
   body: { color: "#a8b5bc", fontSize: 11, lineHeight: 16 },
-  battlePair: { flexDirection: "row", gap: 8 },
+  battlePair: { gap: 7 },
   battleSide: {
     minWidth: 0,
-    flex: 1,
+    minHeight: 75,
+    flexDirection: "row",
     alignItems: "center",
+    gap: 9,
     borderWidth: 1,
-    borderColor: "#414e56",
-    borderRadius: 12,
-    padding: 9,
-    backgroundColor: "#11171b",
+    borderColor: "rgba(115,204,204,0.28)",
+    borderRadius: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "#151a1b",
   },
-  battleImage: { width: 100, height: 94 },
+  battleImage: { width: 64, height: 64 },
+  battleSideCopy: { minWidth: 0, flex: 1 },
   pokemonName: {
     color: "#fff",
     fontSize: 14,
     fontWeight: "900",
-    textAlign: "center",
   },
   moves: {
-    minHeight: 30,
     marginTop: 3,
     color: "#99a7ae",
     fontSize: 8.5,
     lineHeight: 12,
-    textAlign: "center",
   },
-  conditions: {
+  conditions: { gap: 7 },
+  conditionPanel: {
     gap: 7,
     borderWidth: 1,
-    borderColor: "#334149",
-    borderRadius: 11,
-    padding: 9,
-    backgroundColor: "#11171b",
+    borderColor: "rgba(115,204,204,0.28)",
+    borderRadius: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   conditionsLight: { borderColor: "#d0d9de", backgroundColor: "#f6f9fa" },
-  conditionTitle: { color: "#fff", fontSize: 11, fontWeight: "900" },
-  conditionRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  conditionHeading: { flexDirection: "row", alignItems: "center", gap: 6 },
+  conditionTitle: { color: "#8fc6cb", fontSize: 10, fontWeight: "900", textTransform: "uppercase" },
+  conditionValue: { marginLeft: "auto", color: "#f5ffff", fontSize: 10, fontWeight: "900" },
+  shieldChoices: { flexDirection: "row", gap: 5 },
   conditionLabel: {
-    width: 48,
-    color: "#9daab1",
+    color: "#8fc6cb",
     fontSize: 9,
     fontWeight: "900",
     textTransform: "uppercase",
   },
-  energyLabel: { width: 68 },
   energySlider: { minWidth: 0, flex: 1, height: 36 },
   choice: {
-    minWidth: 34,
-    minHeight: 34,
+    minWidth: 0,
+    minHeight: 36,
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "#414e56",
-    borderRadius: 9,
+    borderRadius: 4,
     paddingHorizontal: 7,
     backgroundColor: "#1a2227",
   },
@@ -657,13 +663,17 @@ const styles = StyleSheet.create({
   choiceText: { color: "#aab6bc", fontSize: 10, fontWeight: "900" },
   choiceTextActive: { color: "#fff" },
   primary: {
-    minHeight: 50,
+    minHeight: 45,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 11,
-    backgroundColor: "#168ced",
+    gap: 7,
+    borderWidth: 1,
+    borderColor: "#42d5c2",
+    borderRadius: 7,
+    backgroundColor: "#42d5c2",
   },
-  primaryText: { color: "#fff", fontSize: 14, fontWeight: "900" },
+  primaryText: { color: "#071313", fontSize: 14, fontWeight: "900" },
   disabled: { opacity: 0.55 },
   error: {
     color: "#ff9bad",
@@ -672,16 +682,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   result: {
-    gap: 7,
+    gap: 10,
     borderWidth: 1,
-    borderColor: "#42cc9f",
-    borderRadius: 15,
-    padding: 13,
-    backgroundColor: "#12241f",
+    borderColor: "rgba(115,204,204,0.5)",
+    borderRadius: 8,
+    padding: 10,
+    backgroundColor: "#101516",
   },
-  winner: { color: "#fff", fontSize: 22, fontWeight: "900" },
-  resultTime: { alignSelf: "flex-end", marginTop: -29, marginBottom: 5, color: "#42d5c2", fontSize: 15, fontWeight: "900" },
-  resultSide: { minHeight: 58, flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 4 },
+  resultHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  resultHeadingCopy: { minWidth: 0, flex: 1 },
+  resultEyebrow: { color: "#8fc6cb", fontSize: 9, fontWeight: "800" },
+  winner: { color: "#fff", fontSize: 18, fontWeight: "900" },
+  resultTime: { color: "#42d5c2", fontSize: 15, fontWeight: "900" },
+  resultSide: { minHeight: 69, flexDirection: "row", alignItems: "center", gap: 7, borderWidth: 1, borderColor: "rgba(115,204,204,0.28)", borderRadius: 6, padding: 8, backgroundColor: "#151a1b" },
   resultPokemonImage: { width: 47, height: 47 },
   resultSideCopy: { minWidth: 0, flex: 1, gap: 3 },
   resultName: { color: "#fff", fontSize: 12, fontWeight: "900" },
@@ -698,15 +711,20 @@ const styles = StyleSheet.create({
   resultStatValue: { color: "#299cf5", fontSize: 11, fontWeight: "900" },
   resultStatLabel: { color: "#9daab1", fontSize: 7.5, textTransform: "uppercase" },
   timeline: {
-    gap: 4,
+    gap: 6,
     marginTop: 3,
-    borderWidth: 1,
-    borderColor: "#334149",
-    borderRadius: 10,
-    padding: 9,
-    backgroundColor: "#11171b",
+    borderTopWidth: 1,
+    borderColor: "rgba(115,204,204,0.28)",
+    paddingTop: 9,
   },
-  timelineEvent: { color: "#9daab1", fontSize: 9, lineHeight: 13 },
+  timelineTitle: { color: "#8fc6cb", fontSize: 10, fontWeight: "900" },
+  timelineEvent: { minWidth: 0, flexDirection: "row", gap: 7, borderLeftWidth: 2, borderColor: "#54a9ef", paddingHorizontal: 7, paddingVertical: 6, backgroundColor: "rgba(84,169,239,0.05)" },
+  timelineEventLight: { backgroundColor: "#f5fbff" },
+  timelineTime: { width: 42, color: "#42d5c2", fontSize: 9, fontWeight: "900" },
+  timelineCopy: { minWidth: 0, flex: 1, gap: 2 },
+  timelineMove: { color: "#f5ffff", fontSize: 9 },
+  timelineActor: { fontWeight: "900" },
+  timelineDetail: { color: "#9daab1", fontSize: 8, fontWeight: "800" },
   sectionTitle: { color: "#fff", fontSize: 18, fontWeight: "900" },
   swap: { width: 44, minHeight: 40, alignSelf: "center", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 999, backgroundColor: "#101516" },
   searchWrap: { minHeight: 43, flexDirection: "row", alignItems: "center", gap: 7, borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 999, paddingHorizontal: 11, backgroundColor: "#101516" },

@@ -63,6 +63,10 @@ const repetitions = Math.max(1, Number(process.env.POKEGONEXUS_PERFORMANCE_SAMPL
 const workflowsOnly = process.env.POKEGONEXUS_PERFORMANCE_WORKFLOWS_ONLY === 'true';
 const workflowFilter = process.env.POKEGONEXUS_PERFORMANCE_WORKFLOW_FILTER?.trim().toLocaleLowerCase() ?? '';
 const workflowScreenshotDirectory = process.env.POKEGONEXUS_PERFORMANCE_SCREENSHOT_DIR?.trim() ?? '';
+const androidArtifactDirectory = path.resolve(
+  process.env.POKEGONEXUS_PERFORMANCE_ANDROID_ARTIFACT_DIR?.trim()
+    || path.resolve(path.dirname(reportPath), 'vite-android-system'),
+);
 const routeFilter = process.env.POKEGONEXUS_PERFORMANCE_ROUTE_FILTER?.trim() ?? '';
 const samples: MetricSample[] = [];
 const androidDeviceId = process.env.POKEGONEXUS_ANDROID_DEVICE_ID?.trim() ?? '';
@@ -72,6 +76,7 @@ const androidCdpUrl = process.env.POKEGONEXUS_ANDROID_CDP_URL?.trim()
   || 'http://127.0.0.1:9222';
 const webBaseUrl = (process.env.E2E_BASE_URL?.trim()
   || `http://127.0.0.1:${process.env.E2E_PORT?.trim() || '3100'}`).replace(/\/+$/, '');
+const androidMemoryMetricSamples = new Set<number>();
 
 const captureWorkflowScreenshot = async (
   page: Page,
@@ -919,6 +924,10 @@ const collectPvpInteractions = async (
     await recordInteraction(page, 'interaction.pvp.team.selection-result', sampleIndex * 3 + 2);
     await expect(page.getByText(/handled$/)).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText('Field coverage', { exact: true })).toBeVisible();
+    const roleResults = page.locator('.pvp-team-role-results');
+    await expect(roleResults.locator(':scope > span').nth(0)).toContainText('Clodsire12-0');
+    await expect(roleResults.locator(':scope > span').nth(1)).toContainText('Azumarill4-4');
+    await expect(roleResults.locator(':scope > span').nth(2)).toContainText('Bulbasaur8-4');
     await recordInteraction(page, 'interaction.pvp.team.evaluation-result', sampleIndex);
 
     await page.getByText('Published matchup evidence', { exact: true }).click();
@@ -959,6 +968,10 @@ const collectPvpInteractions = async (
     await page.getByRole('button', { name: 'Run battle', exact: true }).click();
     const battleResult = page.locator('.pvp-battle-result');
     await battleResult.waitFor({ state: 'visible', timeout: 30_000 });
+    await expect(battleResult).toContainText('Bulbasaur wins');
+    await expect(battleResult).toContainText('70.0s');
+    await expect(battleResult).toContainText('804');
+    await expect(battleResult).toContainText('195');
     await recordInteraction(page, 'interaction.pvp.battle.simulation-result', sampleIndex);
     await captureWorkflowScreenshot(page, sampleIndex, 'pvp-battle-focused', battleResult);
 
@@ -994,6 +1007,7 @@ const collectPvpInteractions = async (
     await fieldButton.click();
     const fieldResult = page.locator('.pvp-meta-gauntlet-result');
     await fieldResult.waitFor({ state: 'visible', timeout: 30_000 });
+    await expect(fieldResult).toContainText('6-0-0');
     await recordInteraction(page, 'interaction.pvp.team-battle.field-result', sampleIndex);
     await captureWorkflowScreenshot(page, sampleIndex, 'pvp-battle-team', fieldResult);
 
@@ -1021,11 +1035,18 @@ const collectPvpInteractions = async (
     await ivRank.getByRole('button', { name: 'Increase Attack IV', exact: true }).click();
     await expect(ivRank.getByRole('spinbutton', { name: 'Attack IV' })).toHaveValue('1');
     await recordInteraction(page, 'interaction.pvp.iv.adjust-result', sampleIndex);
-    await ivRank.getByRole('button', { name: /Best Buddy 51/ }).click();
-    await expect(ivRank.getByRole('button', { name: /Best Buddy 51/ }))
+    const bestBuddyButton = ivRank.getByRole('button', { name: /Best Buddy 51/ });
+    await bestBuddyButton.click();
+    await expect(bestBuddyButton)
       .toHaveAttribute('aria-pressed', 'true');
     await recordInteraction(page, 'interaction.pvp.iv.level-result', sampleIndex);
     await captureWorkflowScreenshot(page, sampleIndex, 'pvp-iv-rank', ivResult);
+    if (performanceProfile === 'physical-android') {
+      await ivResult.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(250);
+      collectAndroidFrameTimelineMetrics(sampleIndex);
+      collectAndroidChromeMemoryMetric(sampleIndex);
+    }
   } finally {
     await page.close();
   }
@@ -1100,39 +1121,6 @@ const prepareAndroidChrome = async () => {
   // commands. Playwright waits for every attached target, so remove only these
   // target-less tabs before connecting while preserving real user tabs.
   await closeUninitializedAndroidChromeTargets();
-  execFileSync(adbPath, [
-    '-s', androidDeviceId, 'shell', 'dumpsys', 'gfxinfo', androidChromePackage, 'reset',
-  ]);
-};
-
-const parseFrameStats = (text: string) => {
-  const lines = text.split(/\r?\n/);
-  const frames: Array<{ budgetMs: number | null; durationMs: number }> = [];
-  for (let index = 0; index < lines.length; index += 1) {
-    if (!lines[index].startsWith('Flags,')) continue;
-    const headers = lines[index].split(',');
-    const intendedIndex = headers.indexOf('IntendedVsync');
-    const completedIndex = headers.indexOf('FrameCompleted');
-    const workloadTargetIndex = headers.indexOf('WorkloadTarget');
-    if (intendedIndex < 0 || completedIndex < 0) continue;
-    for (const row of lines.slice(index + 1)) {
-      if (row === '---PROFILEDATA---') break;
-      if (!/^\d+,/.test(row)) continue;
-      const values = row.split(',').map(Number);
-      if (values[0] !== 0) continue;
-      const duration = (values[completedIndex] - values[intendedIndex]) / 1_000_000;
-      const workloadTarget = workloadTargetIndex >= 0 ? values[workloadTargetIndex] : NaN;
-      if (Number.isFinite(duration) && duration >= 0 && duration < 10_000) {
-        frames.push({
-          budgetMs: Number.isFinite(workloadTarget) && workloadTarget > 0
-            ? workloadTarget / 1_000_000
-            : null,
-          durationMs: duration,
-        });
-      }
-    }
-  }
-  return frames;
 };
 
 const parseChromeProcessPssBytes = (text: string) => {
@@ -1148,42 +1136,36 @@ const parseChromeProcessPssBytes = (text: string) => {
   return totalKilobytes > 0 ? totalKilobytes * 1024 : null;
 };
 
-const resetAndroidChromeFrameStats = () => {
-  if (performanceProfile !== 'physical-android' || !androidDeviceId) return;
-  execFileSync(adbPath, [
-    '-s', androidDeviceId, 'shell', 'dumpsys', 'gfxinfo', androidChromePackage, 'reset',
-  ]);
+const collectAndroidFrameTimelineMetrics = (sampleIndex: number) => {
+  const output = path.resolve(
+    androidArtifactDirectory,
+    `chrome-sample-${sampleIndex + 1}-frame-timeline.json`,
+  );
+  execFileSync(process.execPath, [
+    path.resolve(frontendDirectory, 'scripts/performance-parity/capture-android-frame-timeline.mjs'),
+    '--device', androidDeviceId,
+    '--layer-match', androidChromePackage,
+    '--output', output,
+  ], { stdio: 'inherit' });
+  const metrics = JSON.parse(readFileSync(output, 'utf8')) as {
+    frameTimeP95Ms: number;
+    jankyFramesPercent: number;
+  };
+  addMetric('global.runtime', 'frame_time_p95_ms', metrics.frameTimeP95Ms, sampleIndex, {
+    direction: 'lower', unit: 'ms',
+  });
+  addMetric('global.runtime', 'janky_frames_percent', metrics.jankyFramesPercent, sampleIndex, {
+    direction: 'lower', unit: 'percent',
+  });
 };
 
-const collectAndroidChromeSystemMetrics = (sampleIndex: number) => {
+const collectAndroidChromeMemoryMetric = (sampleIndex: number) => {
   if (performanceProfile !== 'physical-android' || !androidDeviceId) return;
-  const frameText = execFileSync(adbPath, [
-    '-s', androidDeviceId, 'shell', 'dumpsys', 'gfxinfo', androidChromePackage, 'framestats',
-  ], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
-  const frames = parseFrameStats(frameText);
-  const displayText = execFileSync(adbPath, [
-    '-s', androidDeviceId, 'shell', 'dumpsys', 'display',
-  ], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
-  const refreshHz = Number(displayText.match(/refreshRate[=: ]+([\d.]+)/)?.[1] ?? 60);
-  const frameBudgetMs = Number.isFinite(refreshHz) && refreshHz > 0 ? 1_000 / refreshHz : 16.67;
-  if (frames.length) {
-    const sorted = frames.map((frame) => frame.durationMs).sort((left, right) => left - right);
-    const p95 = sorted[Math.max(0, Math.ceil(sorted.length * 0.95) - 1)];
-    addMetric('global.runtime', 'frame_time_p95_ms', p95, sampleIndex, {
-      direction: 'lower', unit: 'ms',
-    });
-    addMetric(
-      'global.runtime',
-      'janky_frames_percent',
-      frames.filter((frame) => frame.durationMs > (frame.budgetMs ?? frameBudgetMs)).length
-        / frames.length * 100,
-      sampleIndex,
-      { direction: 'lower', unit: 'percent' },
-    );
-  }
   const memoryText = execFileSync(adbPath, [
     '-s', androidDeviceId, 'shell', 'dumpsys', 'meminfo',
   ], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+  mkdirSync(androidArtifactDirectory, { recursive: true });
+  writeFileSync(path.resolve(androidArtifactDirectory, `chrome-sample-${sampleIndex + 1}-meminfo.txt`), memoryText);
   const totalPssBytes = parseChromeProcessPssBytes(memoryText);
   if (totalPssBytes !== null) {
     addMetric(
@@ -1194,6 +1176,7 @@ const collectAndroidChromeSystemMetrics = (sampleIndex: number) => {
       { direction: 'lower', unit: 'bytes' },
     );
   }
+  androidMemoryMetricSamples.add(sampleIndex);
 };
 
 const writeReport = () => {
@@ -1211,7 +1194,11 @@ const writeReport = () => {
       repetitions,
       androidDeviceId: androidDeviceId || null,
       deviceIdentity: androidDeviceId || null,
+      source: performanceProfile === 'physical-android'
+        ? 'adb-cdp-surfaceflinger-frametimeline-meminfo'
+        : 'playwright-performance-api',
       workloadId: 'canonical-performance-fixtures-v1',
+      frameWorkloadId: 'physical-scroll-v1',
       catalogEntries: performanceCatalogEntries,
       instanceEntries: Object.keys(performanceInstances).length,
       pvpEntries: performancePvpEntries,
@@ -1250,7 +1237,6 @@ test.describe('Vite performance parity report', () => {
       });
     try {
       for (let repetition = 0; repetition < repetitions; repetition += 1) {
-        resetAndroidChromeFrameStats();
         if (!workflowsOnly) {
           for (const [themeIndex, theme] of (['dark', 'light'] as const).entries()) {
             for (const auth of (['guest', 'signed-in'] as const)) {
@@ -1304,7 +1290,9 @@ test.describe('Vite performance parity report', () => {
             if (!physicalContext) await interactionContext.close();
           }
         }
-        collectAndroidChromeSystemMetrics(repetition);
+        if (!androidMemoryMetricSamples.has(repetition)) {
+          collectAndroidChromeMemoryMetric(repetition);
+        }
       }
     } finally {
       writeReport();

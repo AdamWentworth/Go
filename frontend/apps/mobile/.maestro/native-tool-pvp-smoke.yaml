@@ -84,7 +84,7 @@ name: Native PvP tool smoke
     speed: 40
     timeout: 15000
 - tapOn: "Simulate battle"
-- assertVisible: "SIMULATED RESULT"
+- assertVisible: "Simulated result"
 - scrollUntilVisible:
     element:
       text: "Team battle"
