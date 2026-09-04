@@ -694,8 +694,16 @@ if [[ "${smoke_performance}" == "true" ]]; then
     performance_gfx_logs+=("${artifact_dir}/maestro/${successful_output}-gfxinfo.txt")
     performance_memory_logs+=("${artifact_dir}/maestro/${successful_output}-meminfo.txt")
   done
-  node "${mobile_directory}/scripts/assert-native-collection-performance.mjs" \
-    "${performance_device_logs[@]}"
+  collection_performance_flow="false"
+  if [[ -d "${smoke_flow}" && -f "${smoke_flow}/native-collection-performance.yaml" ]]; then
+    collection_performance_flow="true"
+  elif [[ "$(basename "${smoke_flow}")" == "native-collection-performance.yaml" ]]; then
+    collection_performance_flow="true"
+  fi
+  if [[ "${collection_performance_flow}" == "true" ]]; then
+    node "${mobile_directory}/scripts/assert-native-collection-performance.mjs" \
+      "${performance_device_logs[@]}"
+  fi
   performance_profile="android-diagnostic"
   if [[ "${device_kind}" == "physical" && "${smoke_runtime}" == "standalone" ]]; then
     performance_profile="physical-android"
