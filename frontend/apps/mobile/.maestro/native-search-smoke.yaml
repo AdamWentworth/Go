@@ -104,7 +104,10 @@ tags:
     visible: Find a trainer
     timeout: 10000
 - tapOn: Username or Pokémon GO name
-- inputText: Other
+- inputText: O
+- assertVisible: Enter one more character to search.
+- assertNotVisible: No trainers found
+- inputText: ther
 - hideKeyboard
 - scrollUntilVisible:
     element:
@@ -113,4 +116,9 @@ tags:
     timeout: 10000
 - assertVisible: Nexus · @OtherTrainer
 - assertVisible: Pokémon GO · OtherPogoName
+- tapOn: Search trainers
+- assertVisible: Nexus · @OtherTrainer
 - takeScreenshot: search-03-trainers
+- tapOn: Clear trainer search
+- assertVisible: Find people you know
+- takeScreenshot: search-04-trainers-cleared

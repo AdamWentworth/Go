@@ -2,8 +2,12 @@ import type { Coordinates, LocationSuggestion } from '@pokemongonexus/shared-con
 import type { BasePokemon, Move } from '@pokemongonexus/shared-contracts/pokemon';
 import Slider from '@react-native-community/slider';
 import {
+  Animated,
+  BackHandler,
+  Easing,
   Image,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,9 +15,10 @@ import {
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   NativeOptionPicker,
   type NativeOptionPickerEntry,
@@ -26,6 +31,7 @@ import { getNativeLocationSuggestions } from '../../services/locationApi';
 import { useNativeModalAnimation } from '../settings/useNativeMotion';
 import {
   countNativePokemonSearchFilters,
+  nativePokemonSearchGenderOptions,
   nativePokemonSearchPreviewImage,
   normalizeNativePokemonSelection,
   selectNativePokemonSearchBackground,
@@ -34,6 +40,7 @@ import {
   type NativePokemonSearchDraft,
 } from './nativePokemonSearchDraft';
 import { useNativeColorScheme } from '../settings/useNativeColorScheme';
+import { markNativeUiPerformanceAfterPaint } from '../../observability/nativeUiInteractionTiming';
 
 export type NativeSearchFilterSection = 'pokemon' | 'location' | 'matching';
 
@@ -43,11 +50,12 @@ type Props = {
   assetBaseUrl: string;
   catalog: BasePokemon[];
   draft: NativePokemonSearchDraft;
+  embedded?: boolean;
   error?: string | null;
   initialSection?: NativeSearchFilterSection;
   isSearching?: boolean;
   notice?: string | null;
-  onApply: () => void;
+  onApply: () => boolean | void;
   onChange: (draft: NativePokemonSearchDraft) => void;
   onClose: () => void;
   onNotice: (notice: string | null) => void;
@@ -156,8 +164,14 @@ const Choice = ({
   </Pressable>
 );
 
-const SelectField = ({ label, light, onPress, value }: { label: string; light: boolean; onPress: () => void; value: string }) => (
-  <Pressable accessibilityRole="button" onPress={onPress} style={[styles.selectField, light && styles.selectFieldLight]}>
+const SelectField = ({ disabled = false, label, light, onPress, value }: { disabled?: boolean; label: string; light: boolean; onPress: () => void; value: string }) => (
+  <Pressable
+    accessibilityRole="button"
+    accessibilityState={{ disabled }}
+    disabled={disabled}
+    onPress={onPress}
+    style={[styles.selectField, light && styles.selectFieldLight, disabled && styles.disabled]}
+  >
     <View style={styles.selectFieldCopy}>
       <Text style={[styles.fieldLabel, light && styles.secondaryLight]}>{label}</Text>
       <Text numberOfLines={2} style={[styles.selectValue, light && styles.textLight]}>{value}</Text>
@@ -254,10 +268,11 @@ const IvStepper = ({ label, light, onChange, value }: { label: string; light: bo
   </View>
 );
 
-export const NativePokemonSearchFilterSheet = ({
+const NativePokemonSearchFilterSheetImpl = ({
   assetBaseUrl,
   catalog,
   draft,
+  embedded = false,
   error = null,
   initialSection = 'pokemon',
   isSearching = false,
@@ -272,9 +287,75 @@ export const NativePokemonSearchFilterSheet = ({
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
   const animationType = useNativeModalAnimation('slide');
+  const reduceMotion = animationType === 'none';
+  const { height } = useWindowDimensions();
+  const [entryProgress] = useState(() => new Animated.Value(embedded ? 0 : 1));
+  const closingRef = useRef(false);
   const [section, setSection] = useState<NativeSearchFilterSection>(initialSection);
+  const sectionStartedAtRef = useRef<number | null>(null);
   const [picker, setPicker] = useState<PickerState>(null);
+  useEffect(() => {
+    if (!embedded || !visible) return undefined;
+    closingRef.current = false;
+    if (reduceMotion) {
+      entryProgress.setValue(1);
+      return undefined;
+    }
+    entryProgress.setValue(0);
+    const animation = Animated.timing(entryProgress, {
+      duration: 280,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+      isInteraction: false,
+      toValue: 1,
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [embedded, entryProgress, reduceMotion, visible]);
+  const requestClose = useCallback(() => {
+    if (!embedded || Platform.OS === 'web') {
+      onClose();
+      return;
+    }
+    if (closingRef.current) return;
+    closingRef.current = true;
+    if (reduceMotion) {
+      onClose();
+      return;
+    }
+    Animated.timing(entryProgress, {
+      duration: 280,
+      easing: Easing.inOut(Easing.ease),
+      isInteraction: false,
+      toValue: 0,
+      useNativeDriver: true,
+    }).start(() => onClose());
+  }, [embedded, entryProgress, onClose, reduceMotion]);
+  const applyAndClose = useCallback(() => {
+    const shouldClose = onApply();
+    if (shouldClose) requestClose();
+  }, [onApply, requestClose]);
+  useEffect(() => {
+    if (Platform.OS === 'web' || !embedded || !visible) return undefined;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      requestClose();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [embedded, requestClose, visible]);
+  useEffect(() => {
+    const startedAt = sectionStartedAtRef.current;
+    if (startedAt == null) return;
+    sectionStartedAtRef.current = null;
+    markNativeUiPerformanceAfterPaint('search_filter_section_painted', startedAt);
+  }, [section]);
+  const selectSection = (nextSection: NativeSearchFilterSection) => {
+    if (nextSection === section) return;
+    sectionStartedAtRef.current = Date.now();
+    setSection(nextSection);
+  };
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const pokemon = useMemo(() => catalog.find((candidate) => (
     candidate.pokemon_id === draft.pokemonId
     && (candidate.form ?? null) === draft.form
@@ -287,15 +368,24 @@ export const NativePokemonSearchFilterSheet = ({
   const moves = pokemon?.moves ?? [];
   const fastMoves = moves.filter((move) => Boolean(move.is_fast));
   const chargedMoves = moves.filter((move) => !move.is_fast);
+  const genderOptions = nativePokemonSearchGenderOptions(pokemon);
   const availableForms = pokemon ? catalog.filter((candidate) => (
     candidate.pokemon_id === pokemon.pokemon_id
     || candidate.name.toLocaleLowerCase() === pokemon.name.toLocaleLowerCase()
   )) : [];
+  const perfectIvs = draft.attackIv === 15 && draft.defenseIv === 15 && draft.staminaIv === 15;
+  const canReset = Boolean(
+    countNativePokemonSearchFilters(draft)
+    || draft.city
+    || draft.useCurrentLocation
+    || draft.ownership !== 'caught',
+  );
 
   useEffect(() => {
     if (
       !visible
       || section !== 'location'
+      || draft.useCurrentLocation
       || draft.city.trim().length < 3
       || (draft.latitude != null && draft.longitude != null)
     ) {
@@ -308,7 +398,7 @@ export const NativePokemonSearchFilterSheet = ({
         .catch(() => { if (active) setLocationSuggestions([]); });
     }, 250);
     return () => { active = false; clearTimeout(timer); };
-  }, [draft.city, draft.latitude, draft.longitude, section, visible]);
+  }, [draft.city, draft.latitude, draft.longitude, draft.useCurrentLocation, section, visible]);
 
   const openPicker = (next: NonNullable<PickerState>) => setPicker(next);
   const closePicker = () => setPicker(null);
@@ -365,16 +455,19 @@ export const NativePokemonSearchFilterSheet = ({
         <Text style={[styles.cardCopy, light && styles.secondaryLight]}>Shiny, Shadow, costume, form, and Max form.</Text>
         <View style={styles.choiceGrid}>
           <Choice active={draft.shiny} disabled={!pokemon} imageUri={`${assetBaseUrl.replace(/\/$/, '')}/images/shiny_icon.png`} label="Shiny" light={light} onPress={() => onChange({ ...draft, shiny: !draft.shiny })} />
-          <Choice active={draft.shadow} disabled={!pokemon || draft.dynamax || draft.gigantamax} imageUri={`${assetBaseUrl.replace(/\/$/, '')}/images/shadow_icon.png`} label="Shadow" light={light} onPress={() => onChange({ ...draft, shadow: !draft.shadow })} />
-          <Choice active={draft.costumeId != null} disabled={!pokemon?.costumes?.length || draft.dynamax || draft.gigantamax} imageUri={`${assetBaseUrl.replace(/\/$/, '')}/images/costume_icon.png`} label="Costume" light={light} detail={selectedCostume?.name ?? (!pokemon?.costumes?.length ? 'No costume' : 'Any')} onPress={() => pokemon && chooseSimple({
+          <Choice active={draft.shadow} disabled={!pokemon} imageUri={`${assetBaseUrl.replace(/\/$/, '')}/images/shadow_icon.png`} label="Shadow" light={light} onPress={() => {
+            const shadow = !draft.shadow;
+            onChange({ ...draft, shadow, ...(shadow ? { dynamax: false, gigantamax: false } : {}) });
+          }} />
+          <Choice active={draft.costumeId != null} disabled={!pokemon?.costumes?.length} imageUri={`${assetBaseUrl.replace(/\/$/, '')}/images/costume_icon.png`} label="Costume" light={light} detail={selectedCostume?.name ?? 'No costume'} onPress={() => pokemon && chooseSimple({
             title: 'Choose a costume', selectedKey: draft.costumeId == null ? '' : String(draft.costumeId),
-            entries: [{ key: '', label: 'Any costume' }, ...(pokemon.costumes ?? []).map((costume) => ({ key: String(costume.costume_id), label: costume.name }))],
-            onSelect: (key) => onChange({ ...draft, costumeId: key ? Number(key) : null, backgroundId: null }),
+            entries: [{ key: '', label: 'No costume' }, ...(pokemon.costumes ?? []).map((costume) => ({ key: String(costume.costume_id), label: costume.name }))],
+            onSelect: (key) => onChange({ ...draft, costumeId: key ? Number(key) : null, backgroundId: null, dynamax: false, gigantamax: false }),
           })} />
         </View>
         {pokemon ? (
           <View style={styles.variantSelects}>
-            <SelectField label="Form" light={light} value={draft.form || 'Any form'} onPress={() => chooseSimple({
+            <SelectField disabled={!availableForms.some((entry) => entry.form?.trim())} label="Form" light={light} value={draft.form || 'Any form'} onPress={() => chooseSimple({
               title: 'Choose a form', selectedKey: draft.form ?? '',
               entries: [
                 { key: '', label: 'Any form' },
@@ -390,10 +483,10 @@ export const NativePokemonSearchFilterSheet = ({
                 onChange(normalizeNativePokemonSelection(draft, selected));
               },
             })} />
-            <SelectField label="Costume" light={light} value={selectedCostume?.name ?? (!pokemon.costumes?.length ? 'No costume' : 'Any costume')} onPress={() => chooseSimple({
+            <SelectField disabled={!pokemon.costumes?.length} label="Costume" light={light} value={selectedCostume?.name ?? 'No costume'} onPress={() => chooseSimple({
               title: 'Choose a costume', selectedKey: draft.costumeId == null ? '' : String(draft.costumeId),
-              entries: [{ key: '', label: 'Any costume' }, ...(pokemon.costumes ?? []).map((costume) => ({ key: String(costume.costume_id), label: costume.name }))],
-              onSelect: (key) => onChange({ ...draft, costumeId: key ? Number(key) : null, backgroundId: null }),
+              entries: [{ key: '', label: 'No costume' }, ...(pokemon.costumes ?? []).map((costume) => ({ key: String(costume.costume_id), label: costume.name }))],
+              onSelect: (key) => onChange({ ...draft, costumeId: key ? Number(key) : null, backgroundId: null, dynamax: false, gigantamax: false }),
             })} />
           </View>
         ) : null}
@@ -413,21 +506,21 @@ export const NativePokemonSearchFilterSheet = ({
           <View style={[styles.card, light && styles.cardLight]}>
             <Text style={[styles.cardTitle, light && styles.textLight]}>Gender and moves</Text>
             <Text style={[styles.cardCopy, light && styles.secondaryLight]}>Match a gender or exact Pokémon GO moveset.</Text>
-            <SelectField label="Gender" light={light} value={fieldLabel(draft.gender)} onPress={() => chooseSimple({
+            {genderOptions.length > 0 ? <SelectField label="Gender" light={light} value={fieldLabel(draft.gender, genderOptions.includes('Any') ? 'Any' : genderOptions[0])} onPress={() => chooseSimple({
               title: 'Choose a gender', selectedKey: draft.gender ?? '',
-              entries: ['Any', 'Male', 'Female', 'Genderless'].map((label) => ({ key: label === 'Any' ? '' : label, label })),
+              entries: genderOptions.map((label) => ({ key: label === 'Any' ? '' : label, label })),
               onSelect: (key) => onChange({ ...draft, gender: key || null }),
-            })} />
-            <SelectField label="Fast move" light={light} value={moveName(draft.fastMoveId)} onPress={() => chooseSimple({
+            })} /> : null}
+            <SelectField disabled={fastMoves.length === 0} label="Fast move" light={light} value={moveName(draft.fastMoveId)} onPress={() => chooseSimple({
               title: 'Choose a fast move', selectedKey: draft.fastMoveId == null ? '' : String(draft.fastMoveId), entries: moveOptions(fastMoves),
               onSelect: (key) => onChange({ ...draft, fastMoveId: key ? Number(key) : null }),
             })} />
-            <SelectField label="Charged move 1" light={light} value={moveName(draft.chargedMove1Id)} onPress={() => chooseSimple({
-              title: 'Choose charged move 1', selectedKey: draft.chargedMove1Id == null ? '' : String(draft.chargedMove1Id), entries: moveOptions(chargedMoves),
+            <SelectField disabled={chargedMoves.length === 0} label="Charged move" light={light} value={moveName(draft.chargedMove1Id)} onPress={() => chooseSimple({
+              title: 'Choose charged move 1', selectedKey: draft.chargedMove1Id == null ? '' : String(draft.chargedMove1Id), entries: moveOptions(chargedMoves.filter((move) => move.move_id !== draft.chargedMove2Id)),
               onSelect: (key) => onChange({ ...draft, chargedMove1Id: key ? Number(key) : null }),
             })} />
-            <SelectField label="Charged move 2" light={light} value={moveName(draft.chargedMove2Id)} onPress={() => chooseSimple({
-              title: 'Choose charged move 2', selectedKey: draft.chargedMove2Id == null ? '' : String(draft.chargedMove2Id), entries: moveOptions(chargedMoves),
+            <SelectField disabled={chargedMoves.length === 0} label="Second charged move" light={light} value={moveName(draft.chargedMove2Id)} onPress={() => chooseSimple({
+              title: 'Choose charged move 2', selectedKey: draft.chargedMove2Id == null ? '' : String(draft.chargedMove2Id), entries: moveOptions(chargedMoves.filter((move) => move.move_id !== draft.chargedMove1Id)),
               onSelect: (key) => onChange({ ...draft, chargedMove2Id: key ? Number(key) : null }),
             })} />
           </View>
@@ -457,28 +550,45 @@ export const NativePokemonSearchFilterSheet = ({
       <View style={[styles.card, light && styles.cardLight]}>
         <Text style={[styles.cardTitle, light && styles.textLight]}>Starting point</Text>
         <Text style={[styles.cardCopy, light && styles.secondaryLight]}>Your exact coordinates are never shown in search results.</Text>
-        {savedLocation ? (
-          <Pressable
-            accessibilityLabel={`Use saved location ${savedLocation.label}`}
-            accessibilityRole="button"
-            onPress={() => {
-              onChange({ ...draft, city: savedLocation.label, latitude: savedLocation.latitude, longitude: savedLocation.longitude });
-              setLocationSuggestions([]);
-            }}
-            style={[
-              styles.savedLocation,
-              light && styles.savedLocationLight,
-              draft.latitude === savedLocation.latitude && draft.longitude === savedLocation.longitude && styles.savedLocationActive,
-              light && draft.latitude === savedLocation.latitude && draft.longitude === savedLocation.longitude && styles.savedLocationActiveLight,
-            ]}
-          >
-            <View style={styles.iconLabelRow}>
-              <NativeUiIcon color={light ? '#172124' : '#f3f8f9'} name="map" size={16} />
-              <Text style={[styles.savedLocationTitle, light && styles.textLight]}>Use saved location</Text>
-            </View>
-            <Text style={[styles.savedLocationCopy, light && styles.secondaryLight]}>Search from the location stored in your profile</Text>
-          </Pressable>
-        ) : null}
+        <Pressable
+          accessibilityLabel="Use saved location"
+          accessibilityRole="button"
+          accessibilityState={{ selected: draft.useCurrentLocation }}
+          onPress={() => {
+            if (draft.useCurrentLocation) {
+              onChange({ ...draft, city: '', useCurrentLocation: false, latitude: null, longitude: null });
+              setLocationError(null);
+              return;
+            }
+            if (!savedLocation) {
+              setLocationError('No saved location is available. Search for a city instead.');
+              return;
+            }
+            onChange({
+              ...draft,
+              city: '',
+              useCurrentLocation: true,
+              latitude: savedLocation.latitude,
+              longitude: savedLocation.longitude,
+            });
+            setLocationError(null);
+            setLocationSuggestions([]);
+          }}
+          style={[
+            styles.savedLocation,
+            light && styles.savedLocationLight,
+            draft.useCurrentLocation && styles.savedLocationActive,
+            light && draft.useCurrentLocation && styles.savedLocationActiveLight,
+          ]}
+        >
+          <View style={styles.iconLabelRow}>
+            <NativeUiIcon color={light ? '#172124' : '#f3f8f9'} name="map" size={16} />
+            <Text style={[styles.savedLocationTitle, light && styles.textLight]}>
+              {draft.useCurrentLocation ? 'Using saved location' : 'Use saved location'}
+            </Text>
+          </View>
+          <Text style={[styles.savedLocationCopy, light && styles.secondaryLight]}>Search from the location stored in your profile</Text>
+        </Pressable>
         <View accessibilityElementsHidden style={styles.locationDivider}>
           <View style={[styles.locationDividerLine, light && styles.locationDividerLineLight]} />
           <Text style={[styles.locationDividerText, light && styles.secondaryLight]}>OR CHOOSE ANOTHER AREA</Text>
@@ -487,13 +597,15 @@ export const NativePokemonSearchFilterSheet = ({
         <Text style={[styles.fieldLabel, light && styles.secondaryLight]}>City or place</Text>
         <TextInput
           accessibilityLabel="City or place"
+          editable={!draft.useCurrentLocation}
           onChangeText={(city) => {
             setLocationSuggestions([]);
-            onChange({ ...draft, city, latitude: null, longitude: null });
+            setLocationError(null);
+            onChange({ ...draft, city, useCurrentLocation: false, latitude: null, longitude: null });
           }}
           placeholder="Search for a city"
           placeholderTextColor={light ? '#667477' : '#8a999c'}
-          style={[styles.locationInput, light && styles.locationInputLight]}
+          style={[styles.locationInput, light && styles.locationInputLight, draft.useCurrentLocation && styles.disabled]}
           value={draft.city}
         />
         {locationSuggestions.map((suggestion, index) => {
@@ -506,7 +618,8 @@ export const NativePokemonSearchFilterSheet = ({
               key={`${suggestion.displayName}-${index}`}
               onPress={() => {
                 if (latitude == null || longitude == null) return;
-                onChange({ ...draft, city: suggestion.displayName, latitude, longitude });
+                onChange({ ...draft, city: suggestion.displayName, useCurrentLocation: false, latitude, longitude });
+                setLocationError(null);
                 setLocationSuggestions([]);
               }}
               style={[styles.locationSuggestion, light && styles.locationSuggestionLight]}
@@ -518,6 +631,7 @@ export const NativePokemonSearchFilterSheet = ({
             </Pressable>
           );
         })}
+        {locationError ? <Text accessibilityLiveRegion="polite" style={styles.locationError}>{locationError}</Text> : null}
         {draft.city && draft.latitude != null && draft.longitude != null ? (
           <Text style={styles.locationSelected}>✓ Search center selected</Text>
         ) : null}
@@ -555,7 +669,18 @@ export const NativePokemonSearchFilterSheet = ({
               <Text style={[styles.cardTitle, light && styles.textLight]}>Individual values</Text>
               <Text style={[styles.cardCopy, light && styles.secondaryLight]}>Leave a stat at Any to accept 0–15.</Text>
             </View>
-            <Pressable accessibilityRole="button" onPress={() => onChange({ ...draft, attackIv: 15, defenseIv: 15, staminaIv: 15 })} style={[styles.compactButton, light && styles.compactButtonLight]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: perfectIvs }}
+              onPress={() => onChange({
+                ...draft,
+                attackIv: perfectIvs ? null : 15,
+                defenseIv: perfectIvs ? null : 15,
+                staminaIv: perfectIvs ? null : 15,
+              })}
+              style={[styles.compactButton, light && styles.compactButtonLight, perfectIvs && styles.compactButtonActive]}
+            >
+              <Image source={{ uri: `${assetBaseUrl.replace(/\/$/, '')}/images/hundo.png` }} style={styles.compactButtonIcon} />
               <Text style={styles.compactButtonText}>Perfect IVs</Text>
             </Pressable>
           </View>
@@ -622,8 +747,7 @@ export const NativePokemonSearchFilterSheet = ({
     </View>
   );
 
-  return (
-    <Modal animationType={animationType} hardwareAccelerated onRequestClose={onClose} presentationStyle="fullScreen" visible={visible}>
+  const content = (
       <SafeAreaView
         edges={['top', 'bottom']}
         style={[styles.screen, light && styles.screenLight]}
@@ -637,14 +761,14 @@ export const NativePokemonSearchFilterSheet = ({
             </View>
             <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Refine your search</Text>
           </View>
-          <Pressable accessibilityLabel="Close search filters" accessibilityRole="button" onPress={onClose} style={[styles.close, light && styles.closeLight]}>
+          <Pressable accessibilityLabel="Close search filters" accessibilityRole="button" onPress={requestClose} style={[styles.close, light && styles.closeLight]}>
             <Text style={[styles.closeText, light && styles.textLight]}>×</Text>
           </Pressable>
         </View>
         <View accessibilityRole="tablist" style={[styles.tabs, light && styles.tabsLight]}>
-          <SectionButton active={section === 'pokemon'} icon="pokeball" label="Pokémon" light={light} onPress={() => setSection('pokemon')} />
-          <SectionButton active={section === 'location'} icon="map" label="Location" light={light} onPress={() => setSection('location')} />
-          <SectionButton active={section === 'matching'} icon="trade" label="Matching" light={light} onPress={() => setSection('matching')} />
+          <SectionButton active={section === 'pokemon'} icon="pokeball" label="Pokémon" light={light} onPress={() => selectSection('pokemon')} />
+          <SectionButton active={section === 'location'} icon="map" label="Location" light={light} onPress={() => selectSection('location')} />
+          <SectionButton active={section === 'matching'} icon="trade" label="Matching" light={light} onPress={() => selectSection('matching')} />
         </View>
         {notice ? <Text accessibilityLiveRegion="polite" style={styles.notice}>{notice}</Text> : null}
         {error ? <Text accessibilityLiveRegion="assertive" style={styles.error}>{error}</Text> : null}
@@ -652,10 +776,10 @@ export const NativePokemonSearchFilterSheet = ({
           {section === 'pokemon' ? pokemonSection : section === 'location' ? locationSection : matchingSection}
         </ScrollView>
         <View style={[styles.footer, light && styles.footerLight]}>
-          <Pressable accessibilityRole="button" onPress={onReset} style={[styles.resetButton, light && styles.resetButtonLight]}>
+          {canReset ? <Pressable accessibilityRole="button" onPress={onReset} style={[styles.resetButton, light && styles.resetButtonLight]}>
             <Text style={[styles.resetButtonText, light && styles.textLight]}>Reset filters</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" disabled={isSearching} onPress={onApply} style={[styles.applyButton, isSearching && styles.disabled]}>
+          </Pressable> : null}
+          <Pressable accessibilityRole="button" disabled={isSearching} onPress={applyAndClose} style={[styles.applyButton, !canReset && styles.applyButtonOnly, isSearching && styles.disabled]}>
             <Text style={styles.applyButtonText}>{isSearching ? 'Searching…' : `Apply & search${countNativePokemonSearchFilters(draft) ? ` · ${countNativePokemonSearchFilters(draft)}` : ''}`}</Text>
           </Pressable>
         </View>
@@ -671,11 +795,48 @@ export const NativePokemonSearchFilterSheet = ({
           />
         ) : null}
       </SafeAreaView>
+  );
+
+  if (embedded) {
+    return (
+      <Animated.View
+        accessibilityElementsHidden={!visible}
+        importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
+        pointerEvents={visible ? 'auto' : 'none'}
+        style={[
+          styles.embeddedOverlay,
+          {
+            opacity: entryProgress,
+            transform: [{
+              translateY: entryProgress.interpolate({ inputRange: [0, 1], outputRange: [height, 0] }),
+            }],
+          },
+        ]}
+      >
+        {content}
+      </Animated.View>
+    );
+  }
+
+  return (
+    <Modal animationType={animationType} hardwareAccelerated onRequestClose={onClose} presentationStyle="fullScreen" visible={visible}>
+      {content}
     </Modal>
   );
 };
 
+export const NativePokemonSearchFilterSheet = memo(
+  NativePokemonSearchFilterSheetImpl,
+  (previous, next) => Boolean(
+    previous.embedded
+    && next.embedded
+    && !previous.visible
+    && !next.visible
+  ),
+);
+
 const styles = StyleSheet.create({
+  embeddedOverlay: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 50, elevation: 50 },
   screen: { flex: 1, minHeight: 0, backgroundColor: '#090d0f' },
   screenLight: { backgroundColor: '#f8fff9' },
   header: { minHeight: 68, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#334347', backgroundColor: '#0e1416' },
@@ -740,6 +901,7 @@ const styles = StyleSheet.create({
   locationSuggestion: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 11, borderWidth: 1, borderColor: '#46575a', borderRadius: 8, backgroundColor: '#182022' },
   locationSuggestionLight: { borderColor: '#a7b4b7', backgroundColor: '#f4f7f7' },
   locationSuggestionText: { color: '#eaf1f2', fontSize: 13, fontWeight: '700' },
+  locationError: { color: '#ff8a9a', fontSize: 12, fontWeight: '800' },
   iconLabelRow: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 7 },
   locationSelected: { color: '#62dfbc', fontSize: 12, fontWeight: '900' },
   locationDivider: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 2 },
@@ -761,8 +923,10 @@ const styles = StyleSheet.create({
   toggleDescription: { marginTop: 3, color: '#aab5b7', fontSize: 11, lineHeight: 16 },
   cardHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cardHeadingCopy: { flex: 1, minWidth: 0 },
-  compactButton: { minHeight: 40, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 11, borderWidth: 1, borderColor: '#2f9cff', borderRadius: 8 },
+  compactButton: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 11, borderWidth: 1, borderColor: '#2f9cff', borderRadius: 8 },
   compactButtonLight: { backgroundColor: '#e7f3ff' },
+  compactButtonActive: { backgroundColor: '#173e66' },
+  compactButtonIcon: { width: 18, height: 18 },
   compactButtonText: { color: '#8fc9ff', fontSize: 11, fontWeight: '900' },
   ivGrid: { gap: 7 },
   ivField: { flexDirection: 'row', alignItems: 'center' },
@@ -783,6 +947,7 @@ const styles = StyleSheet.create({
   resetButtonLight: { borderColor: '#8e9c9f' },
   resetButtonText: { color: '#d9e2e3', fontSize: 13, fontWeight: '900' },
   applyButton: { flex: 1.35, minHeight: 50, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: '#138cff' },
+  applyButtonOnly: { flex: 1 },
   applyButtonText: { color: '#051421', fontSize: 14, fontWeight: '900' },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.72 },

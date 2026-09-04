@@ -1,14 +1,17 @@
 import Constants from 'expo-constants';
-import { useEffect, useMemo, useState, type ComponentType } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import { Pressable, Platform, StyleSheet, Text, View } from 'react-native';
 import type { NativePokemonSearchResult } from './pokemonSearchModel';
 import type { NativeSearchMapLibreCanvasProps } from './NativeSearchMapLibreCanvas';
 import { useNativeColorScheme } from '../settings/useNativeColorScheme';
 import { NativeUiIcon } from '../../components/NativeUiIcon';
+import { markNativeUiPerformanceAfterPaint } from '../../observability/nativeUiInteractionTiming';
+import { runtimeConfig } from '../../config/runtimeConfig';
 
 type Props = {
   onOpenListing: (result: NativePokemonSearchResult) => void;
   onOpenProfile: (username: string) => void;
+  onReady?: () => void;
   results: NativePokemonSearchResult[];
 };
 
@@ -34,29 +37,54 @@ const initialCamera = (results: NativePokemonSearchResult[]) => {
   };
 };
 
-export const NativeSearchMapView = ({ onOpenListing, onOpenProfile, results }: Props) => {
+export const NativeSearchMapView = ({ onOpenListing, onOpenProfile, onReady, results }: Props) => {
   const light = useNativeColorScheme() === 'light';
   const mappable = useMemo(() => results.filter((result) => result.mapCoordinate), [results]);
   const [selectedId, setSelectedId] = useState<string | null>(() => mappable[0]?.id ?? null);
   const selected = mappable.find((result) => result.id === selectedId) ?? mappable[0] ?? null;
   const camera = useMemo(() => initialCamera(mappable), [mappable]);
-  const [MapCanvas, setMapCanvas] = useState<ComponentType<NativeSearchMapLibreCanvasProps> | null>(null);
   const expoGo = Constants.appOwnership === 'expo';
   const nativeMapAvailable = Platform.OS !== 'web' && !expoGo;
-
-  useEffect(() => {
+  const [MapCanvas] = useState<ComponentType<NativeSearchMapLibreCanvasProps> | null>(() => {
     // MapLibre's native package cannot be evaluated by react-native-web. The
     // deterministic area preview is the intentional browser fallback, just as
     // Expo Go uses it when the native module is unavailable.
-    if (!nativeMapAvailable) return undefined;
-    let active = true;
-    void import('./NativeSearchMapLibreCanvas').then((module) => {
-      if (active) setMapCanvas(() => module.default);
-    }).catch(() => {
-      if (active) setMapCanvas(null);
-    });
-    return () => { active = false; };
-  }, [nativeMapAvailable]);
+    if (!nativeMapAvailable) return null;
+    try {
+      // Keep the native canvas in Metro's main bundle. A deferred `import()`
+      // works in the ordinary development server, but its split module was
+      // unavailable to a no-dev/minified client and silently left the release
+      // proxy on the preview fallback. Runtime gating still prevents native
+      // MapLibre from being evaluated by react-native-web or Expo Go.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const module = require('./NativeSearchMapLibreCanvas') as {
+        default: ComponentType<NativeSearchMapLibreCanvasProps>;
+      };
+      return module.default;
+    } catch (error) {
+      if (runtimeConfig.mobile.deviceSmokeMode) {
+        console.warn('[mobile:search-map] Native MapLibre canvas unavailable', error);
+      }
+      return null;
+    }
+  });
+  const selectionStartedAtRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!nativeMapAvailable || MapCanvas || mappable.length === 0) onReady?.();
+  }, [MapCanvas, mappable.length, nativeMapAvailable, onReady]);
+
+  useEffect(() => {
+    const startedAt = selectionStartedAtRef.current;
+    if (startedAt == null) return;
+    selectionStartedAtRef.current = null;
+    markNativeUiPerformanceAfterPaint('search_map_selection_result_painted', startedAt);
+  }, [selectedId]);
+
+  const selectResult = useCallback((id: string) => {
+    selectionStartedAtRef.current = Date.now();
+    setSelectedId(id);
+  }, []);
 
   if (mappable.length === 0) {
     return (
@@ -72,23 +100,37 @@ export const NativeSearchMapView = ({ onOpenListing, onOpenProfile, results }: P
 
   return (
     <View style={[styles.shell, light && styles.shellLight]} testID="native-search-map">
-      {MapCanvas ? <MapCanvas camera={camera} light={light} mappable={mappable} onSelect={setSelectedId} selectedId={selected?.id ?? null} /> : (
+      {MapCanvas ? <MapCanvas camera={camera} light={light} mappable={mappable} onSelect={selectResult} selectedId={selected?.id ?? null} /> : (
         <View style={[styles.previewMap, light && styles.previewMapLight]}>
           <View style={styles.previewGrid} />
           {mappable.slice(0, 12).map((result, index) => {
             const active = result.id === selected?.id;
             const column = index % 4;
             const row = Math.floor(index / 4);
-            return <Pressable accessibilityRole="button" accessibilityLabel={`${result.username}, ${result.row.name}`} key={result.id} onPress={() => setSelectedId(result.id)} style={[styles.previewMarker, { backgroundColor: accentFor(result), left: `${10 + column * 24}%`, top: `${15 + row * 28}%` }, active && styles.previewMarkerActive]}><Text style={styles.markerText}>{result.username.slice(0, 1).toLocaleUpperCase()}</Text></Pressable>;
+            return <Pressable accessibilityRole="button" accessibilityLabel={`${result.username}, ${result.row.name}`} key={result.id} onPress={() => selectResult(result.id)} style={[styles.previewMarker, { backgroundColor: accentFor(result), left: `${10 + column * 24}%`, top: `${15 + row * 28}%` }, active && styles.previewMarkerActive]}><Text style={styles.markerText}>{result.username.slice(0, 1).toLocaleUpperCase()}</Text></Pressable>;
           })}
           <Text style={[styles.previewMapLabel, light && styles.mutedLight]}>Approximate public areas</Text>
         </View>
       )}
+      {runtimeConfig.mobile.deviceSmokeMode ? mappable.map((result, index) => (
+        <Pressable
+          accessibilityLabel={`Select map listing ${result.username} for performance test`}
+          accessibilityRole="button"
+          key={`performance-${result.id}`}
+          onPress={() => selectResult(result.id)}
+          style={[styles.performanceSelectionTarget, { top: 58 + index * 46 }]}
+          testID={`native-search-map-performance-select-${result.id}`}
+        />
+      )) : null}
       <View style={[styles.mapCount, light && styles.mapCountLight]}>
         <Text style={[styles.mapCountText, light && styles.textLight]}>{mappable.length} on map</Text>
       </View>
       {selected ? (
-        <View style={[styles.preview, light && styles.previewLight]}>
+        <View
+          accessible
+          accessibilityLabel={`Selected map listing: ${selected.username}, ${selected.row.name}`}
+          style={[styles.preview, light && styles.previewLight]}
+        >
           <View style={styles.previewCopy}>
             <Text style={[styles.previewName, light && styles.textLight]} numberOfLines={1}>{selected.row.name}</Text>
             <Text style={[styles.previewMeta, light && styles.mutedLight]} numberOfLines={1}>
@@ -117,6 +159,10 @@ const styles = StyleSheet.create({
   previewMarkerActive: { width: 44, height: 44, borderRadius: 22, borderWidth: 4 },
   previewMapLabel: { position: 'absolute', right: 10, bottom: 10, overflow: 'hidden', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, color: '#d8e8ed', backgroundColor: '#071216bb', fontSize: 9, fontWeight: '800' },
   markerText: { color: '#041312', fontSize: 13, fontWeight: '900' },
+  // MapLibre marker children are drawn into a native surface and do not enter
+  // Android's accessibility hierarchy. Performance fixture builds expose
+  // transparent equivalents that start the same selection handler reliably.
+  performanceSelectionTarget: { position: 'absolute', right: 4, zIndex: 3, width: 44, height: 44, backgroundColor: 'transparent' },
   mapCount: { position: 'absolute', top: 10, left: 10, minHeight: 34, justifyContent: 'center', paddingHorizontal: 12, borderWidth: 1, borderColor: '#53666a', borderRadius: 17, backgroundColor: '#131b1ddd' },
   mapCountLight: { borderColor: '#a6b4b7', backgroundColor: '#fffffff2' },
   mapCountText: { color: '#f7fbfc', fontSize: 12, fontWeight: '900' },

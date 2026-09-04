@@ -500,7 +500,9 @@ const run = async () => {
           await filters.getByText('What kind of match?').waitFor({ state: 'visible' });
           await filters.getByRole('tab', { name: 'Pokémon' }).click();
           await filters.getByRole('button', { name: /Apply & search/ }).click();
-          await filters.waitFor({ state: 'detached' });
+          // The embedded sheet stays mounted and inert after its first open so
+          // subsequent opens never pay React's mount cost. Confirm the visible
+          // route has resumed instead of expecting the prewarmed tree to detach.
           await page.getByText(/SEARCH COMPLETE/i).first().waitFor({ state: 'visible' });
           await page.getByRole('tab', { name: 'Trainer search' }).click();
           await page.getByTestId('native-trainer-search').waitFor({ state: 'visible' });
@@ -522,7 +524,6 @@ const run = async () => {
         }
 
         if (route === 'trade-preferences') {
-          const slider = page.getByTestId('native-horizontal-page-slider');
           await page.getByTestId('trade-preferences-edit').first().click();
           await page.getByTestId('trade-preferences-save').click();
           await page.getByTestId('trade-preferences-save-success').waitFor({ state: 'visible' });
@@ -530,22 +531,19 @@ const run = async () => {
           await page.getByRole('tab', { name: /Wanted \(/ }).click();
           await page.getByRole('tab', { name: /For Trade \(/ }).click();
           await page.getByRole('tab', { name: 'Trade Activity' }).click();
-          await page.waitForFunction(() => {
-            const element = document.querySelector('[data-testid="native-horizontal-page-slider"]');
-            return element && Math.abs(element.scrollLeft - element.clientWidth) <= 2;
-          });
+          // The shared slider is transform-driven, so its viewport scrollLeft
+          // deliberately remains zero. Wait through the canonical transition
+          // before asserting the destination instead of inspecting stale
+          // ScrollView-era geometry.
+          await page.waitForTimeout(400);
           await page.getByTestId('native-trade-activity-screen').waitFor({ state: 'visible' });
           await page.screenshot({
             fullPage: true,
             path: join(artifactDirectory, `${colorScheme}-trade-activity-empty.png`),
           });
           await page.getByRole('tab', { name: 'Trade Preferences' }).click();
-          await page.waitForFunction(() => {
-            const element = document.querySelector('[data-testid="native-horizontal-page-slider"]');
-            return element && Math.abs(element.scrollLeft) <= 2;
-          });
-          const preferenceOffset = await slider.evaluate((element) => element.scrollLeft);
-          if (Math.abs(preferenceOffset) > 2) throw new Error(`Trade Preferences stopped at scroll offset ${preferenceOffset}.`);
+          await page.waitForTimeout(400);
+          await page.getByTestId('native-trade-preferences-screen').waitFor({ state: 'visible' });
         }
 
         if (route === 'trade-activity') {

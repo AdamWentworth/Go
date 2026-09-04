@@ -17,7 +17,10 @@ export type NativeSearchSession = {
 };
 
 const sessions = new Map<string, NativeSearchSession>();
+const pendingPersistence = new Map<string, NativeSearchSession>();
+const persistenceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const SEARCH_SESSION_KEY_PREFIX = 'pokemongonexus.mobile.search-session.v1.';
+const PERSISTENCE_DEBOUNCE_MS = 200;
 
 const storageKey = (ownerKey: string): string => (
   `${SEARCH_SESSION_KEY_PREFIX}${ownerKey.trim()}`
@@ -42,14 +45,25 @@ const isNativeSearchSession = (
     && typeof candidate.draft === 'object';
 };
 
-const persistSession = (session: NativeSearchSession): void => {
-  void SecureStore.setItemAsync(
-    storageKey(session.ownerKey),
-    JSON.stringify(session),
-  ).catch(() => {
+const persistPendingSession = (ownerKey: string): void => {
+  persistenceTimers.delete(ownerKey);
+  const session = pendingPersistence.get(ownerKey);
+  if (!session) return;
+  pendingPersistence.delete(ownerKey);
+  void SecureStore.setItemAsync(storageKey(ownerKey), JSON.stringify(session)).catch(() => {
     // Search restoration is a convenience. An unavailable device store must
     // never interrupt a search that is otherwise working.
   });
+};
+
+const persistSession = (session: NativeSearchSession): void => {
+  pendingPersistence.set(session.ownerKey, session);
+  const existingTimer = persistenceTimers.get(session.ownerKey);
+  if (existingTimer) clearTimeout(existingTimer);
+  persistenceTimers.set(session.ownerKey, setTimeout(
+    () => persistPendingSession(session.ownerKey),
+    PERSISTENCE_DEBOUNCE_MS,
+  ));
 };
 
 export const readNativeSearchSession = (
@@ -97,8 +111,15 @@ export const patchNativeSearchSession = (
 export const clearNativeSearchSession = (ownerKey?: string): void => {
   if (ownerKey) {
     sessions.delete(ownerKey);
+    pendingPersistence.delete(ownerKey);
+    const timer = persistenceTimers.get(ownerKey);
+    if (timer) clearTimeout(timer);
+    persistenceTimers.delete(ownerKey);
     void SecureStore.deleteItemAsync(storageKey(ownerKey)).catch(() => {});
     return;
   }
   sessions.clear();
+  pendingPersistence.clear();
+  for (const timer of persistenceTimers.values()) clearTimeout(timer);
+  persistenceTimers.clear();
 };

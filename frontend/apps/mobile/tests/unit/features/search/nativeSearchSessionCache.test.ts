@@ -100,6 +100,38 @@ describe('nativeSearchSessionCache', () => {
     }));
   });
 
+  it('coalesces rapid SecureStore writes so filter taps stay on the UI thread', () => {
+    jest.useFakeTimers();
+    try {
+      const draft = createNativePokemonSearchDraft({ city: 'Burnaby' });
+      writeNativeSearchSession({
+        activeView: 'pokemon',
+        draft,
+        executedDraft: draft,
+        ownerKey: 'trainer-fast',
+        pokemonDisplayMode: 'list',
+        pokemonQuery,
+        pokemonScrollOffset: 0,
+        trainerQuery: '',
+        trainerScrollOffset: 0,
+      });
+      patchNativeSearchSession('trainer-fast', { trainerQuery: 'm' });
+      patchNativeSearchSession('trainer-fast', { trainerQuery: 'mi' });
+
+      expect(mockedSecureStore.setItemAsync).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(199);
+      expect(mockedSecureStore.setItemAsync).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(1);
+      expect(mockedSecureStore.setItemAsync).toHaveBeenCalledTimes(1);
+      expect(mockedSecureStore.setItemAsync).toHaveBeenCalledWith(
+        'pokemongonexus.mobile.search-session.v1.trainer-fast',
+        expect.stringContaining('"trainerQuery":"mi"'),
+      );
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('can clear one trainer without affecting another', () => {
     for (const ownerKey of ['trainer-1', 'trainer-2']) {
       writeNativeSearchSession({

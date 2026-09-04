@@ -53,6 +53,20 @@ const eventScenarios = {
   collection_selection_painted: 'interaction.collection.selection',
   collection_organizer_painted: 'interaction.collection.organizer',
   instance_overlay_target_committed: 'interaction.instance.navigate',
+  search_mode_result_painted: 'interaction.search.mode-result',
+  search_display_result_painted: 'interaction.search.display-result',
+  search_modify_result_painted: 'interaction.search.modify-result',
+  search_pokemon_picker_painted: 'interaction.search.pokemon-picker',
+  search_pokemon_selection_painted: 'interaction.search.pokemon-selection',
+  search_ownership_result_painted: 'interaction.search.ownership-result',
+  search_filters_painted: 'interaction.search.filters-open',
+  search_filter_section_painted: 'interaction.search.filter-section',
+  search_filter_result_painted: 'interaction.search.filter-result',
+  search_results_painted: 'interaction.search.results',
+  search_details_result_painted: 'interaction.search.details-result',
+  search_map_selection_result_painted: 'interaction.search.map-selection',
+  search_trainer_query_result_painted: 'interaction.search.trainer-query-result',
+  search_trainer_clear_result_painted: 'interaction.search.trainer-clear-result',
   pokedex_advanced_result_painted: 'interaction.pokedex.advanced-result',
   pokedex_category_result_painted: 'interaction.pokedex.category-result',
   pokedex_facet_result_painted: 'interaction.pokedex.facet-result',
@@ -130,6 +144,7 @@ const eventSampleSelection = {
   pvp_battle_picker_search_result_painted: 'last',
   pvp_team_battle_search_result_painted: 'last',
   pvp_iv_search_result_painted: 'last',
+  search_trainer_query_result_painted: 'last',
 };
 
 const samples = [];

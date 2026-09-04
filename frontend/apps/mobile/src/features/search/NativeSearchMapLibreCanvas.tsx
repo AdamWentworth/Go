@@ -40,7 +40,14 @@ export default function NativeSearchMapLibreCanvas({ camera, light, mappable, on
           const active = result.id === selectedId;
           return (
             <Marker anchor="center" id={result.id} key={result.id} lngLat={result.mapCoordinate!} onPress={() => onSelect(result.id)}>
-              <View accessibilityLabel={`${result.username}, ${result.row.name}${result.mapCoordinateIsApproximate ? ', approximate area' : ''}`} style={[styles.marker, { backgroundColor: accentFor(result) }, result.mapCoordinateIsApproximate && styles.approximateMarker, active && styles.markerActive]}>
+              <View
+                accessible
+                accessibilityLabel={`${result.username}, ${result.row.name}${result.mapCoordinateIsApproximate ? ', approximate area' : ''}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                style={[styles.marker, { backgroundColor: accentFor(result) }, result.mapCoordinateIsApproximate && styles.approximateMarker, active && styles.markerActive]}
+                testID={`native-search-map-marker-${result.id}`}
+              >
                 <Text style={styles.markerText}>{result.username.slice(0, 1).toLocaleUpperCase()}</Text>
               </View>
             </Marker>

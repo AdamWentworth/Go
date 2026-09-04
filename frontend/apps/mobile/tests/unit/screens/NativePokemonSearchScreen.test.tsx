@@ -180,6 +180,31 @@ describe('NativePokemonSearchScreen', () => {
     expect(view.getByRole('button', { name: 'Choose Pokémon' })).toBeTruthy();
   });
 
+  it('matches Vite reset semantics without silently restoring the profile location', () => {
+    const onDraftChange = jest.fn();
+    const view = render(
+      <NativePokemonSearchScreen
+        {...baseProps}
+        onDraftChange={onDraftChange}
+        savedLocation={{ label: 'Burnaby', latitude: 49.24, longitude: -122.98 }}
+      />,
+    );
+
+    fireEvent.press(view.getByRole('button', { name: 'Filters' }));
+    fireEvent.press(view.getByRole('button', { name: 'Reset filters' }));
+
+    expect(onDraftChange).toHaveBeenCalledWith(expect.objectContaining({
+      city: '',
+      latitude: null,
+      longitude: null,
+      ownership: 'caught',
+      pokemonId: 25,
+      pokemonName: 'Pikachu',
+      shiny: false,
+      useCurrentLocation: false,
+    }));
+  });
+
   it('renders reciprocal listings and preserves both explicit destinations', () => {
     const onOpenListing = jest.fn();
     const onOpenProfile = jest.fn();

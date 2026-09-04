@@ -10,22 +10,25 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   buildNativeTrainerSearchRows,
   type NativeTrainerSearchRow,
 } from '../features/search/trainerSearchModel';
 import { NativeUiIcon } from '../components/NativeUiIcon';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
 
 type Props = {
   entries: TrainerAutocompleteEntry[];
   error?: string | null;
+  hasSearched?: boolean;
   isLoading?: boolean;
   initialScrollOffset?: number;
   onOpenCatalog: (username: string) => void;
   onOpenProfile: (username: string) => void;
   onQueryChange: (query: string) => void;
+  onSubmit: (query: string) => void;
   onRetry?: () => void;
   onScrollOffsetChange?: (offset: number) => void;
   query: string;
@@ -113,11 +116,13 @@ const TrainerCard = ({
 export const NativeTrainerSearchScreen = ({
   entries,
   error = null,
+  hasSearched = false,
   isLoading = false,
   initialScrollOffset = 0,
   onOpenCatalog,
   onOpenProfile,
   onQueryChange,
+  onSubmit,
   onRetry,
   onScrollOffsetChange,
   query,
@@ -128,9 +133,36 @@ export const NativeTrainerSearchScreen = ({
   const listRef = useRef<FlatList<NativeTrainerSearchRow>>(null);
   const restoredScrollRef = useRef(initialScrollOffset <= 0);
   const latestScrollOffsetRef = useRef(initialScrollOffset);
+  const performanceStartsRef = useRef(new Map<string, number>());
   const rows = useMemo(() => buildNativeTrainerSearchRows(entries), [entries]);
   const trimmedQuery = query.trim();
   const hasQuery = trimmedQuery.length >= 2;
+  const beginPerformance = useCallback((event: string) => {
+    performanceStartsRef.current.set(event, Date.now());
+  }, []);
+  const finishPerformance = useCallback((event: string) => {
+    const startedAt = performanceStartsRef.current.get(event);
+    if (startedAt == null) return;
+    performanceStartsRef.current.delete(event);
+    markNativeUiPerformanceAfterPaint(event, startedAt);
+  }, []);
+  useEffect(() => {
+    if (!isLoading && (hasSearched || error)) {
+      finishPerformance('search_trainer_query_result_painted');
+    }
+  }, [entries, error, finishPerformance, hasSearched, isLoading]);
+  useEffect(() => {
+    if (!query) finishPerformance('search_trainer_clear_result_painted');
+  }, [finishPerformance, query]);
+  const submit = () => {
+    Keyboard.dismiss();
+    if (!hasQuery) {
+      inputRef.current?.focus();
+      return;
+    }
+    beginPerformance('search_trainer_query_result_painted');
+    onSubmit(trimmedQuery);
+  };
   const restoreScrollPosition = useCallback(() => {
     if (restoredScrollRef.current || initialScrollOffset <= 0 || isLoading) return;
     restoredScrollRef.current = true;
@@ -158,46 +190,75 @@ export const NativeTrainerSearchScreen = ({
       ListHeaderComponent={(
         <>
           <View style={[styles.intro, light && styles.panelLight]}>
-            <Text style={styles.eyebrow}>TRAINER SEARCH</Text>
-            <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>
-              Find a trainer
-            </Text>
-            <Text style={[styles.description, light && styles.secondaryLight]}>
-              Search by their Nexus username or Pokémon GO name.
-            </Text>
-            <Text style={[styles.label, light && styles.textLight]}>Trainer name</Text>
-            <View style={[styles.inputShell, light && styles.inputShellLight]}>
-              <View style={styles.searchGlyph}>
-                <NativeUiIcon color={light ? '#6b7478' : '#9babad'} name="search" size={21} />
+            <View style={styles.introHeader}>
+              <View style={[styles.introIcon, light && styles.introIconLight]}>
+                <NativeUiIcon color="#2f9cff" name="trainers" size={21} />
               </View>
-              <TextInput
-                accessibilityLabel="Trainer name"
-                autoCapitalize="none"
-                autoComplete="off"
-                autoCorrect={false}
-                enterKeyHint="search"
-                onChangeText={onQueryChange}
-                onSubmitEditing={Keyboard.dismiss}
-                placeholder="Username or Pokémon GO name"
-                placeholderTextColor={light ? '#6b7478' : '#839396'}
-                ref={inputRef}
-                returnKeyType="search"
-                style={[styles.input, light && styles.inputLight]}
-                value={query}
-              />
-              {query ? (
-                <Pressable
-                  accessibilityLabel="Clear trainer search"
-                  accessibilityRole="button"
-                  onPress={() => {
-                    onQueryChange('');
-                    inputRef.current?.focus();
+              <View style={styles.introCopy}>
+                <Text style={styles.eyebrow}>TRAINER SEARCH</Text>
+                <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>
+                  Find a trainer
+                </Text>
+                <Text style={[styles.description, light && styles.secondaryLight]}>
+                  Search by their Nexus username or Pokémon GO name.
+                </Text>
+              </View>
+            </View>
+            <Text style={[styles.label, light && styles.textLight]}>Trainer name</Text>
+            <View style={styles.searchRow}>
+              <View style={[styles.inputShell, light && styles.inputShellLight]}>
+                <View style={styles.searchGlyph}>
+                  <NativeUiIcon color={light ? '#6b7478' : '#9babad'} name="search" size={21} />
+                </View>
+                <TextInput
+                  accessibilityLabel="Trainer name"
+                  autoCapitalize="none"
+                  autoComplete="off"
+                  autoCorrect={false}
+                  enterKeyHint="search"
+                  onChangeText={(value) => {
+                    beginPerformance('search_trainer_query_result_painted');
+                    onQueryChange(value);
                   }}
-                  style={({ pressed }) => [styles.clearButton, pressed && styles.pressed]}
-                >
-                  <Text style={[styles.clearText, light && styles.textLight]}>×</Text>
-                </Pressable>
-              ) : null}
+                  onSubmitEditing={submit}
+                  placeholder="Username or Pokémon GO name"
+                  placeholderTextColor={light ? '#6b7478' : '#839396'}
+                  ref={inputRef}
+                  returnKeyType="search"
+                  style={[styles.input, light && styles.inputLight]}
+                  value={query}
+                />
+                {query ? (
+                  <Pressable
+                    accessibilityLabel="Clear trainer search"
+                    accessibilityRole="button"
+                    onPress={() => {
+                      beginPerformance('search_trainer_clear_result_painted');
+                      onQueryChange('');
+                      inputRef.current?.focus();
+                    }}
+                    style={({ pressed }) => [styles.clearButton, pressed && styles.pressed]}
+                  >
+                    <Text style={[styles.clearText, light && styles.textLight]}>×</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              <Pressable
+                accessibilityLabel="Search trainers"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !hasQuery }}
+                disabled={!hasQuery}
+                onPress={submit}
+                style={({ pressed }) => [
+                  styles.submitButton,
+                  !hasQuery && styles.disabled,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={[styles.submitText, !hasQuery && styles.disabledText]}>
+                  {isLoading ? 'Searching…' : 'Search'}
+                </Text>
+              </Pressable>
             </View>
             <Text accessibilityLiveRegion="polite" style={[styles.hint, light && styles.secondaryLight]}>
               {trimmedQuery.length === 1
@@ -223,7 +284,10 @@ export const NativeTrainerSearchScreen = ({
               </Text>
               <Text style={[styles.stateCopy, light && styles.secondaryLight]}>{error}</Text>
               {onRetry ? (
-                <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retryButton}>
+                <Pressable accessibilityRole="button" onPress={() => {
+                  beginPerformance('search_trainer_query_result_painted');
+                  onRetry();
+                }} style={styles.retryButton}>
                   <Text style={styles.retryText}>Try again</Text>
                 </Pressable>
               ) : null}
@@ -242,7 +306,7 @@ export const NativeTrainerSearchScreen = ({
               </Text>
             </View>
           ) : null}
-          {!isLoading && !error && hasQuery && rows.length === 0 ? (
+          {!isLoading && !error && hasQuery && hasSearched && rows.length === 0 ? (
             <View style={[styles.state, light && styles.panelLight]}>
               <NativeUiIcon color="#42d7c6" name="search" size={27} />
               <Text style={[styles.stateTitle, light && styles.textLight]}>No trainers found</Text>
@@ -251,7 +315,7 @@ export const NativeTrainerSearchScreen = ({
               </Text>
             </View>
           ) : null}
-          {!isLoading && !error && !hasQuery ? (
+          {!isLoading && !error && trimmedQuery.length === 0 ? (
             <View style={[styles.state, light && styles.panelLight]}>
               <NativeUiIcon color="#42d7c6" name="trainers" size={29} />
               <Text style={[styles.stateTitle, light && styles.textLight]}>Find people you know</Text>
@@ -282,17 +346,26 @@ const styles = StyleSheet.create({
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 12, paddingBottom: 110, gap: 12 },
   intro: { padding: 18, borderWidth: 1, borderColor: '#2d4246', borderRadius: 14, backgroundColor: '#171d1f' },
   panelLight: { borderColor: '#b8c7c9', backgroundColor: '#ffffff' },
+  introHeader: { flexDirection: 'row', alignItems: 'center', gap: 13 },
+  introIcon: { width: 48, height: 48, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2f9cff66', borderRadius: 14, backgroundColor: '#2f9cff1f' },
+  introIconLight: { backgroundColor: '#dfefff' },
+  introCopy: { flex: 1, minWidth: 0 },
   eyebrow: { color: '#2f9cff', fontSize: 11, fontWeight: '900', letterSpacing: 1.4 },
-  title: { marginTop: 3, color: '#f7fbfc', fontSize: 25, fontWeight: '900', textAlign: 'center' },
-  description: { marginTop: 5, color: '#a6b1b3', fontSize: 14, lineHeight: 20, textAlign: 'center' },
+  title: { marginTop: 2, color: '#f7fbfc', fontSize: 25, fontWeight: '900' },
+  description: { marginTop: 2, color: '#a6b1b3', fontSize: 14, lineHeight: 20 },
   label: { marginTop: 18, marginBottom: 7, color: '#edf4f5', fontSize: 13, fontWeight: '800' },
-  inputShell: { minHeight: 52, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#718286', borderRadius: 12, backgroundColor: '#0d1214' },
+  searchRow: { flexDirection: 'row', alignItems: 'stretch', gap: 8 },
+  inputShell: { flex: 1, minWidth: 0, minHeight: 52, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#718286', borderRadius: 12, backgroundColor: '#0d1214' },
   inputShellLight: { borderColor: '#849397', backgroundColor: '#ffffff' },
   searchGlyph: { marginLeft: 14, alignItems: 'center', justifyContent: 'center' },
   input: { flex: 1, minWidth: 0, minHeight: 50, paddingHorizontal: 10, color: '#ffffff', fontSize: 16 },
   inputLight: { color: '#11191b' },
   clearButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   clearText: { color: '#eef7f8', fontSize: 28, fontWeight: '400' },
+  submitButton: { minWidth: 96, minHeight: 52, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, borderWidth: 1, borderColor: '#2f9cff', borderRadius: 12, backgroundColor: '#176aad' },
+  submitText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
+  disabled: { borderColor: '#354347', backgroundColor: '#242c2e', opacity: 0.72 },
+  disabledText: { color: '#7d8a8d' },
   hint: { marginTop: 7, color: '#8ea0a3', fontSize: 12 },
   state: { marginTop: 12, alignItems: 'center', padding: 24, gap: 7, borderWidth: 1, borderColor: '#2d4246', borderRadius: 14, backgroundColor: '#12191b' },
   errorState: { borderColor: '#a94858', backgroundColor: 'rgba(103, 26, 42, 0.18)' },

@@ -1,7 +1,7 @@
 import type { PokemonSearchQueryParams } from '@pokemongonexus/shared-contracts/search';
 import type { MobileSessionUser } from '@pokemongonexus/shared-contracts/auth';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Animated, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
@@ -36,6 +36,7 @@ import { NativeTrainerSearchScreen } from '../../screens/NativeTrainerSearchScre
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
 import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 import { NativeProtectedSessionGate } from '../../components/NativeProtectedSessionGate';
+import { markNativeUiPerformanceAfterPaint } from '../../observability/nativeUiInteractionTiming';
 
 const SEARCH_VIEWS: NativeSearchHubView[] = ['pokemon', 'trainers'];
 
@@ -69,11 +70,7 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
   const [pageScrollX] = useState(() => new Animated.Value(0));
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const [draft, setDraft] = useState<NativePokemonSearchDraft>(() => (
-    initialSession?.draft ?? createNativePokemonSearchDraft({
-      city: user.location,
-      latitude: user.coordinates?.latitude,
-      longitude: user.coordinates?.longitude,
-    })
+    initialSession?.draft ?? createNativePokemonSearchDraft()
   ));
   const [executedDraft, setExecutedDraft] = useState<NativePokemonSearchDraft | null>(
     initialSession?.executedDraft ?? null,
@@ -86,6 +83,7 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
     initialSession?.trainerQuery.trim() ?? '',
   );
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [searchFiltersOpen, setSearchFiltersOpen] = useState(false);
   const pokemonSearch = useNativePokemonSearchQuery(pokemonQuery);
   const trainerSearch = useNativeTrainerSearchQuery(
     debouncedTrainerQuery,
@@ -119,7 +117,9 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
   }, [initialSession, requestedView, user.user_id]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedTrainerQuery(trainerQuery.trim()), 250);
+    // Match Vite's deliberate 300 ms auto-search debounce. An explicit Search
+    // action below bypasses this timer on both platforms.
+    const timer = setTimeout(() => setDebouncedTrainerQuery(trainerQuery.trim()), 300);
     return () => clearTimeout(timer);
   }, [trainerQuery]);
 
@@ -153,8 +153,11 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
   }, [activeView, draft, executedDraft, pokemonQuery, sessionHydrated, trainerQuery, user.user_id]);
 
   const changeView = useCallback((view: NativeSearchHubView) => {
+    const startedAt = Date.now();
     setActiveView(view);
-    sliderRef.current?.setPage(SEARCH_VIEWS.indexOf(view));
+    sliderRef.current?.setPage(SEARCH_VIEWS.indexOf(view), undefined, () => {
+      markNativeUiPerformanceAfterPaint('search_mode_result_painted', startedAt);
+    });
   }, []);
 
   const results = useMemo(() => {
@@ -170,6 +173,12 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
   const searchNotice = pokemonQuery && !pokemonSearch.isFetching && pokemonSearch.data
     ? `Search complete · ${pokemonSearch.data.length} ${pokemonSearch.data.length === 1 ? 'listing' : 'listings'} found.`
     : null;
+  const normalizedTrainerQuery = trainerQuery.trim();
+  const trainerResultIsCurrent = normalizedTrainerQuery.length >= 2
+    && normalizedTrainerQuery === debouncedTrainerQuery
+    && !trainerSearch.isFetching
+    && !trainerSearch.isPlaceholderData
+    && trainerSearch.isFetched;
   const savedLocation = user.coordinates && user.location
     ? {
         label: user.location,
@@ -212,6 +221,13 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
       <Text style={[styles.stateCopy, light && styles.secondaryLight]}>
         {errorMessage(snapshotQuery.error) ?? 'The Pokémon catalog could not be loaded.'}
       </Text>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => void snapshotQuery.refetch()}
+        style={styles.retryButton}
+      >
+        <Text style={styles.retryText}>Try again</Text>
+      </Pressable>
     </View>
   ) : (
     <NativePokemonSearchScreen
@@ -224,6 +240,7 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
       isLoading={pokemonSearch.isFetching}
       notice={searchNotice}
       onDraftChange={setDraft}
+      onFilterVisibilityChange={setSearchFiltersOpen}
       onDisplayModeChange={(pokemonDisplayMode) => {
         patchNativeSearchSession(user.user_id, { pokemonDisplayMode });
       }}
@@ -248,11 +265,13 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
 
   return (
     <View style={[styles.screen, light && styles.screenLight]} testID="native-search-route">
-      <NativeSearchHubHeader
-        activeView={activeView}
-        onViewChange={changeView}
-        scrollX={pageScrollX}
-      />
+      {!searchFiltersOpen ? (
+        <NativeSearchHubHeader
+          activeView={activeView}
+          onViewChange={changeView}
+          scrollX={pageScrollX}
+        />
+      ) : null}
       <NativeHorizontalPageSlider
         activeIndex={activeIndex}
         onIndexChange={(index) => setActiveView(SEARCH_VIEWS[index] ?? 'pokemon')}
@@ -261,12 +280,21 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
       >
         {pokemonPanel}
         <NativeTrainerSearchScreen
-          entries={trainerQuery.trim().length >= 2 ? trainerSearch.data ?? [] : []}
-          error={errorMessage(trainerSearch.error)}
-          isLoading={trainerSearch.isFetching}
+          entries={trainerResultIsCurrent ? trainerSearch.data ?? [] : []}
+          error={trainerResultIsCurrent ? errorMessage(trainerSearch.error) : null}
+          hasSearched={trainerResultIsCurrent}
+          isLoading={normalizedTrainerQuery === debouncedTrainerQuery && trainerSearch.isFetching}
           onOpenCatalog={openForeignCatalog}
           onOpenProfile={openTrainerProfile}
           onQueryChange={setTrainerQuery}
+          onSubmit={(query) => {
+            const normalized = query.trim();
+            if (normalized === debouncedTrainerQuery) {
+              void trainerSearch.refetch();
+              return;
+            }
+            setDebouncedTrainerQuery(normalized);
+          }}
           onRetry={() => void trainerSearch.refetch()}
           query={trainerQuery}
           initialScrollOffset={restoredSession?.trainerScrollOffset ?? 0}
@@ -275,10 +303,12 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
           }}
         />
       </NativeHorizontalPageSlider>
-      <NativeActionMenuAnchor
-        assetBaseUrl={runtimeConfig.api.frontendAppUrl}
-        onPress={() => setActionMenuOpen(true)}
-      />
+      {!searchFiltersOpen ? (
+        <NativeActionMenuAnchor
+          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+          onPress={() => setActionMenuOpen(true)}
+        />
+      ) : null}
       {actionMenuOpen ? (
         <NativeActionMenu
           assetBaseUrl={runtimeConfig.api.frontendAppUrl}
@@ -327,6 +357,8 @@ const styles = StyleSheet.create({
   stateLight: { borderColor: '#b4c1c3', backgroundColor: '#ffffff' },
   errorState: { borderColor: '#b94e61' },
   errorIcon: { color: '#ff6e83', fontSize: 28, fontWeight: '900' },
+  retryButton: { minHeight: 42, justifyContent: 'center', marginTop: 4, paddingHorizontal: 16, borderRadius: 8, backgroundColor: '#176aad' },
+  retryText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
   stateTitle: { color: '#f6fafb', fontSize: 18, fontWeight: '900', textAlign: 'center' },
   stateCopy: { maxWidth: 460, color: '#a6b1b3', fontSize: 13, lineHeight: 19, textAlign: 'center' },
   textLight: { color: '#172124' },

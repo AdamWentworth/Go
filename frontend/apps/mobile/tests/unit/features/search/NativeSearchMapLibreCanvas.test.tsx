@@ -70,7 +70,9 @@ describe('NativeSearchMapLibreCanvas', () => {
     expect(view.getByTestId('native-search-maplibre')).toBeTruthy();
     expect(view.getByTestId('map-canvas')).toBeTruthy();
     expect(view.getByTestId('map-camera')).toBeTruthy();
-    expect(view.getByLabelText('OtherTrainer, Shiny Pikachu, approximate area')).toBeTruthy();
+    const marker = view.getByRole('button', { name: 'OtherTrainer, Shiny Pikachu, approximate area' });
+    expect(marker.props.accessibilityState).toEqual({ selected: true });
+    expect(view.getByTestId('native-search-map-marker-listing-1')).toBeTruthy();
 
     fireEvent.press(view.getByTestId('map-marker-listing-1'));
     expect(onSelect).toHaveBeenCalledWith('listing-1');

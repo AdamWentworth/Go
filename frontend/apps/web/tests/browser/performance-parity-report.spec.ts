@@ -9,6 +9,7 @@ import {
   test,
   type Browser,
   type BrowserContext,
+  type Locator,
   type Page,
 } from '@playwright/test';
 
@@ -77,6 +78,7 @@ const androidCdpUrl = process.env.POKEGONEXUS_ANDROID_CDP_URL?.trim()
 const webBaseUrl = (process.env.E2E_BASE_URL?.trim()
   || `http://127.0.0.1:${process.env.E2E_PORT?.trim() || '3100'}`).replace(/\/+$/, '');
 const androidMemoryMetricSamples = new Set<number>();
+let physicalAutomationPage: Page | null = null;
 
 const captureWorkflowScreenshot = async (
   page: Page,
@@ -189,11 +191,38 @@ const performancePvpData = {
 };
 const performancePvpEntries = Object.values(performancePvpData.leagues)
   .reduce((total, league) => total + league.entries.length, 0);
+const performanceSearchResults = [{
+  pokemon_id: 25,
+  instance_id: 'performance-search-pikachu',
+  username: 'OtherTrainer',
+  distance: 2.8,
+  latitude: 49.289,
+  longitude: -123.119,
+  cp: 821,
+  shiny: true,
+  gender: 'Female',
+  location_caught: 'Coal Harbour',
+  date_caught: '2026-06-18',
+  wanted_list: {},
+}];
 const performanceRouteOptions = {
   baseUrl: webBaseUrl,
+  locationSuggestions: [{
+    displayName: 'Vancouver, British Columbia, Canada',
+    latitude: 49.2827,
+    longitude: -123.1207,
+    boundary: null,
+  }],
   mockImages: false,
   pvpData: performancePvpData,
+  searchResults: performanceSearchResults,
   syncInstances: performanceInstances,
+  trainerSuggestions: [{
+    username: 'OtherTrainer',
+    pokemonGoName: 'OtherPogoName',
+    team: 'Mystic',
+    trainer_level: 50,
+  }],
   userInstances: {
     instances: performanceInstances,
     username: signedInUser.username,
@@ -269,6 +298,7 @@ const setAuthAndTheme = async (
 ) => {
   await page.addInitScript(({ activeTheme, authState, user }) => {
     localStorage.clear();
+    sessionStorage.clear();
     localStorage.setItem('isLightMode', String(activeTheme === 'light'));
     if (authState === 'signed-in') localStorage.setItem('user', JSON.stringify(user));
   }, { activeTheme: theme, authState: auth, user: signedInUser });
@@ -442,11 +472,30 @@ const createMeasuredPage = async (
   auth: ContractRoute['auth'],
   theme: 'dark' | 'light',
 ) => {
-  const page = await context.newPage();
+  const page = performanceProfile === 'physical-android'
+    && physicalAutomationPage
+    && !physicalAutomationPage.isClosed()
+    ? physicalAutomationPage
+    : await context.newPage();
+  if (performanceProfile === 'physical-android') physicalAutomationPage = page;
+  // CDP creates Android Chrome tabs in the background. Playwright can inspect
+  // the background tab's DOM while real touch injection still lands on the
+  // foreground tab, producing false overlap/interception failures. Explicitly
+  // foreground every measured page; this is a no-op for the desktop proxy.
+  await page.bringToFront();
   await installE2eRoutes(page, performanceRouteOptions);
   await setAuthAndTheme(page, auth, theme);
   await installBrowserProbe(page);
   return page;
+};
+
+const closeMeasuredPage = async (page: Page) => {
+  // Android sends real touch input only to Chrome's foreground tab. Reuse the
+  // one foreground automation tab across physical samples; creating/closing
+  // background tabs makes DOM inspection and touch injection target different
+  // pages. Desktop contexts retain their normal page isolation.
+  if (performanceProfile === 'physical-android') return;
+  await page.close();
 };
 
 const recordInteraction = async (
@@ -459,6 +508,18 @@ const recordInteraction = async (
   addMetric(scenarioId, 'interaction_ready_ms', latency, sampleIndex, {
     direction: 'lower', unit: 'ms',
   });
+};
+
+const activateMeasuredControl = async (locator: Locator) => {
+  if (performanceProfile === 'physical-android') {
+    // Native interaction traces start inside the Pressable handler. Dispatching
+    // the DOM activation event is the like-for-like start on Android Chrome and
+    // avoids CDP's incorrect CSS-to-device coordinate conversion on high-DPI
+    // physical screens.
+    await locator.dispatchEvent('click');
+    return;
+  }
+  await locator.click();
 };
 
 const collectSharedInteractions = async (
@@ -477,6 +538,10 @@ const collectSharedInteractions = async (
     await collectPvpInteractions(context, sampleIndex);
     return;
   }
+  if (workflowFilter === 'search') {
+    await collectSearchInteractions(context, sampleIndex);
+    return;
+  }
   const home = await createMeasuredPage(context, 'signed-in', 'dark');
   try {
     await home.goto(`${webBaseUrl}/`, { waitUntil: 'domcontentloaded' });
@@ -490,7 +555,7 @@ const collectSharedInteractions = async (
     await expect(home.locator('html')).toHaveAttribute('data-theme', 'light');
     await recordInteraction(home, 'interaction.theme.toggle', sampleIndex);
   } finally {
-    await home.close();
+    await closeMeasuredPage(home);
   }
 
   const collection = await createMeasuredPage(context, 'signed-in', 'dark');
@@ -508,7 +573,7 @@ const collectSharedInteractions = async (
     await recordInteraction(collection, 'interaction.collection.filter', sampleIndex);
     await recordInteraction(collection, 'interaction.collection.query-result', sampleIndex);
   } finally {
-    await collection.close();
+    await closeMeasuredPage(collection);
   }
 
   const queryCollection = await createMeasuredPage(context, 'signed-in', 'dark');
@@ -524,7 +589,7 @@ const collectSharedInteractions = async (
       .waitFor({ state: 'visible' });
     await recordInteraction(queryCollection, 'interaction.collection.evolution-result', sampleIndex);
   } finally {
-    await queryCollection.close();
+    await closeMeasuredPage(queryCollection);
   }
 
   const sortCollection = await createMeasuredPage(context, 'signed-in', 'dark');
@@ -539,7 +604,7 @@ const collectSharedInteractions = async (
     await expect(sortCollection.locator('.sort-button-img')).toHaveAttribute('alt', 'NAME');
     await recordInteraction(sortCollection, 'interaction.collection.sort-result', sampleIndex);
   } finally {
-    await sortCollection.close();
+    await closeMeasuredPage(sortCollection);
   }
 
   const tagCollection = await createMeasuredPage(context, 'signed-in', 'dark');
@@ -563,7 +628,7 @@ const collectSharedInteractions = async (
     await tagCollection.locator('.modal-overlay').waitFor({ state: 'visible' });
     await recordInteraction(tagCollection, 'interaction.collection.clear-tag-dialog', sampleIndex);
   } finally {
-    await tagCollection.close();
+    await closeMeasuredPage(tagCollection);
   }
 
   const organizer = await createMeasuredPage(context, 'signed-in', 'dark');
@@ -576,7 +641,7 @@ const collectSharedInteractions = async (
     await organizer.locator('.pokemon-organizer').waitFor({ state: 'visible' });
     await recordInteraction(organizer, 'interaction.collection.organizer', sampleIndex);
   } finally {
-    await organizer.close();
+    await closeMeasuredPage(organizer);
   }
 
   const instance = await createMeasuredPage(context, 'signed-in', 'dark');
@@ -594,12 +659,125 @@ const collectSharedInteractions = async (
     await expect(previousButton).toBeHidden();
     await recordInteraction(instance, 'interaction.instance.navigate', sampleIndex * 2 + 1);
   } finally {
-    await instance.close();
+    await closeMeasuredPage(instance);
   }
 
   await collectPokedexInteractions(context, sampleIndex);
   await collectRaidInteractions(context, sampleIndex);
   await collectPvpInteractions(context, sampleIndex);
+  await collectSearchInteractions(context, sampleIndex);
+};
+
+const collectSearchInteractions = async (
+  context: BrowserContext,
+  sampleIndex: number,
+) => {
+  const page = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    await page.goto(`${webBaseUrl}/search`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(page);
+    const pokemonInput = page.getByRole('combobox', { name: 'Pokémon' });
+    await pokemonInput.waitFor({ state: 'visible' });
+
+    await pokemonInput.fill('Pika');
+    const pikachu = page.getByRole('option', { name: /Pikachu/i }).first();
+    await pikachu.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.search.pokemon-picker', sampleIndex);
+    await activateMeasuredControl(pikachu);
+    await expect(pokemonInput).toHaveValue('Pikachu');
+    await recordInteraction(page, 'interaction.search.pokemon-selection', sampleIndex);
+
+    const forTrade = page.getByRole('button', { name: 'For Trade', exact: true });
+    await activateMeasuredControl(forTrade);
+    await expect(forTrade).toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.search.ownership-result', sampleIndex);
+
+    await activateMeasuredControl(page.getByRole('button', { name: /^Filters/ }));
+    const filters = page.getByRole('dialog', { name: 'Refine your search' });
+    await filters.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.search.filters-open', sampleIndex);
+
+    const locationTab = filters.getByRole('tab', { name: 'Location', exact: true });
+    await activateMeasuredControl(locationTab);
+    await expect(locationTab).toHaveAttribute('aria-selected', 'true');
+    await filters.getByText('Where should we look?').waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.search.filter-section', sampleIndex * 2);
+
+    const city = filters.getByPlaceholder('Search for a city');
+    await city.fill('Vancouver');
+    await activateMeasuredControl(filters.getByRole('button', { name: 'Vancouver, British Columbia, Canada' }));
+    await expect(city).toHaveValue('Vancouver, British Columbia, Canada');
+    await recordInteraction(page, 'interaction.search.filter-result', sampleIndex * 2);
+
+    const matchingTab = filters.getByRole('tab', { name: 'Matching', exact: true });
+    await activateMeasuredControl(matchingTab);
+    await expect(matchingTab).toHaveAttribute('aria-selected', 'true');
+    const mutualMatches = filters.getByRole('switch', { name: 'Mutual matches only' });
+    await mutualMatches.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.search.filter-section', sampleIndex * 2 + 1);
+    await activateMeasuredControl(mutualMatches);
+    await expect(mutualMatches).toHaveAttribute('aria-checked', 'true');
+    await recordInteraction(page, 'interaction.search.filter-result', sampleIndex * 2 + 1);
+    await captureWorkflowScreenshot(page, sampleIndex, 'search-filters', filters);
+
+    await activateMeasuredControl(filters.getByRole('button', { name: 'Apply and search' }));
+    await filters.waitFor({ state: 'detached' });
+    const results = page.getByRole('region', { name: 'Pokémon search results' });
+    await results.getByText('OtherTrainer').waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.search.results', sampleIndex);
+
+    const details = results.locator('details.search-result-details-disclosure').first();
+    await activateMeasuredControl(details.locator('summary'));
+    await expect(details).toHaveAttribute('open', '');
+    await recordInteraction(page, 'interaction.search.details-result', sampleIndex);
+    await captureWorkflowScreenshot(page, sampleIndex, 'search-results', results);
+
+    await activateMeasuredControl(page.getByRole('button', { name: 'Map view', exact: true }));
+    const map = page.locator('.search-map-shell');
+    await map.waitFor({ state: 'visible' });
+    // OpenLayers deliberately fits the result extent over a one-second
+    // animation. The map is not interaction-ready until that camera motion
+    // settles; including it also makes the native comparison honest.
+    await page.waitForTimeout(1_100);
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
+    await recordInteraction(page, 'interaction.search.display-result', sampleIndex * 2);
+
+    const mapViewport = map.locator('.ol-viewport');
+    const bounds = await mapViewport.boundingBox();
+    if (!bounds) throw new Error('Search map viewport has no visible bounds.');
+    await mapViewport.click({ position: { x: bounds.width / 2, y: bounds.height / 2 } });
+    const popup = map.locator('.ol-popup');
+    await expect(popup).toContainText('OtherTrainer');
+    await recordInteraction(page, 'interaction.search.map-selection', sampleIndex);
+
+    await activateMeasuredControl(page.getByRole('button', { name: 'List view', exact: true }));
+    await results.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.search.display-result', sampleIndex * 2 + 1);
+
+    await activateMeasuredControl(page.getByRole('button', { name: 'Modify search', exact: true }));
+    await forTrade.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.search.modify-result', sampleIndex);
+
+    const trainersTab = page.getByRole('tab', { name: 'Trainers', exact: true });
+    await activateMeasuredControl(trainersTab);
+    await expect(trainersTab).toHaveAttribute('aria-selected', 'true');
+    await page.waitForTimeout(330);
+    const trainerInput = page.getByRole('searchbox', { name: 'Trainer name' });
+    await trainerInput.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.search.mode-result', sampleIndex);
+
+    await trainerInput.fill('Other');
+    await page.getByText('Nexus · @OtherTrainer').waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.search.trainer-query-result', sampleIndex);
+    await captureWorkflowScreenshot(page, sampleIndex, 'search-trainers');
+    await activateMeasuredControl(page.getByRole('button', { name: 'Clear trainer search' }));
+    await page.getByText('Find people you know').waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.search.trainer-clear-result', sampleIndex);
+  } finally {
+    await closeMeasuredPage(page);
+  }
 };
 
 const collectPokedexInteractions = async (
@@ -744,7 +922,7 @@ const collectPokedexInteractions = async (
     await recordInteraction(page, 'interaction.pokedex.detail.bulk-dialog', sampleIndex + repetitions);
     await page.getByRole('dialog', { name: 'Confirm action' }).getByRole('button', { name: 'Cancel', exact: true }).click();
   } finally {
-    await page.close();
+    await closeMeasuredPage(page);
   }
 };
 
@@ -841,7 +1019,7 @@ const collectRaidInteractions = async (
     await page.getByRole('dialog', { name: /Log .* raid/i }).waitFor({ state: 'visible' });
     await recordInteraction(page, 'interaction.raid.calibration-open', sampleIndex);
   } finally {
-    await page.close();
+    await closeMeasuredPage(page);
   }
 };
 
@@ -1048,7 +1226,7 @@ const collectPvpInteractions = async (
       collectAndroidChromeMemoryMetric(sampleIndex);
     }
   } finally {
-    await page.close();
+    await closeMeasuredPage(page);
   }
 };
 
@@ -1222,6 +1400,12 @@ test.describe('Vite performance parity report', () => {
       const [connectedContext] = ownedBrowser.contexts();
       if (!connectedContext) throw new Error('Android Chrome exposed no inspectable browser context.');
       physicalContext = connectedContext;
+      physicalAutomationPage = connectedContext.pages().find((page) => (
+        page.url().startsWith(webBaseUrl)
+      )) ?? connectedContext.pages().at(-1) ?? null;
+      if (!physicalAutomationPage) {
+        throw new Error('Android Chrome exposed no foreground automation page.');
+      }
     } else {
       ownedBrowser = await chromium.launch({
         headless: true,
@@ -1269,7 +1453,7 @@ test.describe('Vite performance parity report', () => {
                       repetition * contract.routes.length * 2 + themeIndex * contract.routes.length + routeIndex,
                     );
                   } finally {
-                    await page.close();
+                    await closeMeasuredPage(page);
                   }
                 }
                 if (!routeFilter && auth === 'signed-in' && theme === 'dark') {

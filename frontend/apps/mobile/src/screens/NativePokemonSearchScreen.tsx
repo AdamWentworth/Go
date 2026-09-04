@@ -32,6 +32,7 @@ import { NativeSearchMapView } from '../features/search/NativeSearchMapView';
 import { NativeOptionPicker, type NativeOptionPickerEntry } from '../components/NativeOptionPicker';
 import { NativeUiIcon } from '../components/NativeUiIcon';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
 
 type SavedLocation = Coordinates & { label: string };
 
@@ -47,6 +48,7 @@ type Props = {
   notice?: string | null;
   onDisplayModeChange?: (mode: 'list' | 'map') => void;
   onDraftChange: (draft: NativePokemonSearchDraft) => void;
+  onFilterVisibilityChange?: (visible: boolean) => void;
   onOpenListing: (result: NativePokemonSearchResult) => void;
   onOpenProfile: (username: string) => void;
   onSearch: (
@@ -135,6 +137,7 @@ const ResultCard = ({
   result: NativePokemonSearchResult;
 }) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsStartedAtRef = useRef<number | null>(null);
   const accent = light
     ? result.mode === 'trade' ? '#087454' : result.mode === 'wanted' ? '#b0003b' : '#005bb5'
     : result.mode === 'trade' ? '#35c680' : result.mode === 'wanted' ? '#f25f78' : '#2f9cff';
@@ -161,6 +164,12 @@ const ResultCard = ({
     : result.mode === 'caught'
       ? 'Pokémon details'
       : 'Listing details';
+  useEffect(() => {
+    const startedAt = detailsStartedAtRef.current;
+    if (startedAt == null) return;
+    detailsStartedAtRef.current = null;
+    markNativeUiPerformanceAfterPaint('search_details_result_painted', startedAt);
+  }, [detailsOpen]);
   return (
     <View style={[styles.resultCard, light && styles.resultCardLight, { borderTopColor: accent }]}>
       <View style={[styles.resultHeader, { backgroundColor: `${accent}12` }]}>
@@ -204,7 +213,10 @@ const ResultCard = ({
             accessibilityLabel={detailsLabel}
             accessibilityRole="button"
             accessibilityState={{ expanded: detailsOpen }}
-            onPress={() => setDetailsOpen((current) => !current)}
+            onPress={() => {
+              detailsStartedAtRef.current = Date.now();
+              setDetailsOpen((current) => !current);
+            }}
             style={styles.detailsSummary}
           >
             <Text style={[styles.detailsSummaryText, light && styles.textLight]}>▸  {detailsLabel}</Text>
@@ -278,6 +290,7 @@ export const NativePokemonSearchScreen = ({
   notice = null,
   onDisplayModeChange,
   onDraftChange,
+  onFilterVisibilityChange,
   onOpenListing,
   onOpenProfile,
   onSearch,
@@ -293,12 +306,15 @@ export const NativePokemonSearchScreen = ({
   const [filterSection, setFilterSection] = useState<NativeSearchFilterSection>('pokemon');
   const [filterError, setFilterError] = useState<string | null>(null);
   const [filterNotice, setFilterNotice] = useState<string | null>(null);
+  const [filterPrepared, setFilterPrepared] = useState(false);
+  const [preparedFilterDraft, setPreparedFilterDraft] = useState(draft);
   const [displayMode, setDisplayMode] = useState<'list' | 'map'>(initialDisplayMode);
   const [editingSubmittedSearch, setEditingSubmittedSearch] = useState(!hasSearched);
   const [pokemonPickerOpen, setPokemonPickerOpen] = useState(false);
   const listRef = useRef<FlatList<NativePokemonSearchResult>>(null);
   const restoredScrollRef = useRef(initialScrollOffset <= 0);
   const latestScrollOffsetRef = useRef(initialScrollOffset);
+  const performanceStartsRef = useRef(new Map<string, number>());
   const selectedPokemon = useMemo(() => catalog.find((pokemon) => (
     pokemon.pokemon_id === draft.pokemonId && (pokemon.form ?? null) === draft.form
   )) ?? catalog.find((pokemon) => pokemon.pokemon_id === draft.pokemonId) ?? null, [catalog, draft.form, draft.pokemonId]);
@@ -314,9 +330,54 @@ export const NativePokemonSearchScreen = ({
       imageUri: absoluteUri(pokemon.image_url, assetBaseUrl),
     })), [assetBaseUrl, catalog]);
 
+  const beginPerformance = useCallback((event: string) => {
+    performanceStartsRef.current.set(event, Date.now());
+  }, []);
+  const finishPerformance = useCallback((event: string) => {
+    const startedAt = performanceStartsRef.current.get(event);
+    if (startedAt == null) return;
+    performanceStartsRef.current.delete(event);
+    markNativeUiPerformanceAfterPaint(event, startedAt);
+  }, []);
+
+  useEffect(() => {
+    if (displayMode === 'list') finishPerformance('search_display_result_painted');
+  }, [displayMode, finishPerformance]);
+  useEffect(() => {
+    if (editingSubmittedSearch) finishPerformance('search_modify_result_painted');
+  }, [editingSubmittedSearch, finishPerformance]);
+  useEffect(() => {
+    if (pokemonPickerOpen) finishPerformance('search_pokemon_picker_painted');
+  }, [finishPerformance, pokemonPickerOpen]);
+  useEffect(() => {
+    if (filtersOpen) finishPerformance('search_filters_painted');
+  }, [filtersOpen, finishPerformance]);
+  useEffect(() => {
+    finishPerformance('search_ownership_result_painted');
+  }, [draft.ownership, finishPerformance]);
+  useEffect(() => {
+    finishPerformance('search_pokemon_selection_painted');
+  }, [draft.form, draft.pokemonId, finishPerformance]);
+  useEffect(() => {
+    finishPerformance('search_filter_result_painted');
+  }, [draft, finishPerformance]);
+  useEffect(() => {
+    if (!editingSubmittedSearch && hasSearched && !isLoading && !error) {
+      finishPerformance('search_results_painted');
+    }
+  }, [editingSubmittedSearch, error, finishPerformance, hasSearched, isLoading, results]);
+
   useEffect(() => {
     if (notice) AccessibilityInfo.announceForAccessibility(notice);
   }, [notice]);
+  useEffect(() => {
+    if (!onFilterVisibilityChange || filterPrepared || !editingSubmittedSearch) return undefined;
+    const timer = setTimeout(() => {
+      setPreparedFilterDraft(draft);
+      setFilterPrepared(true);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [draft, editingSubmittedSearch, filterPrepared, onFilterVisibilityChange]);
 
   const restoreScrollPosition = useCallback(() => {
     if (restoredScrollRef.current || initialScrollOffset <= 0 || isLoading) return;
@@ -331,6 +392,8 @@ export const NativePokemonSearchScreen = ({
   };
 
   const changeDisplayMode = (mode: 'list' | 'map') => {
+    if (mode === displayMode) return;
+    beginPerformance('search_display_result_painted');
     setDisplayMode(mode);
     onDisplayModeChange?.(mode);
     // The canonical Search layout keeps the submitted-search summary in view
@@ -343,30 +406,42 @@ export const NativePokemonSearchScreen = ({
   };
 
   const openFilters = (section: NativeSearchFilterSection = 'pokemon') => {
+    beginPerformance('search_filters_painted');
     setFilterError(null);
     setFilterSection(section);
+    setPreparedFilterDraft(draft);
+    setFilterPrepared(true);
+    onFilterVisibilityChange?.(true);
     setFiltersOpen(true);
+  };
+  const submittedFromFiltersRef = useRef(false);
+  const closeFilters = () => {
+    setFiltersOpen(false);
+    onFilterVisibilityChange?.(false);
+    if (submittedFromFiltersRef.current) {
+      submittedFromFiltersRef.current = false;
+      setEditingSubmittedSearch(false);
+    }
   };
   const runSearch = () => {
     const prepared = prepareNativePokemonSearch(draft, selectedPokemon);
     if (!prepared.ok) {
       setFilterSection(prepared.section);
       setFilterError(prepared.message);
+      onFilterVisibilityChange?.(true);
       setFiltersOpen(true);
-      return;
+      return false;
     }
     setFilterError(null);
-    setFiltersOpen(false);
-    setEditingSubmittedSearch(false);
+    beginPerformance('search_results_painted');
+    if (filtersOpen) submittedFromFiltersRef.current = true;
+    else setEditingSubmittedSearch(false);
     onSearch(prepared.query, draft);
+    return filtersOpen;
   };
 
   const resetFilters = () => {
-    const reset = createNativePokemonSearchDraft(savedLocation ? {
-      city: savedLocation.label,
-      latitude: savedLocation.latitude,
-      longitude: savedLocation.longitude,
-    } : {});
+    const reset = createNativePokemonSearchDraft();
     onDraftChange({
       ...reset,
       pokemonId: draft.pokemonId,
@@ -381,7 +456,10 @@ export const NativePokemonSearchScreen = ({
       <Pressable
         accessibilityLabel="Choose Pokémon"
         accessibilityRole="button"
-        onPress={() => setPokemonPickerOpen(true)}
+        onPress={() => {
+          beginPerformance('search_pokemon_picker_painted');
+          setPokemonPickerOpen(true);
+        }}
         style={[styles.primaryPokemon, light && styles.primaryPokemonLight]}
       >
         <Text
@@ -403,7 +481,10 @@ export const NativePokemonSearchScreen = ({
             accessibilityRole="button"
             accessibilityState={{ selected: draft.ownership === ownership }}
             key={ownership}
-            onPress={() => onDraftChange(setNativePokemonSearchOwnership(draft, ownership))}
+            onPress={() => {
+              beginPerformance('search_ownership_result_painted');
+              onDraftChange(setNativePokemonSearchOwnership(draft, ownership));
+            }}
             style={[
               styles.primaryOwnershipButton,
               light && styles.primaryOwnershipButtonLight,
@@ -427,7 +508,7 @@ export const NativePokemonSearchScreen = ({
         <View style={styles.primaryLocationCopy}>
           <Text style={[styles.primaryLocationLabel, light && styles.secondaryLight]}>LOCATION</Text>
           <Text numberOfLines={1} style={[styles.primaryLocationValue, light && styles.textLight]}>
-            {draft.city || `Within ${draft.rangeKm} km`}
+            {draft.useCurrentLocation ? 'Current location' : draft.city || `Within ${draft.rangeKm} km`}
           </Text>
         </View>
       </Pressable>
@@ -505,7 +586,7 @@ export const NativePokemonSearchScreen = ({
                   <Text style={styles.modeChip}>{modeLabel(draft.ownership)}</Text>
                   <View style={[styles.neutralChip, styles.summaryChipRow, light && styles.neutralChipLight]}>
                     <NativeUiIcon color={light ? '#566467' : '#c1ccce'} name="map" size={10} />
-                    <Text numberOfLines={2} style={[styles.neutralChipText, light && styles.secondaryLight]}>{draft.city ? draft.city.replace(/,\s*([^,]+)$/, ',\n$1') : 'Choose location'}</Text>
+                    <Text numberOfLines={2} style={[styles.neutralChipText, light && styles.secondaryLight]}>{draft.useCurrentLocation ? 'Current location' : draft.city ? draft.city.replace(/,\s*([^,]+)$/, ',\n$1') : 'Choose location'}</Text>
                   </View>
                   {filterCount ? (
                     <View style={[styles.neutralChip, styles.summaryChipRow, light && styles.neutralChipLight]}>
@@ -515,7 +596,10 @@ export const NativePokemonSearchScreen = ({
                   ) : null}
                 </View>
               </View>
-              <Pressable accessibilityLabel="Modify search" accessibilityRole="button" onPress={() => setEditingSubmittedSearch(true)} style={styles.modifyButton}>
+              <Pressable accessibilityLabel="Modify search" accessibilityRole="button" onPress={() => {
+                beginPerformance('search_modify_result_painted');
+                setEditingSubmittedSearch(true);
+              }} style={styles.modifyButton}>
                 <View style={styles.iconLabelRow}>
                   <NativeUiIcon color="#ffffff" name="filters" size={15} />
                   <Text style={styles.modifyButtonText}>Modify</Text>
@@ -582,6 +666,7 @@ export const NativePokemonSearchScreen = ({
               </View>
               {displayMode === 'map' ? (
                 <NativeSearchMapView
+                  onReady={() => finishPerformance('search_display_result_painted')}
                   onOpenListing={onOpenListing}
                   onOpenProfile={onOpenProfile}
                   results={results}
@@ -613,23 +698,29 @@ export const NativePokemonSearchScreen = ({
       style={[styles.screen, light && styles.screenLight]}
       testID="native-pokemon-search"
       />
-      {filtersOpen ? (
+      {filtersOpen || (onFilterVisibilityChange && filterPrepared) ? (
         <NativePokemonSearchFilterSheet
           assetBaseUrl={assetBaseUrl}
           catalog={catalog}
-          draft={draft}
+          draft={filtersOpen ? draft : preparedFilterDraft}
+          embedded={Boolean(onFilterVisibilityChange)}
           error={filterError}
           initialSection={filterSection}
           isSearching={isLoading}
-          key={`${filterSection}:${filterError ?? 'clean'}`}
           notice={filterNotice}
           onApply={runSearch}
-          onChange={onDraftChange}
-          onClose={() => setFiltersOpen(false)}
+          onChange={(nextDraft) => {
+            beginPerformance('search_filter_result_painted');
+            onDraftChange(nextDraft);
+          }}
+          onClose={closeFilters}
           onNotice={setFilterNotice}
-          onReset={resetFilters}
+          onReset={() => {
+            beginPerformance('search_filter_result_painted');
+            resetFilters();
+          }}
           savedLocation={savedLocation}
-          visible
+          visible={filtersOpen}
         />
       ) : null}
       {pokemonPickerOpen ? (
@@ -637,7 +728,10 @@ export const NativePokemonSearchScreen = ({
           onClose={() => setPokemonPickerOpen(false)}
           onSelect={(option) => {
             const selected = catalog.find((pokemon) => pokemonKey(pokemon) === option.key);
-            if (selected) onDraftChange(normalizeNativePokemonSelection(draft, selected));
+            if (selected) {
+              beginPerformance('search_pokemon_selection_painted');
+              onDraftChange(normalizeNativePokemonSelection(draft, selected));
+            }
             setPokemonPickerOpen(false);
           }}
           options={pokemonOptions}

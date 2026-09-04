@@ -1,7 +1,7 @@
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import { Redirect } from 'expo-router';
 import { Animated, StyleSheet, View } from 'react-native';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   NativeHorizontalPageSlider,
   type NativeHorizontalPageSliderHandle,
@@ -20,6 +20,7 @@ import {
 import { NativePokemonSearchScreen } from '../../screens/NativePokemonSearchScreen';
 import { NativeTrainerSearchScreen } from '../../screens/NativeTrainerSearchScreen';
 import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
+import { markNativeUiPerformanceAfterPaint } from '../../observability/nativeUiInteractionTiming';
 
 const ASSET_BASE_URL = 'https://pokegonexus.com';
 const VIEWS: NativeSearchHubView[] = ['pokemon', 'trainers'];
@@ -194,27 +195,40 @@ export default function DeviceSmokeSearchRoute() {
     limit: 5,
   }));
   const [hasSearched, setHasSearched] = useState(true);
+  const [searchFiltersOpen, setSearchFiltersOpen] = useState(false);
   const [trainerQuery, setTrainerQuery] = useState('');
+  const [debouncedTrainerQuery, setDebouncedTrainerQuery] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedTrainerQuery(trainerQuery.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [trainerQuery]);
   const changeView = useCallback((view: NativeSearchHubView) => {
+    const startedAt = Date.now();
     setActiveView(view);
-    sliderRef.current?.setPage(VIEWS.indexOf(view));
+    sliderRef.current?.setPage(VIEWS.indexOf(view), undefined, () => {
+      markNativeUiPerformanceAfterPaint('search_mode_result_painted', startedAt);
+    });
   }, []);
-  const trainers = useMemo(() => trainerQuery.trim().length < 2 ? [] : [{
+  const trainers = useMemo(() => debouncedTrainerQuery.length < 2 ? [] : [{
     username: 'OtherTrainer',
     pokemonGoName: 'OtherPogoName',
     team: 'Mystic',
     trainer_level: 50,
-  }], [trainerQuery]);
+  }], [debouncedTrainerQuery]);
+  const trainerResultIsCurrent = trainerQuery.trim().length >= 2
+    && trainerQuery.trim() === debouncedTrainerQuery;
 
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
   return (
     <View style={[styles.screen, light && styles.screenLight]}>
-      <NativeSearchHubHeader
-        activeView={activeView}
-        onViewChange={changeView}
-        scrollX={pageScrollX}
-      />
+      {!searchFiltersOpen ? (
+        <NativeSearchHubHeader
+          activeView={activeView}
+          onViewChange={changeView}
+          scrollX={pageScrollX}
+        />
+      ) : null}
       <NativeHorizontalPageSlider
         activeIndex={VIEWS.indexOf(activeView)}
         onIndexChange={(index) => setActiveView(VIEWS[index] ?? 'pokemon')}
@@ -228,6 +242,7 @@ export default function DeviceSmokeSearchRoute() {
           hasSearched={hasSearched}
           notice={hasSearched ? 'Search complete · 3 listings found.' : null}
           onDraftChange={setDraft}
+          onFilterVisibilityChange={setSearchFiltersOpen}
           onOpenListing={() => undefined}
           onOpenProfile={() => undefined}
           onSearch={() => setHasSearched(true)}
@@ -239,14 +254,16 @@ export default function DeviceSmokeSearchRoute() {
           }}
         />
         <NativeTrainerSearchScreen
-          entries={trainers}
+          entries={trainerResultIsCurrent ? trainers : []}
+          hasSearched={trainerResultIsCurrent}
           onOpenCatalog={() => undefined}
           onOpenProfile={() => undefined}
           onQueryChange={setTrainerQuery}
+          onSubmit={(query) => setDebouncedTrainerQuery(query.trim())}
           query={trainerQuery}
         />
       </NativeHorizontalPageSlider>
-      <NativeRouteActionMenu currentPath="/search" signedIn />
+      {!searchFiltersOpen ? <NativeRouteActionMenu currentPath="/search" signedIn /> : null}
     </View>
   );
 }

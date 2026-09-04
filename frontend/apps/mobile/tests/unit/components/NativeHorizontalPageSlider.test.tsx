@@ -249,6 +249,7 @@ describe('NativeHorizontalPageSlider', () => {
   it('updates the shared indicator immediately when reduced motion disables the page animation', async () => {
     const scrollX = new Animated.Value(0);
     const setValue = jest.spyOn(scrollX, 'setValue');
+    const onComplete = jest.fn();
     const ref = createRef<NativeHorizontalPageSliderHandle>();
     render(
       <NativeHorizontalPageSlider
@@ -263,7 +264,8 @@ describe('NativeHorizontalPageSlider', () => {
     );
 
     await act(async () => Promise.resolve());
-    act(() => ref.current?.setPage(1, false));
+    act(() => ref.current?.setPage(1, false, onComplete));
     expect(setValue).toHaveBeenLastCalledWith(412);
+    expect(onComplete).toHaveBeenCalledTimes(1);
   });
 });

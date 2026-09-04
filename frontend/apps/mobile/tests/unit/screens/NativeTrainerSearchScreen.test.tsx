@@ -7,6 +7,7 @@ describe('NativeTrainerSearchScreen', () => {
     onOpenCatalog: jest.fn(),
     onOpenProfile: jest.fn(),
     onQueryChange: jest.fn(),
+    onSubmit: jest.fn(),
     query: '',
   };
 
@@ -32,6 +33,7 @@ describe('NativeTrainerSearchScreen', () => {
         }]}
         onOpenCatalog={onOpenCatalog}
         onOpenProfile={onOpenProfile}
+        hasSearched
         query="adam"
       />,
     );
@@ -60,12 +62,32 @@ describe('NativeTrainerSearchScreen', () => {
     expect(onQueryChange).toHaveBeenCalledWith('');
 
     screen.rerender(
-      <NativeTrainerSearchScreen {...baseProps} error="Search offline." query="adam" />,
+      <NativeTrainerSearchScreen {...baseProps} error="Search offline." hasSearched query="adam" />,
     );
     expect(screen.getByText('Trainer search couldn’t be completed')).toBeTruthy();
     expect(screen.getByText('Search offline.')).toBeTruthy();
 
-    screen.rerender(<NativeTrainerSearchScreen {...baseProps} query="adam" />);
+    screen.rerender(<NativeTrainerSearchScreen {...baseProps} hasSearched query="adam" />);
     expect(screen.getByText('No trainers found')).toBeTruthy();
+  });
+
+  it('matches Vite submit and pre-search states', () => {
+    const onSubmit = jest.fn();
+    const screen = render(
+      <NativeTrainerSearchScreen {...baseProps} onSubmit={onSubmit} query="a" />,
+    );
+
+    expect(screen.getByText('Enter one more character to search.')).toBeTruthy();
+    expect(screen.queryByText('Find people you know')).toBeNull();
+    expect(screen.queryByText('No trainers found')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Search trainers' }).props.accessibilityState)
+      .toEqual({ disabled: true });
+
+    screen.rerender(
+      <NativeTrainerSearchScreen {...baseProps} onSubmit={onSubmit} query="adam" />,
+    );
+    expect(screen.queryByText('No trainers found')).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Search trainers' }));
+    expect(onSubmit).toHaveBeenCalledWith('adam');
   });
 });

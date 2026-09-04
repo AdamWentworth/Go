@@ -40,7 +40,7 @@ type Props = PropsWithChildren<{
 
 export type NativeHorizontalPageSliderHandle = {
   preparePage: (index: number) => void;
-  setPage: (index: number, animated?: boolean) => void;
+  setPage: (index: number, animated?: boolean, onComplete?: () => void) => void;
 };
 
 // Keep programmatic tab changes in step with the canonical Vite page slide.
@@ -191,7 +191,11 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
     releasePageInteraction();
   }, [releasePageInteraction]);
 
-  const setPage = useCallback((index: number, animated = !reduceMotion) => {
+  const setPage = useCallback((
+    index: number,
+    animated = !reduceMotion,
+    onComplete?: () => void,
+  ) => {
     const nextIndex = clampPageIndex(index, panelCount);
     renderedIndexRef.current = nextIndex;
     // Vite moves one three-panel track. Drive the native track and every header
@@ -219,16 +223,18 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
         isInteraction: false,
         toValue: nextIndex * width,
         useNativeDriver: true,
-      }).start(() => {
+      }).start(({ finished }) => {
         if (interactionGeneration !== interactionGenerationRef.current) return;
         pageAnimationActiveRef.current = false;
         releasePageInteraction();
+        if (finished) onComplete?.();
       });
     } else {
       pageAnimationActiveRef.current = false;
       interactionGenerationRef.current += 1;
       releasePageInteraction();
       pageScrollX.setValue(nextIndex * width);
+      onComplete?.();
     }
   }, [
     nativeDrivenDrag,

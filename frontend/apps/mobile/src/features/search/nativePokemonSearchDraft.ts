@@ -19,6 +19,7 @@ export type NativePokemonSearchDraft = {
   chargedMove2Id: number | null;
   ownership: OwnershipMode;
   city: string;
+  useCurrentLocation: boolean;
   latitude: number | null;
   longitude: number | null;
   rangeKm: number;
@@ -61,10 +62,14 @@ export const createNativePokemonSearchDraft = ({
   chargedMove2Id: null,
   ownership: 'caught',
   city: city ?? '',
+  useCurrentLocation: false,
   latitude,
   longitude,
   rangeKm: 5,
-  limit: 20,
+  // Vite treats five results as the untouched/default Search state. Keeping
+  // native on the same baseline prevents a fresh mobile search from doing
+  // four times the work and from silently changing the result set.
+  limit: 5,
   attackIv: null,
   defenseIv: null,
   staminaIv: null,
@@ -75,23 +80,49 @@ export const createNativePokemonSearchDraft = ({
   tradeInWantedList: false,
 });
 
+export type NativePokemonSearchGender = 'Any' | 'Male' | 'Female' | 'Genderless';
+
+/** Matches the gender choices and automatic single-gender selection used by Vite Search. */
+export const nativePokemonSearchGenderOptions = (
+  pokemon: Pick<BasePokemon, 'gender_rate'> | null,
+): NativePokemonSearchGender[] => {
+  const rate = String(pokemon?.gender_rate ?? '').trim().toLocaleUpperCase();
+  if (!rate) return [];
+  if (rate === 'GENDERLESS' || rate === 'NONE') return ['Genderless'];
+  if (rate === 'M/M') return ['Male'];
+  if (rate === 'F/F') return ['Female'];
+  if (rate === 'M/F' || rate === 'F/M') return ['Any', 'Male', 'Female'];
+
+  const [maleRate, femaleRate, genderlessRate] = rate
+    .split('_')
+    .map((value) => Number.parseInt(value, 10) || 0);
+  if (genderlessRate === 100) return ['Genderless'];
+  if (maleRate > 0 && femaleRate > 0) return ['Any', 'Male', 'Female'];
+  if (maleRate > 0) return ['Male'];
+  if (femaleRate > 0) return ['Female'];
+  return [];
+};
+
 export const normalizeNativePokemonSelection = (
   draft: NativePokemonSearchDraft,
   pokemon: BasePokemon,
-): NativePokemonSearchDraft => ({
-  ...draft,
-  pokemonId: pokemon.pokemon_id,
-  pokemonName: pokemon.name,
-  form: pokemon.form || null,
-  costumeId: null,
-  gender: null,
-  backgroundId: null,
-  dynamax: false,
-  gigantamax: false,
-  fastMoveId: null,
-  chargedMove1Id: null,
-  chargedMove2Id: null,
-});
+): NativePokemonSearchDraft => {
+  const genderOptions = nativePokemonSearchGenderOptions(pokemon);
+  return {
+    ...draft,
+    pokemonId: pokemon.pokemon_id,
+    pokemonName: pokemon.name,
+    form: pokemon.form || null,
+    costumeId: null,
+    gender: genderOptions.includes('Any') ? null : genderOptions[0] ?? null,
+    backgroundId: null,
+    dynamax: false,
+    gigantamax: false,
+    fastMoveId: null,
+    chargedMove1Id: null,
+    chargedMove2Id: null,
+  };
+};
 
 export const setNativePokemonSearchMaxMode = (
   draft: NativePokemonSearchDraft,
@@ -143,6 +174,12 @@ export const selectNativePokemonSearchBackground = (
   const costume = requiredCostume == null
     ? null
     : pokemon.costumes?.find((candidate) => candidate.costume_id === requiredCostume) ?? null;
+  if (requiredCostume != null && !costume) {
+    return {
+      draft,
+      notice: 'This background’s required costume is unavailable.',
+    };
+  }
   const costumeName = costume?.name?.trim() || null;
   const changed = draft.costumeId !== requiredCostume;
   return {
@@ -198,7 +235,9 @@ export const prepareNativePokemonSearch = (
     const background = pokemon.backgrounds?.find(
       (candidate) => Number(candidate.background_id) === Number(draft.backgroundId),
     );
-    if (!background || (background.costume_id ?? null) !== draft.costumeId) {
+    const requiredCostumeExists = background?.costume_id == null
+      || pokemon.costumes?.some((costume) => costume.costume_id === background.costume_id);
+    if (!background || !requiredCostumeExists || (background.costume_id ?? null) !== draft.costumeId) {
       return {
         ok: false,
         message: 'The selected background and costume are not a valid combination.',
@@ -257,6 +296,7 @@ export const countNativePokemonSearchFilters = (
   draft.chargedMove1Id != null,
   draft.chargedMove2Id != null,
   draft.rangeKm !== 5,
+  draft.limit !== 5,
   draft.attackIv != null,
   draft.defenseIv != null,
   draft.staminaIv != null,
