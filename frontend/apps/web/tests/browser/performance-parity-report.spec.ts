@@ -890,7 +890,7 @@ const collectPvpInteractions = async (
     await expect(page.getByText('Meta Pokémon 60', { exact: true })).toBeVisible();
     await recordInteraction(page, 'interaction.pvp.more-result', sampleIndex);
 
-    await page.getByRole('button', { name: 'Show details for Clodsire', exact: true }).click();
+    await page.getByRole('button', { name: 'Show details for Meta Pokémon 60', exact: true }).click();
     const strongMatchups = page.getByRole('heading', { name: 'Strong matchups', exact: true });
     await strongMatchups.waitFor({ state: 'visible' });
     await recordInteraction(page, 'interaction.pvp.ranking-detail', sampleIndex);
@@ -1148,7 +1148,14 @@ const parseChromeProcessPssBytes = (text: string) => {
   return totalKilobytes > 0 ? totalKilobytes * 1024 : null;
 };
 
-const collectAndroidChromeSystemMetrics = () => {
+const resetAndroidChromeFrameStats = () => {
+  if (performanceProfile !== 'physical-android' || !androidDeviceId) return;
+  execFileSync(adbPath, [
+    '-s', androidDeviceId, 'shell', 'dumpsys', 'gfxinfo', androidChromePackage, 'reset',
+  ]);
+};
+
+const collectAndroidChromeSystemMetrics = (sampleIndex: number) => {
   if (performanceProfile !== 'physical-android' || !androidDeviceId) return;
   const frameText = execFileSync(adbPath, [
     '-s', androidDeviceId, 'shell', 'dumpsys', 'gfxinfo', androidChromePackage, 'framestats',
@@ -1162,7 +1169,7 @@ const collectAndroidChromeSystemMetrics = () => {
   if (frames.length) {
     const sorted = frames.map((frame) => frame.durationMs).sort((left, right) => left - right);
     const p95 = sorted[Math.max(0, Math.ceil(sorted.length * 0.95) - 1)];
-    addMetric('global.runtime', 'frame_time_p95_ms', p95, 0, {
+    addMetric('global.runtime', 'frame_time_p95_ms', p95, sampleIndex, {
       direction: 'lower', unit: 'ms',
     });
     addMetric(
@@ -1170,7 +1177,7 @@ const collectAndroidChromeSystemMetrics = () => {
       'janky_frames_percent',
       frames.filter((frame) => frame.durationMs > (frame.budgetMs ?? frameBudgetMs)).length
         / frames.length * 100,
-      0,
+      sampleIndex,
       { direction: 'lower', unit: 'percent' },
     );
   }
@@ -1183,7 +1190,7 @@ const collectAndroidChromeSystemMetrics = () => {
       'global.runtime',
       'memory_pss_bytes',
       totalPssBytes,
-      0,
+      sampleIndex,
       { direction: 'lower', unit: 'bytes' },
     );
   }
@@ -1243,6 +1250,7 @@ test.describe('Vite performance parity report', () => {
       });
     try {
       for (let repetition = 0; repetition < repetitions; repetition += 1) {
+        resetAndroidChromeFrameStats();
         if (!workflowsOnly) {
           for (const [themeIndex, theme] of (['dark', 'light'] as const).entries()) {
             for (const auth of (['guest', 'signed-in'] as const)) {
@@ -1296,9 +1304,9 @@ test.describe('Vite performance parity report', () => {
             if (!physicalContext) await interactionContext.close();
           }
         }
+        collectAndroidChromeSystemMetrics(repetition);
       }
     } finally {
-      collectAndroidChromeSystemMetrics();
       writeReport();
       if (performanceProfile !== 'physical-android') {
         await ownedBrowser?.close();

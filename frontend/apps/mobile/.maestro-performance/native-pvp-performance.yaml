@@ -62,20 +62,24 @@ tags:
     direction: DOWN
     timeout: 60000
 - tapOn: Show next 10 PvP rankings
+- scrollUntilVisible:
+    element:
+      text: Meta Pokémon 60
+    direction: DOWN
+    timeout: 30000
 - extendedWaitUntil:
     visible: Meta Pokémon 60
     timeout: 30000
-- scrollUntilVisible:
-    element:
-      text: Show details for Clodsire
-    direction: UP
-    timeout: 60000
-- tapOn: Show details for Clodsire
+- tapOn: Show details for Meta Pokémon 60
 - extendedWaitUntil:
     visible: Role profile
     timeout: 15000
 - assertVisible: Battle build
-- assertVisible: Strong matchups
+- scrollUntilVisible:
+    element:
+      text: Strong matchups
+    direction: DOWN
+    timeout: 30000
 - takeScreenshot: pvp-ranking-detail
 
 # Team Builder selection, search, exact local evaluation, and source evidence.
@@ -83,7 +87,7 @@ tags:
     element:
       text: "^Team Builder$"
     direction: UP
-    timeout: 60000
+    timeout: 120000
 - tapOn: "^Team Builder$"
 - extendedWaitUntil:
     visible: THREE-POKÉMON TEAM
@@ -106,10 +110,22 @@ tags:
     visible: Select Lead with Clodsire
     timeout: 10000
 - tapOn: Select Lead with Clodsire
+- scrollUntilVisible:
+    element:
+      text: Select Safe Swap with Azumarill
+    direction: DOWN
+    timeout: 30000
 - tapOn: Select Safe Swap with Azumarill
+- scrollUntilVisible:
+    element:
+      text: Select Closer with Bulbasaur
+    direction: DOWN
+    timeout: 30000
 - tapOn: Select Closer with Bulbasaur
-- extendedWaitUntil:
-    visible: FIELD COVERAGE
+- scrollUntilVisible:
+    element:
+      text: FIELD COVERAGE
+    direction: UP
     timeout: 30000
 - scrollUntilVisible:
     element:
@@ -117,8 +133,10 @@ tags:
     direction: UP
     timeout: 30000
 - tapOn: Published matchup evidence
-- extendedWaitUntil:
-    visible: Talonflame
+- scrollUntilVisible:
+    element:
+      text: Lanturn
+    direction: DOWN
     timeout: 15000
 - takeScreenshot: pvp-team-builder
 
@@ -221,8 +239,10 @@ tags:
     direction: UP
     timeout: 30000
 - tapOn: "Test .* meta teams"
-- extendedWaitUntil:
-    visible: ROLE-BALANCED META FIELD
+- scrollUntilVisible:
+    element:
+      text: ROLE-BALANCED META FIELD
+    direction: DOWN
     timeout: 60000
 - takeScreenshot: pvp-battle-team
 
@@ -231,14 +251,24 @@ tags:
     element:
       text: "^IV Rank$"
     direction: UP
-    timeout: 60000
+    timeout: 120000
 - tapOn: "^IV Rank$"
 - extendedWaitUntil:
     visible: Find the strongest IV spread for this league
     timeout: 30000
-- tapOn: My Pokémon
+- scrollUntilVisible:
+    element:
+      text: "My Pokémon.*"
+    direction: DOWN
+    timeout: 30000
+- tapOn: "My Pokémon.*"
 - extendedWaitUntil:
     visible: 1 eligible for Great League
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      text: All Pokémon
+    direction: UP
     timeout: 30000
 - tapOn: All Pokémon
 - scrollUntilVisible:
@@ -250,15 +280,22 @@ tags:
 - inputText: Bulbasaur
 - hideKeyboard
 - extendedWaitUntil:
-    visible: Select #0001 Bulbasaur
+    visible: "Select #0001 Bulbasaur"
     timeout: 15000
-- tapOn: Select #0001 Bulbasaur
-- extendedWaitUntil:
-    visible: IV Rank result
+- tapOn: "Select #0001 Bulbasaur"
+- scrollUntilVisible:
+    element:
+      text: Increase Attack IV
+    direction: DOWN
     timeout: 30000
 - tapOn: Increase Attack IV
 - extendedWaitUntil:
     visible: "^1$"
     timeout: 15000
 - tapOn: "★ Best Buddy 51"
+- scrollUntilVisible:
+    element:
+      text: IV Rank result
+    direction: DOWN
+    timeout: 30000
 - takeScreenshot: pvp-iv-rank

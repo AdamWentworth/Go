@@ -206,10 +206,9 @@ const percentile = (values, fraction) => {
   return sorted[Math.max(0, Math.ceil(sorted.length * fraction) - 1)];
 };
 
-const frames = (listArgs.get('--gfxinfo') ?? []).flatMap(
-  (gfxPath) => parseFrameStats(readFileSync(resolve(gfxPath), 'utf8')),
-);
-if (frames.length) {
+for (const gfxPath of listArgs.get('--gfxinfo') ?? []) {
+  const frames = parseFrameStats(readFileSync(resolve(gfxPath), 'utf8'));
+  if (!frames.length) continue;
   const p95 = percentile(frames.map((frame) => frame.durationMs), 0.95);
   const jankyPercent = frames.filter(
     (frame) => frame.durationMs > (frame.budgetMs ?? frameBudgetMs),

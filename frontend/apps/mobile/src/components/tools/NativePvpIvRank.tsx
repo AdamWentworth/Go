@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Image,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -164,7 +163,6 @@ export const NativePvpIvRank = ({
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const [ivs, setIvs] = useState({ attack: 0, defense: 15, stamina: 15 });
   const [bestBuddy, setBestBuddy] = useState(false);
-  const deferredBestBuddy = useDeferredValue(bestBuddy);
   const deferredQuery = useDeferredValue(query);
   const variants = useMemo(
     () => createPokemonVariants(catalog),
@@ -178,14 +176,22 @@ export const NativePvpIvRank = ({
     () => buildOwnedPvPIvRoster(pokemonOptions, variants, instances, rankings),
     [instances, pokemonOptions, rankings, variants],
   );
+  const eligibleOwnedCount = useMemo(
+    () => ownedRoster.entries.filter((entry) => (
+      cpLimit == null || entry.cp == null || entry.cp <= cpLimit
+    )).length,
+    [cpLimit, ownedRoster.entries],
+  );
   const rankedOwnedEntries = useMemo(
-    () => rankOwnedPvPIvEntries(
-      ownedRoster.entries,
-      league,
-      deferredBestBuddy ? 51 : 50,
-      cpLimit,
-    ),
-    [cpLimit, deferredBestBuddy, league, ownedRoster.entries],
+    () => scope === "owned"
+      ? rankOwnedPvPIvEntries(
+          ownedRoster.entries,
+          league,
+          bestBuddy ? 51 : 50,
+          cpLimit,
+        )
+      : [],
+    [bestBuddy, cpLimit, league, ownedRoster.entries, scope],
   );
   const ownedOptions = useMemo(() => {
     const unique = new Map<string, PvPIvPokemonOption>();
@@ -196,7 +202,6 @@ export const NativePvpIvRank = ({
   const selectedOption = selectedOptionId == null
     ? null
     : availableOptions.find((option) => option.id === selectedOptionId) ?? null;
-  const deferredSelectedOption = useDeferredValue(selectedOption);
   const normalizedQuery = deferredQuery.trim().toLocaleLowerCase();
   const matchingCatalog = useMemo(
     () => pokemonOptions
@@ -218,18 +223,18 @@ export const NativePvpIvRank = ({
     [normalizedQuery, rankedOwnedEntries],
   );
   const ivRankings = useMemo(
-    () => deferredSelectedOption?.id === selectedOption?.id && deferredSelectedOption
+    () => selectedOption
       ? buildPvPIvRankings(
           {
-            attack: deferredSelectedOption.attack,
-            defense: deferredSelectedOption.defense,
-            stamina: deferredSelectedOption.stamina,
+            attack: selectedOption.attack,
+            defense: selectedOption.defense,
+            stamina: selectedOption.stamina,
           },
           league,
-          deferredBestBuddy ? 51 : 50,
+          bestBuddy ? 51 : 50,
         )
       : [],
-    [deferredBestBuddy, deferredSelectedOption, league, selectedOption?.id],
+    [bestBuddy, league, selectedOption],
   );
   const rankedOwnedCopies = useMemo(() => {
     if (!selectedOption || scope !== "owned") return [];
@@ -249,18 +254,17 @@ export const NativePvpIvRank = ({
   const evaluatedIvs = scope === "owned" && selectedOwnedCopy
     ? selectedOwnedCopy.entry.ivs
     : ivs;
-  const deferredEvaluatedIvs = useDeferredValue(evaluatedIvs);
   const result = useMemo(
-    () => rankPvPIvSpread(ivRankings, deferredEvaluatedIvs),
-    [deferredEvaluatedIvs, ivRankings],
+    () => rankPvPIvSpread(ivRankings, evaluatedIvs),
+    [evaluatedIvs, ivRankings],
   );
   useEffect(() => finishPerformance("pvp_iv_scope_result_painted"), [finishPerformance, scope]);
   useEffect(() => {
     if (query === deferredQuery) finishPerformance("pvp_iv_search_result_painted");
   }, [deferredQuery, finishPerformance, matchingCatalog, matchingOwned, query]);
   useEffect(() => finishPerformance("pvp_iv_selection_result_painted"), [finishPerformance, result, selectedOption]);
-  useEffect(() => finishPerformance("pvp_iv_adjust_result_painted"), [deferredEvaluatedIvs, finishPerformance, result]);
-  useEffect(() => finishPerformance("pvp_iv_level_result_painted"), [deferredBestBuddy, finishPerformance, result]);
+  useEffect(() => finishPerformance("pvp_iv_adjust_result_painted"), [evaluatedIvs, finishPerformance, result]);
+  useEffect(() => finishPerformance("pvp_iv_level_result_painted"), [bestBuddy, finishPerformance, result]);
   useEffect(() => finishPerformance("pvp_iv_copy_result_painted"), [finishPerformance, selectedOwnedCopy]);
   const changeScope = (next: Scope) => {
     if (next === "owned" && !signedIn) return;
@@ -309,7 +313,7 @@ export const NativePvpIvRank = ({
           <View style={styles.iconLabelRow}><NativeUiIcon color={scope === "catalog" ? '#071313' : light ? '#071d20' : '#f5ffff'} name="catalog" size={14} /><Text style={[styles.scopeText, light && styles.textLight, scope === "catalog" && styles.activeText]}>All Pokémon</Text></View>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityState={{ disabled: !signedIn, selected: scope === "owned" }} disabled={!signedIn} onPress={() => changeScope("owned")} style={[styles.scopeButton, scope === "owned" && styles.scopeActive, !signedIn && styles.disabled]}>
-          <View style={styles.iconLabelRow}><NativeUiIcon color={scope === "owned" ? '#071313' : light ? '#071d20' : '#f5ffff'} name="trainers" size={14} /><Text style={[styles.scopeText, light && styles.textLight, scope === "owned" && styles.activeText]}>My Pokémon{signedIn && !isLoading ? `  ${rankedOwnedEntries.length}` : ""}</Text></View>
+          <View style={styles.iconLabelRow}><NativeUiIcon color={scope === "owned" ? '#071313' : light ? '#071d20' : '#f5ffff'} name="trainers" size={14} /><Text style={[styles.scopeText, light && styles.textLight, scope === "owned" && styles.activeText]}>My Pokémon{signedIn && !isLoading ? `  ${eligibleOwnedCount}` : ""}</Text></View>
         </Pressable>
       </View>
 
@@ -405,7 +409,7 @@ export const NativePvpIvRank = ({
         <View style={styles.statGrid}>{[["Level", formatLevel(result.selected.level)], ["CP", result.selected.cp.toLocaleString()], ["Attack", result.selected.battleAttack.toFixed(1)], ["Defense", result.selected.battleDefense.toFixed(1)], ["HP", String(result.selected.battleHp)]].map(([label, value]) => <View key={label} style={styles.stat}><Text style={[styles.statLabel, light && styles.mutedLight]}>{label}</Text><Text style={[styles.statValue, light && styles.textLight]}>{value}</Text></View>)}</View>
         <View style={[styles.best, light && styles.bestLight]}><View><Text style={[styles.productLabel, light && styles.mutedLight]}>RANK 1 SPREAD</Text><Text style={[styles.bestIvs, light && styles.textLight]}>{result.best.attack}/{result.best.defense}/{result.best.stamina}</Text></View><Text style={[styles.bestMeta, light && styles.mutedLight]}>Level {formatLevel(result.best.level)} · CP {result.best.cp.toLocaleString()}</Text></View>
         <Text style={[styles.nearbyTitle, light && styles.accentLight]}>NEARBY RANKS</Text>
-        <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false}><View style={styles.table}>{result.nearby.map((spread) => <View key={`${spread.attack}-${spread.defense}-${spread.stamina}`} style={[styles.tableRow, spread.rank === result.selected.rank && styles.tableSelected]}><Text style={[styles.tableRank, light && styles.textLight]}>#{spread.rank}</Text><Text style={[styles.tableIvs, light && styles.textLight]}>{spread.attack}/{spread.defense}/{spread.stamina}</Text><Text style={[styles.tableMeta, light && styles.mutedLight]}>Lv {formatLevel(spread.level)} · CP {spread.cp.toLocaleString()}</Text><Text style={styles.tableProduct}>{spread.statProductPercent.toFixed(2)}%</Text></View>)}</View></ScrollView>
+        <View style={styles.table}>{result.nearby.map((spread) => <View key={`${spread.attack}-${spread.defense}-${spread.stamina}`} style={[styles.tableRow, spread.rank === result.selected.rank && styles.tableSelected]}><Text style={[styles.tableRank, light && styles.textLight]}>#{spread.rank}</Text><Text style={[styles.tableIvs, light && styles.textLight]}>{spread.attack}/{spread.defense}/{spread.stamina}</Text><Text style={[styles.tableMeta, light && styles.mutedLight]}>Lv {formatLevel(spread.level)} · CP {spread.cp.toLocaleString()}</Text><Text style={styles.tableProduct}>{spread.statProductPercent.toFixed(2)}%</Text></View>)}</View>
       </View> : null}
     </View>
   );
@@ -452,5 +456,5 @@ const styles = StyleSheet.create({
   levelControls: { flexDirection: "row", gap: 5 }, levelButton: { minWidth: 0, flex: 1, minHeight: 39, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 999, backgroundColor: "#101516" }, levelActive: { borderColor: "#42d5c2", backgroundColor: "#42d5c2" }, levelButtonText: { color: "#f5ffff", fontSize: 10, fontWeight: "900" },
   result: { gap: 10, borderWidth: 1, borderColor: "rgba(115,204,204,0.28)", borderRadius: 8, padding: 10, backgroundColor: "#151a1b" }, resultContext: { gap: 2, borderWidth: 1, borderColor: "rgba(141,192,194,0.23)", borderRadius: 6, padding: 7, backgroundColor: "#1d2425" }, resultHero: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" }, rankBlock: { flexDirection: "row", alignItems: "baseline", gap: 6 }, topPercent: { color: "#071313", backgroundColor: "#42d5c2", borderRadius: 999, paddingHorizontal: 7, paddingVertical: 4, fontSize: 8, fontWeight: "900" }, resultRank: { color: "#f5ffff", fontSize: 32, fontWeight: "900" }, resultOf: { color: "#9db6b8", fontSize: 9 }, productBlock: { alignItems: "flex-end" }, productLabel: { color: "#9db6b8", fontSize: 8, fontWeight: "900" }, productValue: { color: "#42d5c2", fontSize: 20, fontWeight: "900" },
   statGrid: { flexDirection: "row", gap: 4 }, stat: { minWidth: 0, flex: 1, borderLeftWidth: 2, borderColor: "#54a9ef", paddingLeft: 5 }, statLabel: { color: "#9db6b8", fontSize: 7, fontWeight: "800" }, statValue: { color: "#f5ffff", fontSize: 11, fontWeight: "900" },
-  best: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, borderWidth: 1, borderColor: "rgba(242,202,88,0.38)", borderRadius: 6, padding: 8, backgroundColor: "rgba(242,202,88,0.07)" }, bestLight: { backgroundColor: "#fff9e6" }, bestIvs: { color: "#f5ffff", fontSize: 14, fontWeight: "900" }, bestMeta: { color: "#9db6b8", fontSize: 9, fontWeight: "700" }, nearbyTitle: { color: "#8fc6cb", fontSize: 9, fontWeight: "900" }, table: { gap: 4 }, tableRow: { minWidth: 315, flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: "rgba(141,192,194,0.2)", borderRadius: 5, padding: 7 }, tableSelected: { borderColor: "#42d5c2", backgroundColor: "rgba(66,213,194,0.08)" }, tableRank: { width: 35, color: "#f5ffff", fontSize: 10, fontWeight: "900" }, tableIvs: { width: 58, color: "#f5ffff", fontSize: 10, fontWeight: "900" }, tableMeta: { flex: 1, color: "#9db6b8", fontSize: 9 }, tableProduct: { color: "#42d5c2", fontSize: 9, fontWeight: "900" },
+  best: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, borderWidth: 1, borderColor: "rgba(242,202,88,0.38)", borderRadius: 6, padding: 8, backgroundColor: "rgba(242,202,88,0.07)" }, bestLight: { backgroundColor: "#fff9e6" }, bestIvs: { color: "#f5ffff", fontSize: 14, fontWeight: "900" }, bestMeta: { color: "#9db6b8", fontSize: 9, fontWeight: "700" }, nearbyTitle: { color: "#8fc6cb", fontSize: 9, fontWeight: "900" }, table: { gap: 4 }, tableRow: { minWidth: 0, flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: "rgba(141,192,194,0.2)", borderRadius: 5, padding: 7 }, tableSelected: { borderColor: "#42d5c2", backgroundColor: "rgba(66,213,194,0.08)" }, tableRank: { width: 35, color: "#f5ffff", fontSize: 10, fontWeight: "900" }, tableIvs: { width: 58, color: "#f5ffff", fontSize: 10, fontWeight: "900" }, tableMeta: { flex: 1, color: "#9db6b8", fontSize: 9 }, tableProduct: { color: "#42d5c2", fontSize: 9, fontWeight: "900" },
 });

@@ -317,7 +317,6 @@ export const NativePvpScreen = ({
   const deferredFormat = useDeferredValue(format);
   const deferredMechanics = useDeferredValue(mechanics);
   const deferredQuery = useDeferredValue(query);
-  const deferredRole = useDeferredValue(role);
   const deferredScope = useDeferredValue(scope);
   const deferredWorkspace = useDeferredValue(workspace);
   const evaluationPlan = useMemo(() => (
@@ -408,9 +407,9 @@ export const NativePvpScreen = ({
     evaluation: activeOwnedEvaluation.response,
     instances,
     query: deferredQuery,
-    role: deferredRole,
+    role,
     scope: deferredScope,
-  }), [activeOwnedEvaluation.response, catalog, deferredFormat, deferredQuery, deferredRole, deferredScope, instances]);
+  }), [activeOwnedEvaluation.response, catalog, deferredFormat, deferredQuery, deferredScope, instances, role]);
   const rankingRows = roster.rows;
   const toolRoster = useMemo(() => buildNativePvpRankingRows({
     catalog,
@@ -452,7 +451,7 @@ export const NativePvpScreen = ({
     finishPerformance("pvp_cup_result_painted");
   }, [deferredFormat, finishPerformance]);
   useEffect(() => finishPerformance("pvp_scope_result_painted"), [deferredScope, finishPerformance, toolRoster.rows]);
-  useEffect(() => finishPerformance("pvp_role_result_painted"), [deferredRole, finishPerformance, rankingRows]);
+  useEffect(() => finishPerformance("pvp_role_result_painted"), [finishPerformance, rankingRows, role]);
   useEffect(() => {
     if (query === deferredQuery) finishPerformance("pvp_search_result_painted");
   }, [deferredQuery, finishPerformance, query, rankingRows]);
@@ -870,6 +869,7 @@ export const NativePvpScreen = ({
         { paddingTop: 8 + insets.top, paddingBottom: 96 + insets.bottom },
       ]}
       keyboardShouldPersistTaps="always"
+      removeClippedSubviews
       ref={workspaceScrollRef}
       nestedScrollEnabled
       style={[styles.root, light && styles.rootLight]}
