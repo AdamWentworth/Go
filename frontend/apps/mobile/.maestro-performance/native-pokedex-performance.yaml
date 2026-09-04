@@ -37,6 +37,7 @@ tags:
 - extendedWaitUntil:
     visible: Shiny Bulbasaur
     timeout: 15000
+- takeScreenshot: pokedex-region-index
 - tapOn: Collapse Kanto Shiny
 - assertNotVisible: Shiny Bulbasaur
 - tapOn: Expand Kanto Shiny
@@ -58,9 +59,10 @@ tags:
 # Detail hero/slot, gender, registration, tabs, combination folder/index, and dialog classes.
 - tapOn: View Shiny
 - tapOn: Show Female Bulbasaur
+- takeScreenshot: pokedex-detail-registered
 - tapOn: Register Shiny
 - extendedWaitUntil:
-    visible: Unregister Shiny
+    visible: Clear Shiny
     timeout: 15000
 - tapOn: Register all
 - assertVisible: Register all entries?
@@ -71,6 +73,7 @@ tags:
       text: Size ranges
     direction: DOWN
     timeout: 30000
+- takeScreenshot: pokedex-detail-info
 - scrollUntilVisible:
     element:
       text: Battle
@@ -82,6 +85,7 @@ tags:
       text: Type effectiveness
     direction: DOWN
     timeout: 30000
+- takeScreenshot: pokedex-detail-battle
 - scrollUntilVisible:
     element:
       text: More
@@ -115,6 +119,7 @@ tags:
 - extendedWaitUntil:
     visible: Showing 60 of 60
     timeout: 15000
+- takeScreenshot: pokedex-detail-more
 - tapOn: Register all
 - assertVisible: Register all entries?
 - tapOn: Cancel
