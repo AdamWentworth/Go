@@ -103,6 +103,24 @@ test.describe('Home page', () => {
       await expect(featureDirectory.getByRole('link', { name: /^Trades/i })).toBeVisible();
       await expect(page.getByRole('link', { name: /complete illustrated guide/i })).toBeAttached();
       await expect(page.getByRole('link', { name: 'Help & information' })).toBeAttached();
+      const sectionOrder = await page.evaluate(() => {
+        const story = document.querySelector('#trade-matching');
+        const directory = document.querySelector('#feature-directory');
+        return Boolean(story && directory && (
+          story.compareDocumentPosition(directory) & Node.DOCUMENT_POSITION_FOLLOWING
+        ));
+      });
+      expect(sectionOrder).toBe(true);
+      const guestDestinations = new Set(await page.locator('a[href]').evaluateAll((links) => (
+        links.map((link) => link.getAttribute('href')).filter(Boolean)
+      )));
+      for (const destination of [
+        '/', '/about', '/data-deletion', '/faq', '/friends', '/getting-started', '/help',
+        '/login', '/max', '/pokedex', '/pokemon', '/privacy', '/pvp', '/raid', '/rankings',
+        '/register', '/safety', '/search', '/terms', '/trade-board', '/trades',
+      ]) {
+        expect(guestDestinations.has(destination), `missing guest Home link ${destination}`).toBe(true);
+      }
 
       const widths = await page.evaluate(() => ({
         body: document.body.scrollWidth,
@@ -319,6 +337,17 @@ test.describe('Home page', () => {
         );
       }
       await expect(page.getByRole('link', { name: /Help & guides/i })).toBeVisible();
+      const signedInDestinations = new Set(await page.locator('a[href]').evaluateAll((links) => (
+        links.map((link) => link.getAttribute('href')).filter(Boolean)
+      )));
+      for (const destination of [
+        '/', '/help', '/max', '/pokedex', '/pokemon', '/pokemon?filter=caught',
+        '/pokemon?filter=favorites', '/pokemon?filter=trade', '/pokemon?filter=wanted',
+        '/profile', '/profile/friends', '/pvp', '/raid', '/search', '/trade-board',
+        '/trades?section=activity', '/trades?section=preferences',
+      ]) {
+        expect(signedInDestinations.has(destination), `missing signed-in Home link ${destination}`).toBe(true);
+      }
 
       const widths = await page.evaluate(() => ({
         body: document.body.scrollWidth,

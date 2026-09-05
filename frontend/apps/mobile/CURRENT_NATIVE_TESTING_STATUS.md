@@ -1,6 +1,6 @@
 # Current Native Testing Status
 
-Last revalidated: 2026-09-01
+Last revalidated: 2026-09-05
 
 This is the short source of truth for continuing the Vite-to-native migration.
 The canonical Vite application defines user-visible behavior. Native may use
@@ -64,7 +64,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 159 suites, 843 tests;
+- native Jest: 161 suites, 903 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -570,9 +570,25 @@ started the page track in 0--1 ms, their complete touch paths measured
 67--101 ms, and the action menu painted in 84 ms. The full suite is now 160
 suites and 854 tests, with typecheck and the complete lint pass clean.
 
+The 2026-09-05 Home pass now covers both the signed-out landing page and the
+signed-in trainer dashboard. Native restores Vite's trade-story-before-feature-
+directory order, exact guest destinations and CTA copy, link semantics, loading
+states in the collection and recent-Pokémon panels, icon treatments, and the
+same action-menu-hint acknowledgement behavior. Home links no longer wait for
+two idle animation frames before navigating. Focused tests pin every guest and
+signed-in destination plus the onboarding and loading branches. Five production-
+mode browser-proxy repetitions passed the strict no-slower-than-Vite gate:
+hint dismissal measured 11.7 ms versus 17.0 ms, the animated feature-directory
+jump 658.4 ms versus 909.6 ms, and onboarding dismissal 36.1 ms versus 49.7 ms
+(Native versus Vite medians). Ten focused Home browser cases also pass across
+desktop and phone-sized Chromium. The shared proxy fixture now supplies the
+same 62-entry PvP workload to both implementations; the earlier five-entry
+Native fixture made cross-implementation environment claims invalid.
+
 ## Remaining approval gate
 
 The latest bundle still needs a short physical-phone pass for perceived frame
 rate and touch latency, especially the action menu, loading spinner, theme
-switch, collection page swipe, and Home-to-filtered-collection links. Automated
-browser timings cannot prove Android rendering smoothness.
+switch, collection page swipe, Home-to-filtered-collection links, and the three
+new Home interaction measurements. Automated browser timings cannot prove
+Android rendering smoothness.

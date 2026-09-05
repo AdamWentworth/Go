@@ -9,6 +9,7 @@ import type {
   NativeHomeOnboardingTask,
 } from '../features/home/nativeHomeDashboardModel';
 import { NativeUiIcon, type NativeUiIconName } from './NativeUiIcon';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
 
 type Props = {
   displayName: string;
@@ -33,6 +34,11 @@ export const NativeHomeOnboarding = ({
   progress,
 }: Props) => {
   const percent = Math.round((progress.completed / progress.total) * 100);
+  const dismiss = () => {
+    const startedAt = Date.now();
+    onDismiss();
+    markNativeUiPerformanceAfterPaint('home_onboarding_dismiss_result_painted', startedAt);
+  };
 
   return (
     <View
@@ -89,7 +95,7 @@ export const NativeHomeOnboarding = ({
               </View>
             ) : (
               <Pressable
-                accessibilityRole="button"
+                accessibilityRole="link"
                 onPress={() => onNavigate(task.to)}
                 style={({ pressed }) => [styles.taskAction, pressed && styles.pressed]}
               >
@@ -112,7 +118,7 @@ export const NativeHomeOnboarding = ({
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          onPress={onDismiss}
+          onPress={dismiss}
           style={({ pressed }) => [styles.dashboardButton, pressed && styles.pressed]}
         >
           <Text style={styles.dashboardButtonText}>Open trainer dashboard</Text>

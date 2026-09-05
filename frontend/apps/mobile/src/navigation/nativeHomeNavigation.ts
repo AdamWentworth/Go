@@ -5,7 +5,6 @@ import { resolveNativeDeepLink } from './nativeDeepLink';
 export const NATIVE_HOME_NAVIGATION_SOURCE = 'home-navigation';
 
 type RunWithLoading = (source: string, action: () => void) => void;
-type ScheduleFrame = (callback: () => void) => number;
 
 export type NativeHomeCollectionEntry = {
   destination: string;
@@ -38,16 +37,14 @@ export const resolveNativeHomeCollectionEntry = (
 };
 
 /**
- * Paint the root loader before asking Expo Router to render a potentially
- * expensive destination. Two frame boundaries guarantee one composited frame
- * with the loader, matching the action-menu navigation handoff.
+ * Start the loader and Expo Router navigation in the same interaction. The
+ * retained root overlay can paint while the destination commits, but Home
+ * must not make every link wait through two otherwise idle frame boundaries.
+ * This matches Vite's navigation handoff and keeps the first tap responsive.
  */
 export const runNativeHomeNavigationWithLoading = (
   runWithLoading: RunWithLoading,
   navigate: () => void,
-  scheduleFrame: ScheduleFrame = requestAnimationFrame,
 ): void => {
-  runWithLoading(NATIVE_HOME_NAVIGATION_SOURCE, () => {
-    scheduleFrame(() => scheduleFrame(navigate));
-  });
+  runWithLoading(NATIVE_HOME_NAVIGATION_SOURCE, navigate);
 };

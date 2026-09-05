@@ -15,6 +15,7 @@ import {
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 
 import { installE2eRoutes, pvpDataFixture } from './support/e2eRoutes';
+import type { E2eRouteOptions } from './support/e2eRoutes';
 import { openCaughtPokemonList, openPokemonPage } from './support/pokemonApp';
 
 type ContractRoute = {
@@ -433,7 +434,10 @@ const setAuthAndTheme = async (
   }, { activeTheme: theme, authState: auth, user: signedInUser });
 };
 
-const seedPerformanceInstances = async (context: BrowserContext) => {
+const seedPerformanceInstances = async (
+  context: BrowserContext,
+  instancePayload: Record<string, Record<string, unknown>> = performanceInstances,
+) => {
   const reusablePhysicalPage = performanceProfile === 'physical-android'
     && physicalAutomationPage
     && !physicalAutomationPage.isClosed()
@@ -483,7 +487,7 @@ const seedPerformanceInstances = async (context: BrowserContext) => {
           };
         };
       });
-    }, performanceInstances);
+    }, instancePayload);
   } finally {
     if (!reusablePhysicalPage) await page.close();
   }
@@ -617,6 +621,7 @@ const createMeasuredPage = async (
   context: BrowserContext,
   auth: ContractRoute['auth'],
   theme: 'dark' | 'light',
+  routeOptions: E2eRouteOptions = performanceRouteOptions,
 ) => {
   const page = performanceProfile === 'physical-android'
     && physicalAutomationPage
@@ -629,7 +634,7 @@ const createMeasuredPage = async (
   // foreground tab, producing false overlap/interception failures. Explicitly
   // foreground every measured page; this is a no-op for the desktop proxy.
   await page.bringToFront();
-  await installE2eRoutes(page, performanceRouteOptions);
+  await installE2eRoutes(page, routeOptions);
   await setAuthAndTheme(page, auth, theme);
   await installBrowserProbe(page);
   return page;
@@ -668,6 +673,71 @@ const activateMeasuredControl = async (locator: Locator) => {
   await locator.click();
 };
 
+const collectHomeInteractions = async (
+  context: BrowserContext,
+  sampleIndex: number,
+) => {
+  const guest = await createMeasuredPage(context, 'guest', 'dark');
+  try {
+    await guest.goto(`${webBaseUrl}/`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(guest);
+    const hintDismiss = guest.getByRole('button', { name: 'Dismiss action menu tip' });
+    await activateMeasuredControl(hintDismiss);
+    await expect(guest.getByRole('note', { name: 'Action menu tip' })).toHaveCount(0);
+    await recordInteraction(guest, 'interaction.home.hint-dismiss', sampleIndex);
+
+    const explore = guest.getByRole('link', { name: /Explore the app/i });
+    await activateMeasuredControl(explore);
+    const directory = guest.locator('#feature-directory');
+    await expect.poll(() => directory.evaluate(
+      (element) => Math.abs(element.getBoundingClientRect().top),
+    )).toBeLessThan(30);
+    await recordInteraction(guest, 'interaction.home.guest-explore', sampleIndex);
+    await captureWorkflowScreenshot(guest, sampleIndex, 'home-guest-directory', directory);
+  } finally {
+    await closeMeasuredPage(guest);
+  }
+
+  await seedPerformanceInstances(context, {});
+  const emptyHomeOptions: E2eRouteOptions = {
+    ...performanceRouteOptions,
+    friendsOverview: { blocked: [], friends: [], incoming: [], outgoing: [] },
+    syncInstances: {},
+    trades: {},
+    userInstances: { instances: {}, username: signedInUser.username },
+    userOverview: {
+      pokemon_instances: {},
+      registrations: {},
+      related_instances: {},
+      trades: {},
+      user: { user_id: signedInUser.user_id, username: signedInUser.username },
+    },
+  };
+  const onboarding = await createMeasuredPage(context, 'signed-in', 'dark', emptyHomeOptions);
+  try {
+    await onboarding.goto(`${webBaseUrl}/`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(onboarding);
+    await onboarding.getByRole('heading', { name: 'Let’s make your account useful.' })
+      .waitFor({ state: 'visible' });
+    const onboardingHintDismiss = onboarding.getByRole('button', {
+      name: 'Dismiss action menu tip',
+    });
+    if (await onboardingHintDismiss.isVisible().catch(() => false)) {
+      await activateMeasuredControl(onboardingHintDismiss);
+      await expect(onboarding.getByRole('note', { name: 'Action menu tip' })).toHaveCount(0);
+    }
+    const openDashboard = onboarding.getByRole('button', { name: 'Open trainer dashboard' });
+    await activateMeasuredControl(openDashboard);
+    await onboarding.getByRole('heading', { name: /Welcome back, PerformanceTrainerGO/ })
+      .waitFor({ state: 'visible' });
+    await recordInteraction(onboarding, 'interaction.home.onboarding-dismiss', sampleIndex);
+    await captureWorkflowScreenshot(onboarding, sampleIndex, 'home-signed-in-dashboard');
+  } finally {
+    await closeMeasuredPage(onboarding);
+    await seedPerformanceInstances(context);
+  }
+};
+
 const collectSharedInteractions = async (
   context: BrowserContext,
   sampleIndex: number,
@@ -700,6 +770,10 @@ const collectSharedInteractions = async (
     await collectRankingsInteractions(context, sampleIndex);
     return;
   }
+  if (workflowFilter === 'home') {
+    await collectHomeInteractions(context, sampleIndex);
+    return;
+  }
   if (workflowFilter !== 'collection') {
     const home = await createMeasuredPage(context, 'signed-in', 'dark');
     try {
@@ -716,6 +790,7 @@ const collectSharedInteractions = async (
     } finally {
       await closeMeasuredPage(home);
     }
+    await collectHomeInteractions(context, sampleIndex);
   }
 
   const collection = await createMeasuredPage(context, 'signed-in', 'dark');

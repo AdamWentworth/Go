@@ -40,6 +40,9 @@ if (profile === 'physical-android' && (
 const eventScenarios = {
   action_menu_surface_painted: 'interaction.action-menu.open',
   theme_visible_palette_committed: 'interaction.theme.toggle',
+  home_hint_dismiss_result_painted: 'interaction.home.hint-dismiss',
+  home_guest_explore_result_painted: 'interaction.home.guest-explore',
+  home_onboarding_dismiss_result_painted: 'interaction.home.onboarding-dismiss',
   collection_search_menu_painted: 'interaction.collection.search-open',
   collection_sort_menu_painted: 'interaction.collection.sort-open',
   collection_filter_result_revealed: 'interaction.collection.filter',

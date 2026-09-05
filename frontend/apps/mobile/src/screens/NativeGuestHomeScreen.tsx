@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import {
   Image,
   Pressable,
@@ -20,6 +20,7 @@ import { NativeActionMenuHint } from '../components/NativeActionMenuHint';
 import { useNativeReducedMotion } from '../features/settings/useNativeMotion';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import { NativeUiIcon, type NativeUiIconName } from '../components/NativeUiIcon';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
 
 type Props = {
   assetBaseUrl: string;
@@ -122,28 +123,42 @@ export const NativeGuestHomeScreen = ({
   const compactNavigation = width < 560;
   const reducedMotion = useNativeReducedMotion();
   const scrollRef = useRef<ScrollView>(null);
-  const [featureDirectoryY, setFeatureDirectoryY] = useState(0);
+  const exploreStartedAtRef = useRef<number | null>(null);
+  const contentYRef = useRef(0);
+  const featureDirectoryRelativeYRef = useRef(0);
   const exploreFeatures = () => {
+    exploreStartedAtRef.current = Date.now();
     scrollRef.current?.scrollTo({
       animated: !reducedMotion,
-      y: Math.max(0, featureDirectoryY - 12),
+      y: Math.max(0, contentYRef.current + featureDirectoryRelativeYRef.current - 12),
     });
+  };
+  const completeExploreScroll = () => {
+    if (exploreStartedAtRef.current === null) return;
+    const startedAt = exploreStartedAtRef.current;
+    exploreStartedAtRef.current = null;
+    markNativeUiPerformanceAfterPaint('home_guest_explore_result_painted', startedAt);
   };
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-guest-home-screen">
-      <ScrollView contentContainerStyle={{ paddingBottom: 106 + insets.bottom }} ref={scrollRef}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 106 + insets.bottom }}
+        onMomentumScrollEnd={completeExploreScroll}
+        ref={scrollRef}
+        testID="native-guest-home-scroll"
+      >
         <View style={styles.heroRegion}>
           <GuestHeroBackground light={light} />
           <View style={[styles.topbar, { paddingTop: 8 + insets.top }]}>
-          <Pressable accessibilityLabel="Pokémon Go Nexus home" accessibilityRole="button" onPress={() => onNavigate('/')} style={styles.brand}>
+          <Pressable accessibilityLabel="Pokémon Go Nexus home" accessibilityRole="link" onPress={() => onNavigate('/')} style={styles.brand}>
             <Image fadeDuration={0} source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.brandIcon} />
             {!compactNavigation ? <Text style={[styles.brandText, light && styles.textLight]}>Pokémon Go Nexus</Text> : null}
           </Pressable>
           <View style={styles.topActions}>
-            {!compactNavigation ? <Pressable accessibilityRole="button" onPress={() => onNavigate('/getting-started')} style={styles.navLink}><Text style={[styles.navLinkText, light && styles.textLight]}>How it works</Text></Pressable> : null}
-            <Pressable accessibilityRole="button" onPress={() => onNavigate('/help')} style={styles.navLink}><Text style={[styles.navLinkText, light && styles.textLight]}>Help</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={() => onNavigate('/login')} style={[styles.signIn, light && styles.signInLight]}><Text style={[styles.signInText, light && styles.textLight]}>Log in</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={() => onNavigate('/register')} style={styles.register}><Text style={styles.registerText}>Create account</Text></Pressable>
+            {!compactNavigation ? <Pressable accessibilityRole="link" onPress={() => onNavigate('/getting-started')} style={styles.navLink}><Text style={[styles.navLinkText, light && styles.textLight]}>How it works</Text></Pressable> : null}
+            <Pressable accessibilityRole="link" onPress={() => onNavigate('/help')} style={styles.navLink}><Text style={[styles.navLinkText, light && styles.textLight]}>Help</Text></Pressable>
+            <Pressable accessibilityRole="link" onPress={() => onNavigate('/login')} style={[styles.signIn, light && styles.signInLight]}><Text style={[styles.signInText, light && styles.textLight]}>Log in</Text></Pressable>
+            <Pressable accessibilityRole="link" onPress={() => onNavigate('/register')} style={styles.register}><Text style={styles.registerText}>Create account</Text></Pressable>
           </View>
           </View>
 
@@ -159,12 +174,12 @@ export const NativeGuestHomeScreen = ({
           <Text accessibilityRole="header" style={[styles.titleAccent, compactNavigation && styles.titleCompact]}>Find the right trade.</Text>
           <Text style={[styles.lead, compactNavigation && styles.leadCompact, light && styles.mutedLight]}>Pokémon Go Nexus is the go-to platform for Pokémon GO trainers to catalog Pokémon, showcase rare catches, and find players whose For Trade and Wanted lists actually line up.</Text>
           <View style={[styles.heroActions, compactNavigation && styles.heroActionsCompact]}>
-            <Pressable accessibilityRole="button" onPress={() => onNavigate('/register')} style={[styles.primary, compactNavigation && styles.heroActionCompact]}><Text style={styles.primaryText}>Create your free account</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={exploreFeatures} style={[styles.secondary, compactNavigation && styles.heroActionCompact, light && styles.secondaryLight]}><Text style={[styles.secondaryText, light && styles.textLight]}>Explore the app ↓</Text></Pressable>
+            <Pressable accessibilityRole="link" onPress={() => onNavigate('/register')} style={[styles.primary, compactNavigation && styles.heroActionCompact]}><Text style={styles.primaryText}>Create your free account</Text></Pressable>
+            <Pressable accessibilityRole="link" onPress={exploreFeatures} style={[styles.secondary, compactNavigation && styles.heroActionCompact, light && styles.secondaryLight]}><Text style={[styles.secondaryText, light && styles.textLight]}>Explore the app ↓</Text></Pressable>
           </View>
           <View accessibilityLabel="Product highlights" style={styles.proof}>
             {['Exact variants and custom tags', 'Reciprocal trade matching', 'Built for mobile and desktop'].map((label) => (
-              <View key={label} style={styles.proofItem}><Text style={styles.proofCheck}>●</Text><Text style={[styles.proofText, light && styles.mutedLight]}>{label}</Text></View>
+              <View key={label} style={styles.proofItem}><NativeUiIcon color="#299cf5" name="check" size={11} /><Text style={[styles.proofText, light && styles.mutedLight]}>{label}</Text></View>
             ))}
           </View>
           <View accessibilityLabel="Example reciprocal trade match" style={[styles.matchPreview, light && styles.matchPreviewLight]}>
@@ -194,23 +209,11 @@ export const NativeGuestHomeScreen = ({
           </View>
         </View>
 
-        <View onLayout={(event) => setFeatureDirectoryY(event.nativeEvent.layout.y)} style={styles.content}>
-          <View style={styles.heading}>
-            <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>EVERYTHING IN ONE TRAINER HUB</Text>
-            <Text accessibilityRole="header" style={[styles.headingTitle, light && styles.textLight]}>Explore Pokémon Go Nexus</Text>
-            <Text style={[styles.headingDetail, light && styles.mutedLight]}>Trading is the heart of the platform, supported by collection, discovery, social, and battle tools.</Text>
-          </View>
-          <View style={styles.features}>
-            {CORE_FEATURES.map((feature) => (
-              <Pressable key={feature.title} accessibilityRole="button" onPress={() => onNavigate(feature.path)} style={({ pressed }) => [styles.feature, light && styles.surfaceLight, pressed && styles.pressed]}>
-                <View style={[styles.featureGlyph, { backgroundColor: `${feature.accent}24` }]}><Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, feature.image) }} style={styles.featureImage} /></View>
-                <View style={styles.featureCopy}><Text style={[styles.featureTitle, light && styles.textLight]}>{feature.title}</Text><Text style={[styles.featureDetail, light && styles.mutedLight]}>{feature.detail}</Text></View>
-                <Text style={[styles.arrow, light && styles.mutedLight]}>›</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <View style={[styles.workflow, light && styles.surfaceLight]}>
+        <View
+          onLayout={(event) => { contentYRef.current = event.nativeEvent.layout.y; }}
+          style={styles.content}
+        >
+          <View style={[styles.workflow, light && styles.surfaceLight]} testID="native-home-trade-story">
             <View style={styles.heading}><Text style={[styles.eyebrow, light && styles.eyebrowLight]}>TRADING, WITHOUT THE GUESSWORK</Text><Text style={[styles.headingTitle, light && styles.textLight]}>The trade is the destination.{`\n`}Your collection makes it possible.</Text><Text style={[styles.headingDetail, light && styles.mutedLight]}>Pokémon Go Nexus connects the pieces that usually live in screenshots, chat messages, and memory. Your collection, wishlist, and trade preferences work together to surface useful matches.</Text></View>
             <View style={styles.steps}>
               {STEPS.map(([number, title, detail, kind]) => (
@@ -229,8 +232,30 @@ export const NativeGuestHomeScreen = ({
                 </View>
               ))}
             </View>
-            <Pressable accessibilityRole="button" onPress={() => onNavigate('/getting-started')} style={styles.workflowLink}><Text style={styles.workflowLinkText}>▤ New here? Open the complete illustrated guide →</Text></Pressable>
+            <Pressable accessibilityRole="link" onPress={() => onNavigate('/getting-started')} style={styles.workflowLink}><Text style={styles.workflowLinkText}>▤ New here? Open the complete illustrated guide →</Text></Pressable>
           </View>
+
+          <View
+            onLayout={(event) => {
+              featureDirectoryRelativeYRef.current = event.nativeEvent.layout.y;
+            }}
+            style={styles.directory}
+            testID="native-home-feature-directory"
+          >
+            <View style={styles.heading}>
+              <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>EVERYTHING IN ONE TRAINER HUB</Text>
+              <Text accessibilityRole="header" style={[styles.headingTitle, light && styles.textLight]}>Explore Pokémon Go Nexus</Text>
+              <Text style={[styles.headingDetail, light && styles.mutedLight]}>Trading is the heart of the platform, supported by the collection, discovery, social, and battle tools around it.</Text>
+            </View>
+            <View style={styles.features}>
+              {CORE_FEATURES.map((feature) => (
+                <Pressable key={feature.title} accessibilityRole="link" onPress={() => onNavigate(feature.path)} style={({ pressed }) => [styles.feature, light && styles.surfaceLight, pressed && styles.pressed]}>
+                  <View style={[styles.featureGlyph, { backgroundColor: `${feature.accent}24` }]}><Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, feature.image) }} style={styles.featureImage} /></View>
+                  <View style={styles.featureCopy}><Text style={[styles.featureTitle, light && styles.textLight]}>{feature.title}</Text><Text style={[styles.featureDetail, light && styles.mutedLight]}>{feature.detail}</Text></View>
+                  <Text style={[styles.arrow, light && styles.mutedLight]}>›</Text>
+                </Pressable>
+              ))}
+            </View>
 
           <View style={[styles.community, light && styles.communityLight]}>
             <View style={styles.communityIntro}>
@@ -239,11 +264,11 @@ export const NativeGuestHomeScreen = ({
               <Text style={[styles.communityDetail, light && styles.mutedLight]}>Build trusted connections inside Nexus, then take a polished trade list anywhere trainers gather.</Text>
             </View>
             <View style={styles.communityActions}>
-              <Pressable accessibilityRole="button" onPress={() => onNavigate('/profile/friends')} style={[styles.communityCard, styles.communityFriends, light && styles.surfaceLight]}>
+              <Pressable accessibilityRole="link" onPress={() => onNavigate('/friends')} style={[styles.communityCard, styles.communityFriends, light && styles.surfaceLight]}>
                 <View style={styles.communityIcon}><NativeUiIcon color="#299cf5" name="trainers" size={22} /></View>
                 <View style={styles.communityCopy}><Text style={[styles.communityEyebrow, light && styles.eyebrowLight]}>TRAINER NETWORK</Text><Text style={[styles.communityCardTitle, light && styles.textLight]}>Friends</Text><Text style={[styles.communityCardDetail, light && styles.mutedLight]}>Manage trusted trainers, requests, privacy, and collection access.</Text></View><Text style={[styles.arrow, light && styles.mutedLight]}>›</Text>
               </Pressable>
-              <Pressable accessibilityRole="button" onPress={() => onNavigate('/trade-board')} style={[styles.communityCard, styles.communityBoard, light && styles.surfaceLight]}>
+              <Pressable accessibilityRole="link" onPress={() => onNavigate('/trade-board')} style={[styles.communityCard, styles.communityBoard, light && styles.surfaceLight]}>
                 <View style={[styles.communityIcon, styles.communityBoardIcon]}><NativeUiIcon color="#35c984" name="share" size={22} /></View>
                 <View style={styles.communityCopy}><Text style={[styles.communityEyebrow, light && styles.eyebrowLight]}>SHARE BEYOND NEXUS</Text><Text style={[styles.communityCardTitle, light && styles.textLight]}>Trade Board</Text><Text style={[styles.communityCardDetail, light && styles.mutedLight]}>Create one visual list or live link for Discord, chats, and communities.</Text></View><Text style={[styles.arrow, light && styles.mutedLight]}>›</Text>
               </Pressable>
@@ -254,15 +279,16 @@ export const NativeGuestHomeScreen = ({
             <View style={styles.toolsHeading}><Text style={[styles.blockTitle, light && styles.textLight]}>Trainer tools</Text><Text style={[styles.toolsDetail, light && styles.mutedLight]}>Jump directly to the reference and planning tools you need.</Text></View>
             <View style={styles.tools}>
               {TOOLS.map(([label, detail, icon, path]) => (
-                <Pressable accessibilityRole="button" key={path} onPress={() => onNavigate(path)} style={[styles.tool, light && styles.surfaceLight]}><Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, icon) }} style={styles.toolIcon} /><View style={styles.toolCopy}><Text style={[styles.toolText, light && styles.textLight]}>{label}</Text><Text style={[styles.toolDetail, light && styles.mutedLight]}>{detail}</Text></View><Text style={[styles.arrow, light && styles.mutedLight]}>›</Text></Pressable>
+                <Pressable accessibilityRole="link" key={path} onPress={() => onNavigate(path)} style={[styles.tool, light && styles.surfaceLight]}><Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, icon) }} style={styles.toolIcon} /><View style={styles.toolCopy}><Text style={[styles.toolText, light && styles.textLight]}>{label}</Text><Text style={[styles.toolDetail, light && styles.mutedLight]}>{detail}</Text></View><Text style={[styles.arrow, light && styles.mutedLight]}>›</Text></Pressable>
               ))}
             </View>
+          </View>
           </View>
 
           <View style={[styles.cta, light && styles.ctaLight]}>
             <Image fadeDuration={0} source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/lockup.png') }} style={styles.ctaLogo} />
-            <View style={styles.ctaCopy}><Text style={[styles.eyebrow, light && styles.eyebrowLight]}>READY TO TRADE SMARTER?</Text><Text style={[styles.ctaTitle, light && styles.textLight]}>Bring your collection. Find the right trainer.</Text><Text style={[styles.ctaDetail, light && styles.mutedLight]}>Create your free account, publish your trade list, and discover exchanges that work for both trainers.</Text></View>
-            <View style={styles.ctaActions}><Pressable accessibilityRole="button" onPress={() => onNavigate('/register')} style={styles.primary}><Text style={styles.primaryText}>Create account →</Text></Pressable><Pressable accessibilityRole="button" onPress={() => onNavigate('/getting-started')} style={[styles.secondary, light && styles.secondaryLight]}><Text style={[styles.secondaryText, light && styles.textLight]}>Quick start guide</Text></Pressable></View>
+            <View style={styles.ctaCopy}><Text style={[styles.eyebrow, light && styles.eyebrowLight]}>READY TO TRADE SMARTER?</Text><Text style={[styles.ctaTitle, light && styles.textLight]}>Bring your collection. Find the right trainer.</Text><Text style={[styles.ctaDetail, light && styles.mutedLight]}>Create your free account to organize exact Pokémon, publish your trade list, and discover exchanges that work for both trainers.</Text></View>
+            <View style={styles.ctaActions}><Pressable accessibilityRole="link" onPress={() => onNavigate('/register')} style={styles.primary}><Text style={styles.primaryText}>Create account →</Text></Pressable><Pressable accessibilityRole="link" onPress={() => onNavigate('/getting-started')} style={[styles.secondary, light && styles.secondaryLight]}><Text style={[styles.secondaryText, light && styles.textLight]}>Quick start guide</Text></Pressable></View>
           </View>
 
           <View style={styles.footer}>
@@ -271,7 +297,7 @@ export const NativeGuestHomeScreen = ({
               {FOOTER_GROUPS.map((group) => (
                 <View key={group.heading} style={styles.footerGroup}>
                   <Text style={[styles.footerHeading, light && styles.textLight]}>{group.heading}</Text>
-                  {group.links.map(([label, path]) => <Pressable accessibilityRole="button" key={path} onPress={() => onNavigate(path)}><Text style={styles.footerLink}>{label}</Text></Pressable>)}
+                  {group.links.map(([label, path]) => <Pressable accessibilityRole="link" key={path} onPress={() => onNavigate(path)}><Text style={styles.footerLink}>{label}</Text></Pressable>)}
                 </View>
               ))}
             </View>
@@ -310,10 +336,10 @@ const styles = StyleSheet.create({
   heroActions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginTop: 24 },
   heroActionsCompact: { width: '100%', maxWidth: 190, flexDirection: 'column', alignItems: 'stretch' },
   heroActionCompact: { width: '100%' },
-  proof: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginTop: 18 }, proofItem: { flexDirection: 'row', alignItems: 'center', gap: 5 }, proofCheck: { color: '#299cf5', fontSize: 9 }, proofText: { color: '#aab9c1', fontSize: 10.5, fontWeight: '700' },
+  proof: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginTop: 18 }, proofItem: { flexDirection: 'row', alignItems: 'center', gap: 5 }, proofText: { color: '#aab9c1', fontSize: 10.5, fontWeight: '700' },
   matchPreview: { width: '100%', maxWidth: 700, marginTop: 35, borderWidth: 1, borderColor: '#305d4e', borderRadius: 24, padding: 14, backgroundColor: '#15221f' }, matchPreviewLight: { borderColor: '#8acbb4', backgroundColor: '#f6fffb' }, matchHeading: { alignItems: 'center', gap: 4, paddingBottom: 12 }, matchEyebrow: { color: '#35c984', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 }, matchEyebrowLight: { color: '#087454' }, matchTitle: { color: '#fff', fontSize: 15, lineHeight: 20, fontWeight: '900', textAlign: 'center' }, exchange: { flexDirection: 'row', alignItems: 'center', gap: 5 }, exchangePokemon: { minWidth: 0, flex: 1, minHeight: 205, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 16, padding: 8, backgroundColor: '#101815' }, exchangePokemonLight: { backgroundColor: '#fff' }, exchangePokemonTrade: { borderColor: '#327e60' }, exchangePokemonWanted: { borderColor: '#9c465a' }, tradeLabel: { color: '#35c984', fontSize: 8.5, fontWeight: '900', letterSpacing: 1 }, wantedLabel: { color: '#f05a70', fontSize: 8.5, fontWeight: '900', letterSpacing: 1 }, wantedLabelLight: { color: '#b00020' }, exchangeStage: { width: '100%', height: 106, alignItems: 'center', justifyContent: 'center' }, exchangeImage: { width: '92%', height: '92%' }, exchangeMaxIcon: { position: 'absolute', right: 2, top: 2, width: 31, height: 31 }, exchangeIcon: { width: 36, height: 36 }, exchangeName: { minHeight: 36, color: '#fff', fontSize: 11.5, lineHeight: 16, fontWeight: '900', textAlign: 'center' }, exchangeMeta: { color: '#9caab1', fontSize: 8.5, textAlign: 'center' }, matchResult: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 10, borderRadius: 12, padding: 10, backgroundColor: '#0e3227' }, matchResultLight: { backgroundColor: '#e5f8f0' }, matchResultIcon: { color: '#35c984', fontSize: 22, fontWeight: '900' }, matchResultCopy: { minWidth: 0, flex: 1 }, matchResultTitle: { color: '#fff', fontSize: 12, fontWeight: '900' }, matchResultDetail: { color: '#a8bab2', fontSize: 9, lineHeight: 13 },
   primary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 11, paddingHorizontal: 20, backgroundColor: '#168ced' }, primaryText: { color: '#05111d', fontWeight: '900' }, secondary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#66747d', borderRadius: 11, paddingHorizontal: 20, backgroundColor: '#161c21' }, secondaryLight: { borderColor: '#aebbc2', backgroundColor: '#fff' }, secondaryText: { color: '#fff', fontWeight: '900' },
-  content: { width: '100%', maxWidth: 940, alignSelf: 'center', gap: 28, paddingHorizontal: 14 }, heading: { gap: 6 }, headingTitle: { color: '#fff', fontSize: 27, lineHeight: 32, fontWeight: '900', textAlign: 'center' }, headingDetail: { maxWidth: 720, alignSelf: 'center', color: '#afbdc5', fontSize: 14, lineHeight: 21, textAlign: 'center' },
+  content: { width: '100%', maxWidth: 940, alignSelf: 'center', gap: 28, paddingHorizontal: 14 }, directory: { gap: 28 }, heading: { gap: 6 }, headingTitle: { color: '#fff', fontSize: 27, lineHeight: 32, fontWeight: '900', textAlign: 'center' }, headingDetail: { maxWidth: 720, alignSelf: 'center', color: '#afbdc5', fontSize: 14, lineHeight: 21, textAlign: 'center' },
   features: { gap: 10 }, feature: { minHeight: 100, flexDirection: 'row', alignItems: 'center', gap: 13, borderWidth: 1, borderColor: '#303b43', borderRadius: 16, padding: 14, backgroundColor: '#141a1f' }, surfaceLight: { borderColor: '#c6d1d6', backgroundColor: '#fff' }, featureGlyph: { width: 60, height: 60, alignItems: 'center', justifyContent: 'center', borderRadius: 15 }, featureImage: { width: 51, height: 51 }, featureCopy: { flex: 1, minWidth: 0 }, featureTitle: { color: '#fff', fontSize: 16, fontWeight: '900' }, featureDetail: { marginTop: 4, color: '#aebbc2', fontSize: 12, lineHeight: 17 }, arrow: { color: '#bdc6ca', fontSize: 26 }, pressed: { opacity: 0.77 },
   workflow: { gap: 18, borderWidth: 1, borderColor: '#334048', borderRadius: 20, padding: 18, backgroundColor: '#151b20' }, steps: { gap: 9 }, step: { borderLeftWidth: 3, borderLeftColor: '#299cf5', borderRadius: 10, padding: 13, backgroundColor: '#10161a' }, stepLight: { backgroundColor: '#f2f7fa' }, stepNumber: { color: '#299cf5', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, stepVisual: { minHeight: 92, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginVertical: 6 }, stepPokemonStage: { width: 92, height: 86, alignItems: 'center', justifyContent: 'center' }, stepPokemon: { width: 92, height: 86 }, stepMaxIcon: { position: 'absolute', right: 0, top: 0, width: 27, height: 27 }, stepVisualGlyph: { color: '#58c3ff', fontSize: 27, fontWeight: '900' }, stepTitle: { marginTop: 3, color: '#fff', fontSize: 16, fontWeight: '900', textAlign: 'center' }, stepDetail: { marginTop: 4, color: '#acb8bf', fontSize: 12, lineHeight: 17, textAlign: 'center' }, workflowLink: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 10, paddingHorizontal: 12, backgroundColor: '#123e62' }, workflowLinkText: { color: '#63baff', fontWeight: '900', textAlign: 'center' },
   community: { gap: 14, borderWidth: 1, borderColor: '#314047', borderRadius: 20, padding: 16, backgroundColor: '#11171b' }, communityLight: { borderColor: '#c6d1d6', backgroundColor: '#f5fafc' }, communityIntro: { gap: 6, alignItems: 'center' }, communityTitle: { color: '#fff', fontSize: 23, lineHeight: 28, fontWeight: '900', textAlign: 'center' }, communityDetail: { maxWidth: 680, color: '#afbdc5', fontSize: 13, lineHeight: 19, textAlign: 'center' }, communityActions: { gap: 10 }, communityCard: { minHeight: 116, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 15, padding: 13, backgroundColor: '#141a1f' }, communityFriends: { borderColor: '#25558a' }, communityBoard: { borderColor: '#553b86' }, communityIcon: { width: 58, height: 58, alignItems: 'center', justifyContent: 'center', borderRadius: 15, backgroundColor: '#102d51' }, communityBoardIcon: { backgroundColor: '#2c1d4d' }, communityIconText: { color: '#299cf5', fontSize: 28, fontWeight: '900' }, communityCopy: { minWidth: 0, flex: 1, gap: 2 }, communityEyebrow: { color: '#299cf5', fontSize: 8, fontWeight: '900', letterSpacing: 1.1 }, communityCardTitle: { color: '#fff', fontSize: 17, fontWeight: '900' }, communityCardDetail: { color: '#aebbc2', fontSize: 11, lineHeight: 16 },

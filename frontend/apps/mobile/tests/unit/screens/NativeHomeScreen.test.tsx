@@ -25,7 +25,8 @@ const baseProps = {
   error: null as string | null,
   friendsState: 'ready' as const,
   incomingFriends: 0,
-  isLoading: false,
+  isCollectionLoading: false,
+  isRecentLoading: false,
   onDismissActionMenuHint: jest.fn(),
   onDismissOnboarding: jest.fn(),
   onNavigate: jest.fn(),
@@ -74,9 +75,9 @@ describe('NativeHomeScreen', () => {
     expect(screen.getByText('7')).toBeTruthy();
     expect(screen.getByText('You’re all caught up')).toBeTruthy();
 
-    fireEvent.press(screen.getByRole('button', { name: 'Find Pokémon' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Open collection' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Trade activity' }));
+    fireEvent.press(screen.getByRole('link', { name: 'Find Pokémon' }));
+    fireEvent.press(screen.getByRole('link', { name: 'Open collection' }));
+    fireEvent.press(screen.getByRole('link', { name: 'Trade activity' }));
 
     expect(baseProps.onNavigate).toHaveBeenNthCalledWith(1, '/search');
     expect(baseProps.onNavigate).toHaveBeenNthCalledWith(2, '/pokemon');
@@ -87,7 +88,7 @@ describe('NativeHomeScreen', () => {
     renderHome();
 
     expect(screen.getByText('Tap the Poké Ball below for quick navigation.')).toBeTruthy();
-    fireEvent.press(screen.getByRole('button', { name: 'Dismiss quick navigation hint' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Dismiss action menu tip' }));
     expect(baseProps.onDismissActionMenuHint).toHaveBeenCalledTimes(1);
   });
 
@@ -95,10 +96,10 @@ describe('NativeHomeScreen', () => {
     const onNavigate = jest.fn();
     renderHome({ ...baseProps, onNavigate });
 
-    fireEvent.press(screen.getByRole('button', { name: /Caught/ }));
-    fireEvent.press(screen.getByRole('button', { name: /Favorites/ }));
-    fireEvent.press(screen.getByRole('button', { name: /For Trade/ }));
-    fireEvent.press(screen.getByRole('button', { name: /Wanted/ }));
+    fireEvent.press(screen.getByRole('link', { name: /Caught/ }));
+    fireEvent.press(screen.getByRole('link', { name: /Favorites/ }));
+    fireEvent.press(screen.getByRole('link', { name: /For Trade/ }));
+    fireEvent.press(screen.getByRole('link', { name: /Wanted/ }));
 
     expect(onNavigate.mock.calls).toEqual(
       Object.values(homeExperienceParityContract.collectionSummaryPaths).map((path) => [path]),
@@ -109,7 +110,7 @@ describe('NativeHomeScreen', () => {
     const onNavigate = jest.fn();
     renderHome({ ...baseProps, onNavigate, recentRows: [recentRow] });
 
-    fireEvent.press(screen.getByRole('button', {
+    fireEvent.press(screen.getByRole('link', {
       name: 'Open Bulbasaur in your Pokémon collection',
     }));
 
@@ -123,6 +124,33 @@ describe('NativeHomeScreen', () => {
     expect(screen.getByText('Service unavailable')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the same collection and recent loading surfaces as Vite', () => {
+    renderHome({
+      ...baseProps,
+      isCollectionLoading: true,
+      isRecentLoading: true,
+    });
+
+    expect(screen.getByText('Loading your collection…')).toBeTruthy();
+    expect(screen.getByText('Loading recent Pokémon…')).toBeTruthy();
+    expect(screen.queryByText('20')).toBeNull();
+    expect(screen.queryByText('Start your collection')).toBeNull();
+  });
+
+  it('routes every Vite signed-in Home destination from a native link', () => {
+    const onNavigate = jest.fn();
+    renderHome({ ...baseProps, onNavigate, recentRows: [recentRow] });
+
+    screen.getAllByRole('link').forEach((link) => fireEvent.press(link));
+    const destinations = new Set(onNavigate.mock.calls.map(([path]) => path));
+    expect(destinations).toEqual(new Set([
+      '/', '/help', '/max', '/pokedex', '/pokemon', '/pokemon?filter=caught',
+      '/pokemon?filter=favorites', '/pokemon?filter=trade', '/pokemon?filter=wanted',
+      '/profile', '/profile/friends', '/pvp', '/raid', '/search', '/trade-board',
+      '/trades?section=activity', '/trades?section=preferences',
+    ]));
   });
 
   it('replaces the dashboard with the canonical milestone onboarding until dismissed', () => {
@@ -146,7 +174,7 @@ describe('NativeHomeScreen', () => {
 
     expect(screen.getByText('Let’s make your account useful.')).toBeTruthy();
     expect(screen.queryByText('You’re all caught up')).toBeNull();
-    fireEvent.press(screen.getByRole('button', { name: 'Open wishlist' }));
+    fireEvent.press(screen.getByRole('link', { name: 'Open wishlist' }));
     fireEvent.press(screen.getByRole('button', { name: 'Open trainer dashboard' }));
     expect(onNavigate).toHaveBeenCalledWith('/pokemon?filter=wanted');
     expect(onDismissOnboarding).toHaveBeenCalledTimes(1);

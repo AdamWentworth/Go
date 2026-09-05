@@ -1,5 +1,4 @@
 import {
-  ActivityIndicator,
   Image,
   Pressable,
   ScrollView,
@@ -28,7 +27,8 @@ type NativeHomeScreenProps = {
   error?: string | null;
   friendsState: FriendsState;
   incomingFriends: number;
-  isLoading?: boolean;
+  isCollectionLoading?: boolean;
+  isRecentLoading?: boolean;
   onDismissActionMenuHint: () => void;
   onDismissOnboarding?: () => void;
   onOpenActionMenu?: () => void;
@@ -73,7 +73,7 @@ const SectionHeading = ({
       <Text accessibilityRole="header" style={[styles.sectionTitle, light && styles.textLight]}>{title}</Text>
     </View>
     {action && onAction ? (
-      <Pressable accessibilityRole="button" onPress={onAction} style={styles.textAction}>
+      <Pressable accessibilityRole="link" onPress={onAction} style={styles.textAction}>
         <Text style={[styles.textActionLabel, light && styles.textActionLabelLight]}>{action}</Text>
         <Text style={[styles.textActionArrow, light && styles.textActionLabelLight]}>›</Text>
       </Pressable>
@@ -97,7 +97,7 @@ const ActionCard = ({
   title: string;
 }) => (
   <Pressable
-    accessibilityRole="button"
+    accessibilityRole="link"
     onPress={onPress}
     style={({ pressed }) => [
       styles.actionCard,
@@ -134,7 +134,7 @@ const StatCard = ({
   value: number;
 }) => (
   <Pressable
-    accessibilityRole="button"
+    accessibilityRole="link"
     onPress={onPress}
     style={({ pressed }) => [
       styles.statCard,
@@ -168,7 +168,7 @@ const ToolLink = ({
   onPress: () => void;
 }) => (
   <Pressable
-    accessibilityRole="button"
+    accessibilityRole="link"
     onPress={onPress}
     style={({ pressed }) => [styles.tool, light && styles.toolLight, pressed && styles.pressed]}
   >
@@ -187,7 +187,8 @@ export const NativeHomeScreen = ({
   error = null,
   friendsState,
   incomingFriends,
-  isLoading = false,
+  isCollectionLoading = false,
+  isRecentLoading = false,
   onDismissActionMenuHint,
   onDismissOnboarding = () => undefined,
   onOpenActionMenu = () => undefined,
@@ -221,13 +222,13 @@ export const NativeHomeScreen = ({
         ]}
       >
         <View style={styles.brandHeader}>
-          <Pressable accessibilityRole="button" onPress={() => onNavigate('/')} style={styles.brand}>
+          <Pressable accessibilityRole="link" onPress={() => onNavigate('/')} style={styles.brand}>
             <Image fadeDuration={0} source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.brandLogo} />
             <Text style={[styles.brandName, light && styles.textLight]}>Pokémon Go Nexus</Text>
           </Pressable>
           <Pressable
             accessibilityLabel={`Open @${username} profile`}
-            accessibilityRole="button"
+            accessibilityRole="link"
             onPress={() => onNavigate('/profile')}
             style={[styles.profileLink, light && styles.profileLinkLight]}
           >
@@ -252,7 +253,7 @@ export const NativeHomeScreen = ({
           <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>TRAINER DASHBOARD</Text>
           <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Welcome back, {firstName}</Text>
           <Text style={[styles.lead, light && styles.mutedLight]}>Your collection, trades, and trainer network—together in one place.</Text>
-          <Pressable accessibilityRole="button" onPress={() => onNavigate('/search')} style={styles.primaryButton}>
+          <Pressable accessibilityRole="link" onPress={() => onNavigate('/search')} style={styles.primaryButton}>
             <NativeUiIcon color="#04131f" name="search" size={18} />
             <Text style={styles.primaryButtonText}>Find Pokémon</Text>
           </Pressable>
@@ -280,7 +281,6 @@ export const NativeHomeScreen = ({
               ? `${attentionCount} item${attentionCount === 1 ? '' : 's'} need your attention`
               : 'You’re all caught up'}
           />
-          {isLoading ? <ActivityIndicator color="#299cf5" style={styles.loader} /> : null}
           <View style={styles.actionGrid}>
             <ActionCard
               accent="#35c984"
@@ -317,17 +317,23 @@ export const NativeHomeScreen = ({
             onAction={() => onNavigate(homeExperienceParityContract.collectionPath)}
             title="At a glance"
           />
-          <View style={styles.statGrid}>
-            <StatCard accent="#299cf5" label="Caught" light={light} onPress={() => onNavigate(homeExperienceParityContract.collectionSummaryPaths.caught)} value={collection.caught} />
-            <StatCard accent="#e7bb1f" label="★ Favorites" light={light} onPress={() => onNavigate(homeExperienceParityContract.collectionSummaryPaths.favorites)} value={collection.favorites} />
-            <StatCard accent="#35c984" icon="trade" label="For Trade" light={light} onPress={() => onNavigate(homeExperienceParityContract.collectionSummaryPaths.trade)} value={collection.forTrade} />
-            <StatCard accent="#f05a70" detail={collection.mostWanted ? `${collection.mostWanted} most wanted` : undefined} icon="heart" label="Wanted" light={light} onPress={() => onNavigate(homeExperienceParityContract.collectionSummaryPaths.wanted)} value={collection.wanted} />
-          </View>
+          {isCollectionLoading ? (
+            <View accessibilityRole="progressbar" style={[styles.panelState, light && styles.panelStateLight]}>
+              <Text style={[styles.panelStateText, light && styles.mutedLight]}>Loading your collection…</Text>
+            </View>
+          ) : (
+            <View style={styles.statGrid}>
+              <StatCard accent="#299cf5" label="Caught" light={light} onPress={() => onNavigate(homeExperienceParityContract.collectionSummaryPaths.caught)} value={collection.caught} />
+              <StatCard accent="#e7bb1f" icon="star" label="Favorites" light={light} onPress={() => onNavigate(homeExperienceParityContract.collectionSummaryPaths.favorites)} value={collection.favorites} />
+              <StatCard accent="#35c984" icon="trade" label="For Trade" light={light} onPress={() => onNavigate(homeExperienceParityContract.collectionSummaryPaths.trade)} value={collection.forTrade} />
+              <StatCard accent="#f05a70" detail={collection.mostWanted ? `${collection.mostWanted} most wanted` : undefined} icon="heart" label="Wanted" light={light} onPress={() => onNavigate(homeExperienceParityContract.collectionSummaryPaths.wanted)} value={collection.wanted} />
+            </View>
+          )}
           <View style={styles.panelActions}>
-            <Pressable accessibilityRole="button" onPress={() => onNavigate(homeExperienceParityContract.collectionPath)} style={[styles.panelAction, light && styles.panelActionLight]}>
+            <Pressable accessibilityRole="link" onPress={() => onNavigate(homeExperienceParityContract.collectionPath)} style={[styles.panelAction, light && styles.panelActionLight]}>
               <Text style={[styles.panelActionText, light && styles.textLight]}>Open collection</Text><Text style={[styles.cardArrow, light && styles.mutedLight]}>›</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" onPress={() => onNavigate('/trade-board')} style={[styles.panelAction, light && styles.panelActionLight]}>
+            <Pressable accessibilityRole="link" onPress={() => onNavigate('/trade-board')} style={[styles.panelAction, light && styles.panelActionLight]}>
               <View style={styles.panelActionLabel}><NativeUiIcon color={light ? '#183c40' : '#f8fcfd'} name="share" size={15} /><Text style={[styles.panelActionText, light && styles.textLight]}>Share Trade Board</Text></View>
             </Pressable>
           </View>
@@ -349,12 +355,16 @@ export const NativeHomeScreen = ({
 
         <View style={[styles.panel, light && styles.panelLight]}>
           <SectionHeading action="View all" eyebrow="Recently updated" light={light} onAction={() => onNavigate(homeExperienceParityContract.collectionPath)} title="Your latest Pokémon" />
-          {recentRows.length ? (
+          {isRecentLoading ? (
+            <View accessibilityRole="progressbar" style={[styles.panelState, light && styles.panelStateLight]}>
+              <Text style={[styles.panelStateText, light && styles.mutedLight]}>Loading recent Pokémon…</Text>
+            </View>
+          ) : recentRows.length ? (
             <View style={styles.recentList}>
               {recentRows.map((row) => (
                 <Pressable
                   accessibilityLabel={`Open ${row.name} in your Pokémon collection`}
-                  accessibilityRole="button"
+                  accessibilityRole="link"
                   key={row.id}
                   onPress={() => onNavigate(homeExperienceParityContract.recentPokemonPath)}
                   style={({ pressed }) => [styles.recentRow, light && styles.recentRowLight, pressed && styles.pressed]}
@@ -375,7 +385,7 @@ export const NativeHomeScreen = ({
             <View style={[styles.emptyState, light && styles.emptyStateLight]}>
               <Text style={styles.emptyPlus}>＋</Text>
               <View style={styles.emptyCopy}><Text style={[styles.emptyTitle, light && styles.textLight]}>Start your collection</Text><Text style={[styles.actionDetail, light && styles.mutedLight]}>Add your first caught or wanted Pokémon to see recent updates here.</Text></View>
-              <Pressable accessibilityRole="button" onPress={() => onNavigate(homeExperienceParityContract.collectionPath)} style={styles.emptyButton}><Text style={styles.emptyButtonText}>Open Pokémon</Text></Pressable>
+              <Pressable accessibilityRole="link" onPress={() => onNavigate(homeExperienceParityContract.collectionPath)} style={styles.emptyButton}><Text style={styles.emptyButtonText}>Open Pokémon</Text></Pressable>
             </View>
           )}
         </View>
@@ -443,7 +453,9 @@ const styles = StyleSheet.create({
   textActionLabel: { color: '#b4c1c3', fontSize: 10, fontWeight: '900', textAlign: 'right' },
   textActionLabelLight: { color: '#345457' },
   textActionArrow: { color: '#b4c1c3', fontSize: 22, fontWeight: '900' },
-  loader: { paddingVertical: 3 },
+  panelState: { minHeight: 84, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#334044', borderRadius: 11, backgroundColor: '#101314' },
+  panelStateLight: { borderColor: '#d0dcda', backgroundColor: 'rgba(255,255,255,0.68)' },
+  panelStateText: { color: '#9eadaf', fontSize: 12, fontWeight: '800' },
   actionGrid: { gap: 14 },
   actionCard: { minHeight: 102, flexDirection: 'row', alignItems: 'center', gap: 11, padding: 12, borderWidth: 1, borderColor: '#354044', borderRadius: 12, backgroundColor: '#101314' },
   actionCardLight: { borderColor: '#d0dcda', backgroundColor: 'rgba(255,255,255,0.68)' },

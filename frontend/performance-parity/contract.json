@@ -80,6 +80,9 @@
   "interactions": [
     { "id": "interaction.action-menu.open", "vite": "action-menu dialog visible", "nativeEvent": "action_menu_surface_painted" },
     { "id": "interaction.theme.toggle", "vite": "visible theme palette changed", "nativeEvent": "theme_visible_palette_committed" },
+    { "id": "interaction.home.hint-dismiss", "vite": "Home action-menu education removed", "nativeEvent": "home_hint_dismiss_result_painted" },
+    { "id": "interaction.home.guest-explore", "vite": "guest feature directory reached", "nativeEvent": "home_guest_explore_result_painted" },
+    { "id": "interaction.home.onboarding-dismiss", "vite": "signed-in trainer dashboard visible", "nativeEvent": "home_onboarding_dismiss_result_painted" },
     { "id": "interaction.collection.search-open", "vite": "search controls visible", "nativeEvent": "collection_search_menu_painted" },
     { "id": "interaction.collection.sort-open", "vite": "sort menu visible", "nativeEvent": "collection_sort_menu_painted" },
     { "id": "interaction.collection.filter", "vite": "filtered result visible", "nativeEvent": "collection_filter_result_revealed" },

@@ -38,25 +38,16 @@ describe('resolveNativeHomeCollectionEntry', () => {
 });
 
 describe('runNativeHomeNavigationWithLoading', () => {
-  it('paints the shared loader for a full frame before starting navigation', () => {
-    const frames: (() => void)[] = [];
+  it('starts the shared loader and navigation in the same interaction', () => {
     const navigate = jest.fn();
-    const scheduleFrame = jest.fn((callback: () => void) => {
-      frames.push(callback);
-      return frames.length;
-    });
     const runWithLoading = jest.fn((_source: string, action: () => void) => action());
 
-    runNativeHomeNavigationWithLoading(runWithLoading, navigate, scheduleFrame);
+    runNativeHomeNavigationWithLoading(runWithLoading, navigate);
 
     expect(runWithLoading).toHaveBeenCalledWith(
       NATIVE_HOME_NAVIGATION_SOURCE,
       expect.any(Function),
     );
-    expect(navigate).not.toHaveBeenCalled();
-    frames.shift()?.();
-    expect(navigate).not.toHaveBeenCalled();
-    frames.shift()?.();
     expect(navigate).toHaveBeenCalledTimes(1);
   });
 });

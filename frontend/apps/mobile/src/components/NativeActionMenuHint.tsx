@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
 
 type Props = {
   assetBaseUrl: string;
@@ -21,6 +23,19 @@ export const NativeActionMenuHint = ({
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
   const insets = useSafeAreaInsets();
+  const [visible, setVisible] = useState(true);
+  const dismiss = () => {
+    const startedAt = Date.now();
+    setVisible(false);
+    onDismiss();
+    markNativeUiPerformanceAfterPaint('home_hint_dismiss_result_painted', startedAt);
+  };
+  const open = () => {
+    setVisible(false);
+    onDismiss();
+    onOpen();
+  };
+  if (!visible) return null;
   return (
     <View
       accessibilityLabel="Action menu tip"
@@ -40,7 +55,7 @@ export const NativeActionMenuHint = ({
       <Pressable
         accessibilityLabel="Open action menu from tip"
         accessibilityRole="button"
-        onPress={onOpen}
+        onPress={open}
         style={({ pressed }) => [styles.copyButton, pressed && styles.pressed]}
       >
         <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>QUICK NAVIGATION</Text>
@@ -51,10 +66,10 @@ export const NativeActionMenuHint = ({
         </Text>
       </Pressable>
       <Pressable
-        accessibilityLabel="Dismiss quick navigation hint"
+        accessibilityLabel="Dismiss action menu tip"
         accessibilityRole="button"
         hitSlop={4}
-        onPress={onDismiss}
+        onPress={dismiss}
         style={styles.dismiss}
       >
         <Text style={[styles.dismissText, light && styles.dismissTextLight]}>×</Text>

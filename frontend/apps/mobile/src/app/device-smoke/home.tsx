@@ -8,6 +8,17 @@ import { NativeGuestHomeScreen } from '../../screens/NativeGuestHomeScreen';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
 
+const ONBOARDING_PROGRESS = {
+  completed: 1,
+  total: 4,
+  tasks: [
+    { id: 'collection' as const, title: 'Add your first Pokémon', description: 'Begin with something you have caught or already want.', action: 'Open Pokémon', to: '/pokemon', complete: true },
+    { id: 'wanted' as const, title: 'Create a Wanted listing', description: 'Tell the app what you are looking for and which details matter.', action: 'Open wishlist', to: '/pokemon?filter=wanted', complete: false },
+    { id: 'trade' as const, title: 'List a Pokémon For Trade', description: 'Choose an eligible caught Pokémon you would offer another trainer.', action: 'Open collection', to: '/pokemon?filter=trade', complete: false },
+    { id: 'connect' as const, title: 'Make your first connection', description: 'Find a trainer, add a friend, or begin a trade proposal.', action: 'Find trainers', to: '/search', complete: false },
+  ],
+};
+
 const RECENT_ROWS: NativeCollectionRow[] = [
   {
     id: 'charizard',
@@ -46,23 +57,31 @@ const RECENT_ROWS: NativeCollectionRow[] = [
 ];
 
 export default function DeviceSmokeHomeRoute() {
-  const params = useLocalSearchParams<{ guest?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    guest?: string | string[];
+    onboarding?: string | string[];
+  }>();
   const router = useRouter();
   const [showHint, setShowHint] = useState(true);
   const [lastPath, setLastPath] = useState('');
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(true);
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
   const guest = (Array.isArray(params.guest) ? params.guest[0] : params.guest) === '1';
+  const onboarding = (Array.isArray(params.onboarding)
+    ? params.onboarding[0]
+    : params.onboarding) === '1';
 
   if (guest) {
     return (
       <View style={{ flex: 1 }}>
         <NativeGuestHomeScreen
           assetBaseUrl={runtimeConfig.api.frontendAppUrl}
-          onDismissActionMenuHint={() => setShowHint(false)}
+          onDismissActionMenuHint={() => {
+            setTimeout(() => setShowHint(false), 0);
+          }}
           onNavigate={setLastPath}
           onOpenActionMenu={() => {
-            setShowHint(false);
             setActionMenuOpen(true);
           }}
           showActionMenuHint={showHint}
@@ -99,13 +118,16 @@ export default function DeviceSmokeHomeRoute() {
         collection={{ caught: 2255, favorites: 77, forTrade: 208, wanted: 168, mostWanted: 1 }}
         friendsState="ready"
         incomingFriends={1}
-        onDismissActionMenuHint={() => setShowHint(false)}
+        onDismissActionMenuHint={() => {
+          setTimeout(() => setShowHint(false), 0);
+        }}
+        onDismissOnboarding={() => setShowOnboarding(false)}
         onOpenActionMenu={() => {
-          setShowHint(false);
           setActionMenuOpen(true);
         }}
         onNavigate={setLastPath}
         onRetry={() => undefined}
+        onboardingProgress={onboarding && showOnboarding ? ONBOARDING_PROGRESS : null}
         pokemonGoName="NexusDemo"
         recentRows={RECENT_ROWS}
         showActionMenuHint={showHint}

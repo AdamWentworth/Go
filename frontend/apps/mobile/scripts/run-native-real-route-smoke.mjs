@@ -143,6 +143,7 @@ const initialRouteTrade = {
   username_proposed: 'NexusRoute',
 };
 let routeTrade = { ...initialRouteTrade };
+let homePerformanceEmptyState = false;
 const routeTradesEnvelope = () => ({
   related_instances: Object.fromEntries(
     Object.entries(foreignInstances).slice(0, 2).map(([instanceId, instance]) => [
@@ -326,15 +327,36 @@ const makePvpEntry = (rank, speciesId, name, type, moveName, pokemonId = rank) =
   variantKind: 'pokemon',
 });
 
+const pvpGreatBaseEntries = [
+  makePvpEntry(1, 'clodsire', 'Clodsire', 'poison', 'Earthquake', 980),
+  makePvpEntry(2, 'azumarill', 'Azumarill', 'water', 'Play Rough', 184),
+  makePvpEntry(3, 'bulbasaur', 'Bulbasaur', 'grass', 'Seed Bomb', 1),
+];
+const pvpGreatEntries = [
+  ...pvpGreatBaseEntries,
+  ...Array.from({ length: 57 }, (_, offset) => {
+    const rank = offset + 4;
+    const template = pvpGreatBaseEntries[offset % pvpGreatBaseEntries.length];
+    return {
+      ...template,
+      categoryScores: template.categoryScores.map(
+        (score) => Math.max(25, score - rank / 4),
+      ),
+      name: `Meta Pokémon ${rank}`,
+      rank,
+      rating: Math.max(300, 700 - rank * 3),
+      score: Math.max(35, 96 - rank * 0.75),
+      sourceRank: rank,
+      speciesId: `meta-pokemon-${rank}`,
+    };
+  }),
+];
+
 const pvpPayload = {
   leagues: {
     great: {
       cpLimit: 1_500,
-      entries: [
-        makePvpEntry(1, 'clodsire', 'Clodsire', 'poison', 'Earthquake', 980),
-        makePvpEntry(2, 'azumarill', 'Azumarill', 'water', 'Play Rough', 184),
-        makePvpEntry(3, 'bulbasaur', 'Bulbasaur', 'grass', 'Seed Bomb', 1),
-      ],
+      entries: pvpGreatEntries,
       key: 'great',
       label: 'Great League',
     },
@@ -493,12 +515,18 @@ const apiResponse = (url, method = 'GET') => {
       ],
     };
   }
+  if (pathname === '/api/users/instances/sync' && homePerformanceEmptyState) {
+    return { checkpoint: 'native-home-empty-checkpoint', instances: {}, not_modified: false };
+  }
   if (pathname === '/api/users/instances/sync') {
     return { checkpoint: 'native-route-checkpoint', instances, not_modified: false };
   }
   if (pathname === '/api/users/tags') return tags;
   if (pathname === '/api/users/collection/summary') {
     return { caught: 142, collection_total: 180, favorite: 12, for_trade: 18, most_wanted: 3, wanted: 24 };
+  }
+  if (pathname === '/api/users/trades' && method === 'GET' && homePerformanceEmptyState) {
+    return { related_instances: {}, trades: [] };
   }
   if (pathname === '/api/users/trades' && method === 'GET') return routeTradesEnvelope();
   if (pathname === '/api/users/trades/native-route-trade/cancel' && method === 'POST') {
@@ -509,6 +537,9 @@ const apiResponse = (url, method = 'GET') => {
       trade_status: 'cancelled',
     };
     return { affected_instances: {}, trade: routeTrade };
+  }
+  if (pathname === '/api/users/friends' && homePerformanceEmptyState) {
+    return { blocked: [], friends: [], incoming: [], outgoing: [] };
   }
   if (pathname === '/api/users/friends') return friends;
   if (pathname === '/api/users/preferences') return preferences;
@@ -878,6 +909,63 @@ const assertNativeDestination = async (page, expectedPath, expectedTestId) => {
   }
   if (await page.getByTestId('web-replica-webview').count()) {
     throw new Error(`${expectedPath} fell back to the canonical WebView.`);
+  }
+};
+
+const assertGuestHomePerformanceWorkflow = async (context) => {
+  const page = await context.newPage();
+  try {
+    await page.goto(`${baseUrl}/native`, { timeout: 60_000, waitUntil: 'domcontentloaded' });
+    await page.getByTestId('native-guest-home-screen').waitFor({
+      state: 'visible',
+      timeout: 25_000,
+    });
+    await waitForRouteToSettle(page);
+    await page.getByLabel('Dismiss action menu tip', { exact: true }).click();
+    await page.getByLabel('Action menu tip', { exact: true }).waitFor({ state: 'hidden' });
+    await recordInteractionPerformance(page, 'interaction.home.hint-dismiss');
+
+    await page.getByRole('link', { name: 'Explore the app ↓', exact: true }).click();
+    const directory = page.getByTestId('native-home-feature-directory');
+    await page.waitForFunction(() => {
+      const element = document.querySelector('[data-testid="native-home-feature-directory"]');
+      return element ? Math.abs(element.getBoundingClientRect().top) < 40 : false;
+    }, null, { timeout: 10_000 });
+    await recordInteractionPerformance(page, 'interaction.home.guest-explore');
+    await directory.screenshot({
+      path: join(artifactDirectory, 'performance-home-guest-directory.png'),
+    });
+  } finally {
+    await page.close();
+  }
+};
+
+const assertSignedInHomePerformanceWorkflow = async (context) => {
+  const page = await context.newPage();
+  homePerformanceEmptyState = true;
+  try {
+    await page.goto(`${baseUrl}/native`, { timeout: 60_000, waitUntil: 'domcontentloaded' });
+    await page.getByTestId('native-home-onboarding').waitFor({
+      state: 'visible',
+      timeout: 25_000,
+    });
+    const hintDismiss = page.getByLabel('Dismiss action menu tip', { exact: true });
+    if (await hintDismiss.isVisible().catch(() => false)) {
+      await hintDismiss.click();
+      await page.getByLabel('Action menu tip', { exact: true })
+        .waitFor({ state: 'hidden', timeout: 10_000 });
+    }
+    await page.getByRole('button', { name: 'Open trainer dashboard', exact: true }).click();
+    await page.getByRole('heading', { name: /Welcome back, NexusRoute/ })
+      .waitFor({ state: 'visible', timeout: 10_000 });
+    await recordInteractionPerformance(page, 'interaction.home.onboarding-dismiss');
+    await page.screenshot({
+      fullPage: true,
+      path: join(artifactDirectory, 'performance-home-signed-in-dashboard.png'),
+    });
+  } finally {
+    homePerformanceEmptyState = false;
+    await page.close();
   }
 };
 
@@ -1600,8 +1688,15 @@ const runContext = async (browser, { authState, routes, theme }) => {
         await page.close();
       }
     }
+    const shouldRunWorkflow = (name) => !workflowFilter || name === workflowFilter;
+    if (!routeFilter && performanceMode && authState === 'guest' && theme === 'dark'
+        && shouldRunWorkflow('home')) {
+      await assertGuestHomePerformanceWorkflow(context);
+    }
     if (!routeFilter && authState === 'signed-in' && theme === 'dark') {
-      const shouldRunWorkflow = (name) => !workflowFilter || name.includes(workflowFilter);
+      if (performanceMode && shouldRunWorkflow('home')) {
+        await assertSignedInHomePerformanceWorkflow(context);
+      }
       if (shouldRunWorkflow('action-menu')) await assertSignedInActionMenuNavigation(context);
       if (shouldRunWorkflow('home-collection')) await assertSignedInHomeCollectionWorkflow(context);
       if (shouldRunWorkflow('collection')) await assertSignedInCollectionWorkflow(context);
@@ -1666,6 +1761,8 @@ const run = async () => {
     for (let repetition = 0; repetition < performanceRepetitions; repetition += 1) {
       for (const theme of workflowsOnly ? ['dark'] : ['dark', 'light']) {
         if (!workflowsOnly) {
+          await runContext(browser, { authState: 'guest', routes: guestRoutes, theme });
+        } else if (workflowFilter === 'home') {
           await runContext(browser, { authState: 'guest', routes: guestRoutes, theme });
         }
         await runContext(browser, { authState: 'signed-in', routes: signedInRoutes, theme });

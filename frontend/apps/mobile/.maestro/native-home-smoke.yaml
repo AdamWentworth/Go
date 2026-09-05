@@ -26,7 +26,7 @@ tags:
 - assertVisible: Find Pokémon
 - assertVisible: QUICK NAVIGATION
 - takeScreenshot: home-01-top
-- tapOn: Dismiss quick navigation hint
+- tapOn: Dismiss action menu tip
 - assertNotVisible: QUICK NAVIGATION
 - scrollUntilVisible:
     element:

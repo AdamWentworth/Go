@@ -120,6 +120,10 @@ export default function NativeHomeRoute() {
         router.push('/native/friends');
         return;
       }
+      if (pathname === '/friends') {
+        router.push('/native/friends');
+        return;
+      }
       if (pathname === '/profile') {
         router.push('/native/profile');
         return;
@@ -243,8 +247,12 @@ export default function NativeHomeRoute() {
 
   if (!session.user) {
     const dismissGuestActionMenuHint = () => {
+      void dismissNativeHomeActionMenuHint(null);
+    };
+    const openGuestActionMenu = () => {
       setShowActionMenuHint(false);
       void dismissNativeHomeActionMenuHint(null);
+      setActionMenuOpen(true);
     };
     return (
       <View style={styles.root}>
@@ -252,13 +260,10 @@ export default function NativeHomeRoute() {
           assetBaseUrl={runtimeConfig.api.frontendAppUrl}
           onDismissActionMenuHint={dismissGuestActionMenuHint}
           onNavigate={navigate}
-          onOpenActionMenu={() => {
-            dismissGuestActionMenuHint();
-            setActionMenuOpen(true);
-          }}
+          onOpenActionMenu={() => setActionMenuOpen(true)}
           showActionMenuHint={showActionMenuHint}
         />
-        <NativeActionMenuAnchor assetBaseUrl={runtimeConfig.api.frontendAppUrl} onPress={() => setActionMenuOpen(true)} />
+        <NativeActionMenuAnchor assetBaseUrl={runtimeConfig.api.frontendAppUrl} onPress={openGuestActionMenu} />
         <NativeActionMenu
           assetBaseUrl={runtimeConfig.api.frontendAppUrl}
           onClose={() => setActionMenuOpen(false)}
@@ -278,8 +283,12 @@ export default function NativeHomeRoute() {
   }
   const signedInUser = session.user;
   const dismissActionMenuHint = () => {
+    void dismissNativeHomeActionMenuHint(signedInUser.user_id);
+  };
+  const openSignedInActionMenu = () => {
     setShowActionMenuHint(false);
     void dismissNativeHomeActionMenuHint(signedInUser.user_id);
+    setActionMenuOpen(true);
   };
   const dismissOnboarding = () => {
     const ownerKey = signedInUser.user_id || signedInUser.username;
@@ -299,13 +308,11 @@ export default function NativeHomeRoute() {
         error={queryErrors.length ? queryErrors.join(' ') : null}
         friendsState={friendsQuery.isPending ? 'loading' : friendsQuery.isError ? 'error' : 'ready'}
         incomingFriends={friendsQuery.data?.incoming.length ?? 0}
-        isLoading={collectionQuery.isPending || tradesQuery.isPending}
+        isCollectionLoading={collectionQuery.isPending}
+        isRecentLoading={collectionQuery.isPending}
         onDismissActionMenuHint={dismissActionMenuHint}
         onDismissOnboarding={dismissOnboarding}
-        onOpenActionMenu={() => {
-          dismissActionMenuHint();
-          setActionMenuOpen(true);
-        }}
+        onOpenActionMenu={() => setActionMenuOpen(true)}
         onNavigate={navigate}
         onRetry={() => {
           void collectionQuery.refetch();
@@ -327,7 +334,7 @@ export default function NativeHomeRoute() {
       />
       <NativeActionMenuAnchor
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}
-        onPress={() => setActionMenuOpen(true)}
+        onPress={openSignedInActionMenu}
       />
       <NativeActionMenu
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}
