@@ -154,6 +154,9 @@ tags:
 - tapOn:
     text: ^X$
 - tapOn: Clear Trade tag filter
+- assertVisible: Confirm action
+- tapOn:
+    text: ^OK$
 - extendedWaitUntil:
     visible: Bulbasaur
     timeout: 10000
@@ -215,6 +218,9 @@ tags:
 - takeScreenshot: 06bb-target-navigation
 - tapOn: Close
 - tapOn: Clear Trade tag filter
+- assertVisible: Confirm action
+- tapOn:
+    text: ^OK$
 - tapOn: TAGS
 - scrollUntilVisible:
     element:
@@ -240,12 +246,14 @@ tags:
 - tapOn: Edit Pokémon
 - assertVisible: Save Pokémon
 - assertVisible: Combat Power
+- tapOn: Open Max Move upgrades
 - scrollUntilVisible:
     element:
       text: Max Move Levels
     direction: DOWN
     timeout: 20000
 - takeScreenshot: 06d-caught-instance-editor
+- tapOn: Close Max Move upgrades
 - scrollUntilVisible:
     element:
       text: Choose location background
@@ -285,52 +293,41 @@ tags:
 - assertVisible: Save Pokémon
 - scrollUntilVisible:
     element:
-      text: APPRAISAL IVS
+      text: Attack
     direction: DOWN
     timeout: 20000
-- assertVisible: APPRAISAL IVS
+- assertVisible: Attack
 - scrollUntilVisible:
     element:
-      text: CAUGHT DETAILS
-    direction: DOWN
-    timeout: 20000
-- extendedWaitUntil:
-    visible: CAUGHT DETAILS
-    timeout: 10000
-- scrollUntilVisible:
-    element:
-      text: LUCKY
-    direction: DOWN
-    speed: 40
-    timeout: 20000
-- scrollUntilVisible:
-    element:
-      text: OBTAINED IN A TRADE
-    direction: DOWN
-    speed: 40
-    timeout: 20000
-- assertVisible: OBTAINED IN A TRADE
-- scrollUntilVisible:
-    element:
-      text: LUCKY
+      text: "LUCKY: YES"
     direction: UP
     speed: 40
     timeout: 20000
 - tapOn: "LUCKY: YES"
+- waitForAnimationToEnd
+- repeat:
+    times: 3
+    commands:
+      - swipe:
+          start: 50%, 82%
+          end: 50%, 45%
+          duration: 400
 - scrollUntilVisible:
     element:
       text: Original trainer name
     direction: DOWN
-    speed: 40
+    speed: 70
+    visibilityPercentage: 50
     timeout: 20000
 - assertVisible: Original trainer name
 - scrollUntilVisible:
     element:
-      text: BALL CAUGHT
+      text: Ball Caught
     direction: DOWN
+    visibilityPercentage: 50
     timeout: 20000
 - extendedWaitUntil:
-    visible: BALL CAUGHT
+    visible: Ball Caught
     timeout: 10000
 - scrollUntilVisible:
     element:
@@ -339,10 +336,26 @@ tags:
     timeout: 20000
 - tapOn: "Ball caught: BEAST BALL"
 - takeScreenshot: 06g-caught-metadata-editor
+- scrollUntilVisible:
+    element:
+      text: Save Pokémon
+    direction: UP
+    visibilityPercentage: 50
+    timeout: 20000
 - tapOn: Save Pokémon
 - assertNotVisible: Pokémon detail editor
 - takeScreenshot: 06c-caught-instance
 - tapOn: Close
+- runFlow:
+    when:
+      visible: "^Continue$"
+    commands:
+      - tapOn: "^Continue$"
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
 - tapOn: Open action menu
 - extendedWaitUntil:
     visible: Quick navigation

@@ -641,20 +641,22 @@ const collectSharedInteractions = async (
     await collectTradeInteractions(context, sampleIndex);
     return;
   }
-  const home = await createMeasuredPage(context, 'signed-in', 'dark');
-  try {
-    await home.goto(`${webBaseUrl}/`, { waitUntil: 'domcontentloaded' });
-    await waitUntilVisuallyReady(home);
-    await home.getByRole('button', { name: 'Action Menu', exact: true }).click();
-    await home.getByRole('dialog', { name: 'Quick navigation' }).waitFor({ state: 'visible' });
-    await recordInteraction(home, 'interaction.action-menu.open', sampleIndex);
+  if (workflowFilter !== 'collection') {
+    const home = await createMeasuredPage(context, 'signed-in', 'dark');
+    try {
+      await home.goto(`${webBaseUrl}/`, { waitUntil: 'domcontentloaded' });
+      await waitUntilVisuallyReady(home);
+      await home.getByRole('button', { name: 'Action Menu', exact: true }).click();
+      await home.getByRole('dialog', { name: 'Quick navigation' }).waitFor({ state: 'visible' });
+      await recordInteraction(home, 'interaction.action-menu.open', sampleIndex);
 
-    const theme = home.locator('.action-menu-overlay .switch');
-    await theme.click();
-    await expect(home.locator('html')).toHaveAttribute('data-theme', 'light');
-    await recordInteraction(home, 'interaction.theme.toggle', sampleIndex);
-  } finally {
-    await closeMeasuredPage(home);
+      const theme = home.locator('.action-menu-overlay .switch');
+      await theme.click();
+      await expect(home.locator('html')).toHaveAttribute('data-theme', 'light');
+      await recordInteraction(home, 'interaction.theme.toggle', sampleIndex);
+    } finally {
+      await closeMeasuredPage(home);
+    }
   }
 
   const collection = await createMeasuredPage(context, 'signed-in', 'dark');
@@ -760,6 +762,8 @@ const collectSharedInteractions = async (
   } finally {
     await closeMeasuredPage(instance);
   }
+
+  if (workflowFilter === 'collection') return;
 
   await collectPokedexInteractions(context, sampleIndex);
   await collectRaidInteractions(context, sampleIndex);
