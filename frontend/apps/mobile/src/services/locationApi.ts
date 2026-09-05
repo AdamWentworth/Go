@@ -2,6 +2,7 @@ import { stripDiacritics } from '@pokemongonexus/shared-contracts/domain';
 import {
   locationContract,
   type LocationBase,
+  type LocationResponse,
   type LocationSuggestion,
 } from '@pokemongonexus/shared-contracts/location';
 import {
@@ -40,4 +41,15 @@ export const getNativeLocationSuggestions = async (
     query: { query },
   });
   return formatNativeLocationSuggestions(payload);
+};
+
+export const getNativeLocationOptions = async (
+  latitude: number,
+  longitude: number,
+  client: NativeLocationApiClient = createNativeLocationApiClient(),
+): Promise<LocationSuggestion[]> => {
+  const payload = await client.get<LocationResponse>(locationContract.endpoints.reverse, {
+    query: { lat: latitude, lon: longitude },
+  });
+  return formatNativeLocationSuggestions(payload.locations ?? []);
 };

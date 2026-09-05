@@ -16,7 +16,6 @@ export default function NativePasswordResetRoute() {
       <NativePasswordResetScreen
         onBackToLogin={() => router.replace('/native/login')}
         onConfirm={(nextToken, password) => mobileSessionApi.confirmPasswordReset({ token: nextToken, password })}
-        onRequest={(identifier) => mobileSessionApi.requestPasswordReset({ identifier })}
         token={token}
       />
       <NativeRouteActionMenu />

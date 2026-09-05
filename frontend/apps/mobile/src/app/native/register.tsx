@@ -3,12 +3,22 @@ import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
 import { NativeRegisterScreen } from '../../screens/NativeRegisterScreen';
 import { nativeRegisterOAuthNotice } from '../../features/auth/nativeAuthRouteFeedback';
+import { NativeProtectedSessionGate } from '../../components/NativeProtectedSessionGate';
 
 export default function NativeRegisterRoute() {
   const router = useRouter();
   const params = useLocalSearchParams<{ oauth?: string | string[] }>();
   const session = useNativeSession();
   const oauthStatus = Array.isArray(params.oauth) ? params.oauth[0] : params.oauth;
+  if (session.status === 'restoring' || session.status === 'unavailable') {
+    return (
+      <NativeProtectedSessionGate
+        message="Checking your secure session…"
+        onRetry={session.retrySession}
+        status={session.status}
+      />
+    );
+  }
   if (session.status === 'signed-in' && session.user) return <Redirect href="/native" />;
   return (
     <>

@@ -2,29 +2,41 @@ import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  PermissionsAndroid,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
+  TurboModuleRegistry,
   useWindowDimensions,
 } from 'react-native';
+import type { TurboModule } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { OAuthProvider } from '@pokemongonexus/shared-contracts/auth';
+import type { Coordinates, LocationSuggestion } from '@pokemongonexus/shared-contracts/location';
 import Svg, { Path } from 'react-native-svg';
 import {
   buildNativeRegistrationRequest,
   createNativeRegistrationDraft,
+  type NativeRegistrationDraft,
   validateNativeRegistrationStep,
 } from '../features/auth/nativeRegistrationModel';
 import { NativeLocationAutocompleteInput } from '../components/NativeLocationAutocompleteInput';
+import { NativeUiIcon } from '../components/NativeUiIcon';
 import { NativeSocialProviderIcon } from '../components/NativeSocialProviderIcon';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import {
+  NativeRegistrationLocationOptions,
+  NativeRegistrationLocationPicker,
+} from '../components/NativeRegistrationLocationPicker';
+import { getNativeLocationOptions } from '../services/locationApi';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
 
 type Props = {
+  initialDraft?: Partial<NativeRegistrationDraft>;
   notice?: string | null;
   onBackToLogin: () => void;
   onOpenPrivacy: () => void;
@@ -36,6 +48,40 @@ type Props = {
     request: Omit<ReturnType<typeof buildNativeRegistrationRequest>, 'email' | 'password'>,
   ) => Promise<void>;
   onRegistered: () => void;
+  getCurrentCoordinates?: () => Promise<Coordinates>;
+  getLocationOptions?: (latitude: number, longitude: number) => Promise<LocationSuggestion[]>;
+};
+
+type NativeLocationTurboModule = TurboModule & {
+  getCurrentPosition: () => Promise<{
+    coords: { latitude: number; longitude: number };
+  }>;
+  requestPermissions: () => Promise<void>;
+};
+
+const getNativeCurrentCoordinates = async (): Promise<Coordinates> => {
+  if (Platform.OS === 'web') throw new Error('Device location is available in the installed app.');
+  if (Platform.OS === 'android') {
+    const result = await PermissionsAndroid.requestMultiple([
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+    ]);
+    const allowed = result[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] === PermissionsAndroid.RESULTS.GRANTED
+      || result[PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION] === PermissionsAndroid.RESULTS.GRANTED;
+    if (!allowed) throw new Error('Location permission was not granted. You can type a place or choose it on the map.');
+  }
+  // Use MapLibre's already-linked location TurboModule directly. Importing
+  // the package index on demand also evaluates every code-generated map view,
+  // which Fast Refresh can attempt to register a second time.
+  const locationModule = TurboModuleRegistry.get<NativeLocationTurboModule>('MLRNLocationModule');
+  if (!locationModule) throw new Error('Device location is unavailable. You can type a place or choose it on the map.');
+  if (Platform.OS === 'ios') await locationModule.requestPermissions();
+  const position = await locationModule.getCurrentPosition();
+  if (!position) throw new Error('Your current location is unavailable. You can type a place or choose it on the map.');
+  return {
+    latitude: position.coords.latitude,
+    longitude: position.coords.longitude,
+  };
 };
 
 const SOCIAL_PROVIDERS: { provider: OAuthProvider; label: string }[] = [
@@ -53,6 +99,9 @@ const STEP_COPY = [
 ] as const;
 
 export const NativeRegisterScreen = ({
+  getCurrentCoordinates = getNativeCurrentCoordinates,
+  getLocationOptions = getNativeLocationOptions,
+  initialDraft,
   notice = null,
   onBackToLogin,
   onOpenPrivacy,
@@ -66,7 +115,10 @@ export const NativeRegisterScreen = ({
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const compact = width < 600;
-  const [draft, setDraft] = useState(createNativeRegistrationDraft);
+  const [draft, setDraft] = useState(() => ({
+    ...createNativeRegistrationDraft(),
+    ...initialDraft,
+  }));
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -74,9 +126,89 @@ export const NativeRegisterScreen = ({
   const [method, setMethod] = useState<'email' | 'oauth' | null>(null);
   const [oauthCode, setOAuthCode] = useState<string | null>(null);
   const [oauthProvider, setOAuthProvider] = useState<OAuthProvider | null>(null);
+  const [locationBusy, setLocationBusy] = useState(false);
+  const [locationOptions, setLocationOptions] = useState<LocationSuggestion[]>([]);
+  const [locationOptionsOpen, setLocationOptionsOpen] = useState(false);
+  const [locationMapOpen, setLocationMapOpen] = useState(false);
   const emailInputRef = useRef<TextInput>(null);
   const patch = <K extends keyof typeof draft>(key: K, value: (typeof draft)[K]) => {
-    setDraft((current) => ({ ...current, [key]: value }));
+    setDraft((current) => {
+      const next = { ...current, [key]: value };
+      if (key === 'username' && current.useUsernameAsPokemonGoName) {
+        next.pokemonGoName = String(value);
+      }
+      return next;
+    });
+    setError(null);
+  };
+  const toggleUsernameAsPokemonGoName = () => {
+    const startedAt = Date.now();
+    setDraft((current) => {
+      const enabled = !current.useUsernameAsPokemonGoName;
+      return {
+        ...current,
+        pokemonGoName: enabled ? current.username : '',
+        useUsernameAsPokemonGoName: enabled,
+      };
+    });
+    setError(null);
+    markNativeUiPerformanceAfterPaint('auth_registration_same_name_painted', startedAt);
+  };
+  const updateTypedLocation = (location: string) => {
+    setDraft((current) => ({
+      ...current,
+      allowLocation: false,
+      coordinates: null,
+      location,
+    }));
+    setError(null);
+  };
+  const loadLocationOptions = async (coordinates: Coordinates, showStandaloneOptions: boolean) => {
+    setLocationBusy(true);
+    setLocationOptions([]);
+    try {
+      const options = await getLocationOptions(coordinates.latitude, coordinates.longitude);
+      setLocationOptions(options);
+      if (showStandaloneOptions && options.length > 0) setLocationOptionsOpen(true);
+      if (options.length === 0) {
+        setError('No broad place names were found for those coordinates. Try another point or type a place.');
+      }
+    } catch {
+      setError('Unable to fetch location options. Please try again.');
+    } finally {
+      setLocationBusy(false);
+    }
+  };
+  const toggleDeviceLocation = async () => {
+    if (locationBusy) return;
+    if (draft.allowLocation) {
+      setDraft((current) => ({ ...current, allowLocation: false, coordinates: null }));
+      setLocationOptions([]);
+      setLocationOptionsOpen(false);
+      return;
+    }
+    setError(null);
+    setLocationBusy(true);
+    try {
+      const coordinates = await getCurrentCoordinates();
+      setDraft((current) => ({ ...current, allowLocation: true, coordinates }));
+      setLocationBusy(false);
+      await loadLocationOptions(coordinates, true);
+    } catch (caught) {
+      setLocationBusy(false);
+      setError(caught instanceof Error ? caught.message : 'Your current location is unavailable.');
+    }
+  };
+  const selectMapCoordinates = (coordinates: Coordinates) => {
+    setDraft((current) => ({ ...current, allowLocation: false, coordinates }));
+    setError(null);
+    void loadLocationOptions(coordinates, false);
+  };
+  const selectLocationOption = (location: LocationSuggestion) => {
+    setDraft((current) => ({ ...current, location: location.displayName }));
+    setLocationMapOpen(false);
+    setLocationOptionsOpen(false);
+    setLocationOptions([]);
     setError(null);
   };
   const continueOrSubmit = async () => {
@@ -87,7 +219,9 @@ export const NativeRegisterScreen = ({
       return;
     }
     if (step < 4) {
+      const startedAt = Date.now();
       setStep((current) => method === 'oauth' && current === 0 ? 2 : current + 1);
+      markNativeUiPerformanceAfterPaint('auth_registration_step_painted', startedAt);
       return;
     }
     setSubmitting(true);
@@ -129,7 +263,14 @@ export const NativeRegisterScreen = ({
     }
   };
 
+  const selectEmailRegistration = () => {
+    const startedAt = Date.now();
+    setMethod('email');
+    markNativeUiPerformanceAfterPaint('auth_registration_method_painted', startedAt);
+  };
+
   return (
+    <>
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.root, light && styles.rootLight, compact && styles.rootCompact, compact && light && styles.rootCompactLight]} testID="native-register-screen">
       <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.content, compact && styles.contentCompact, { paddingTop: (compact ? 21 : 28) + insets.top, paddingBottom: 28 + insets.bottom }]} keyboardShouldPersistTaps="handled">
         <View style={[styles.card, light && styles.cardLight, compact && styles.cardCompact, compact && light && styles.cardCompactLight]}>
@@ -187,7 +328,7 @@ export const NativeRegisterScreen = ({
                   <Text style={[styles.socialText, provider === 'google' && styles.googleText]}>{label}</Text>
                 </Pressable>
               ))}
-              <Pressable accessibilityRole="button" disabled={submitting} onPress={() => setMethod('email')} style={[styles.emailButton, compact && styles.methodButtonCompact, light && styles.secondaryLight]}>
+              <Pressable accessibilityRole="button" disabled={submitting} onPress={selectEmailRegistration} style={[styles.emailButton, compact && styles.methodButtonCompact, light && styles.secondaryLight]}>
                 <View style={styles.emailButtonContent}>
                   <Svg height={18} viewBox="0 0 24 24" width={18}>
                     <Path d="M20 4H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h16a2 2 0 0 0 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" fill={light ? '#39504e' : '#ffffff'} />
@@ -266,8 +407,23 @@ export const NativeRegisterScreen = ({
 
           {method && step === 2 ? (
             <View style={styles.fields}>
+              <Pressable
+                accessibilityLabel={`Use ${draft.username || 'my username'} as my Pokémon GO name`}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: draft.useUsernameAsPokemonGoName }}
+                onPress={toggleUsernameAsPokemonGoName}
+                style={({ pressed }) => [styles.choice, light && styles.secondaryLight, pressed && styles.pressed]}
+              >
+                <View style={styles.choiceCopy}>
+                  <Text style={[styles.choiceTitle, light && styles.textLight]}>Use {draft.username || 'my username'} as my Pokémon GO name</Text>
+                  <Text style={[styles.choiceDetail, light && styles.mutedLight]}>One name across Pokémon Go Nexus and Pokémon GO.</Text>
+                </View>
+                <View style={[styles.checkbox, draft.useUsernameAsPokemonGoName && styles.checkboxChecked]}>
+                  {draft.useUsernameAsPokemonGoName ? <Text style={styles.checkboxGlyph}>✓</Text> : null}
+                </View>
+              </Pressable>
               <Field label="Pokémon GO name" light={light}>
-                <TextInput accessibilityLabel="Pokémon GO name" autoCapitalize="none" onChangeText={(value) => patch('pokemonGoName', value.replace(/\s+/g, ''))} placeholder="Optional" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.pokemonGoName} />
+                <TextInput accessibilityLabel="Pokémon GO name" autoCapitalize="none" editable={!draft.useUsernameAsPokemonGoName} onChangeText={(value) => patch('pokemonGoName', value.replace(/\s+/g, ''))} placeholder="Optional" placeholderTextColor="#718087" style={[styles.input, draft.useUsernameAsPokemonGoName && styles.inputDisabled, light && styles.inputLight]} value={draft.pokemonGoName} />
               </Field>
               <Field label="Trainer code" light={light}>
                 <TextInput accessibilityLabel="Trainer code" inputMode="numeric" maxLength={14} onChangeText={(value) => {
@@ -285,18 +441,46 @@ export const NativeRegisterScreen = ({
                 <NativeLocationAutocompleteInput
                   accessibilityLabel="City or place"
                   light={light}
-                  onChangeText={(value) => patch('location', value)}
-                  placeholder="City, region, country (optional)"
+                  onChangeText={updateTypedLocation}
+                  placeholder="City, region, country"
                   value={draft.location}
                 />
               </Field>
-              <View style={[styles.choice, light && styles.secondaryLight]}>
+              <Pressable
+                accessibilityLabel="Use this device’s location"
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: draft.allowLocation, busy: locationBusy }}
+                disabled={locationBusy}
+                onPress={() => void toggleDeviceLocation()}
+                style={({ pressed }) => [styles.choice, light && styles.secondaryLight, pressed && styles.pressed]}
+              >
                 <View style={styles.choiceCopy}>
-                  <Text style={[styles.choiceTitle, light && styles.textLight]}>Share this broad location</Text>
-                  <Text style={[styles.choiceDetail, light && styles.mutedLight]}>Helps nearby trainers discover you. Exact coordinates are never required here.</Text>
+                  <Text style={[styles.choiceTitle, light && styles.textLight]}>Use this device’s location</Text>
+                  <Text style={[styles.choiceDetail, light && styles.mutedLight]}>Ask the phone for coordinates now. Exact coordinates stay private.</Text>
                 </View>
-                <Switch disabled={!draft.location.trim()} onValueChange={(value) => patch('allowLocation', value)} value={draft.allowLocation && Boolean(draft.location.trim())} />
-              </View>
+                {locationBusy ? <ActivityIndicator color="#2098ff" /> : (
+                  <View style={[styles.checkbox, draft.allowLocation && styles.checkboxChecked]}>
+                    {draft.allowLocation ? <Text style={styles.checkboxGlyph}>✓</Text> : null}
+                  </View>
+                )}
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                disabled={draft.allowLocation || locationBusy}
+                onPress={() => {
+                  setLocationOptions([]);
+                  setLocationMapOpen(true);
+                }}
+                style={[styles.mapButton, light && styles.secondaryLight, draft.allowLocation && styles.disabled]}
+              >
+                <NativeUiIcon color={light ? '#005bb5' : '#58abff'} name="map" size={18} />
+                <Text style={[styles.mapButtonText, light && styles.accentLight]}>{draft.coordinates ? 'Adjust map position' : 'Choose on map'}</Text>
+              </Pressable>
+              {draft.coordinates ? (
+                <Text accessibilityLabel="Coordinates selected" style={[styles.coordinateStatus, light && styles.mutedLight]}>
+                  Coordinates selected · {draft.allowLocation ? 'from this device' : 'from map'}
+                </Text>
+              ) : null}
             </View>
           ) : null}
 
@@ -330,6 +514,30 @@ export const NativeRegisterScreen = ({
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    <NativeRegistrationLocationPicker
+      coordinates={draft.coordinates}
+      light={light}
+      loading={locationBusy}
+      locations={locationOptions}
+      onClose={() => {
+        setLocationMapOpen(false);
+        setLocationOptions([]);
+      }}
+      onSelectCoordinates={selectMapCoordinates}
+      onSelectLocation={selectLocationOption}
+      visible={locationMapOpen}
+    />
+    <NativeRegistrationLocationOptions
+      light={light}
+      locations={locationOptions}
+      onClose={() => {
+        setLocationOptionsOpen(false);
+        setLocationOptions([]);
+      }}
+      onSelectLocation={selectLocationOption}
+      visible={locationOptionsOpen}
+    />
+    </>
   );
 };
 
@@ -358,6 +566,15 @@ const styles = StyleSheet.create({
   passwordInput: { paddingRight: 62 }, eye: { position: 'absolute', right: 5, top: 4, minWidth: 52, height: 44, alignItems: 'center', justifyContent: 'center' }, eyeText: { color: '#b3bec5', fontSize: 12, fontWeight: '900' },
   help: { marginTop: -5, color: '#9caab0', fontSize: 11 }, rules: { borderRadius: 10, padding: 11, backgroundColor: '#17252d' }, rulesText: { color: '#afc6d1', fontSize: 11, fontWeight: '700' },
   choice: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 12, padding: 12, backgroundColor: '#172126' }, choiceCopy: { flex: 1 }, choiceTitle: { color: '#fff', fontWeight: '900' }, choiceDetail: { marginTop: 3, color: '#a7b6bd', fontSize: 11, lineHeight: 15 },
+  mapButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderColor: '#56636a', borderRadius: 11, backgroundColor: '#252b2f' },
+  mapButtonText: { color: '#58abff', fontSize: 13, fontWeight: '900' },
+  coordinateStatus: { marginTop: -3, color: '#a7b6bd', fontSize: 11, fontWeight: '700', textAlign: 'center' },
+  disabled: { opacity: 0.5 },
+  checkbox: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#708087', borderRadius: 5, backgroundColor: '#101719' },
+  checkboxChecked: { borderColor: '#2098ff', backgroundColor: '#2098ff' },
+  checkboxGlyph: { color: '#fff', fontSize: 16, fontWeight: '900', lineHeight: 19 },
+  inputDisabled: { opacity: 0.62 },
+  pressed: { opacity: 0.72 },
   review: { gap: 8 }, reviewRow: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#414d52', borderRadius: 11, padding: 10, backgroundColor: '#181e21' }, reviewCopy: { flex: 1, minWidth: 0 }, reviewLabel: { color: '#2098ff', fontSize: 9, fontWeight: '900', letterSpacing: 1 }, reviewValue: { color: '#fff', fontSize: 14, fontWeight: '900' }, edit: { color: '#2098ff', fontWeight: '900' },
   agreement: { color: '#a7b6bd', fontSize: 11, lineHeight: 16, textAlign: 'center' }, link: { color: '#2098ff', fontWeight: '900' },
   error: { marginTop: 12, borderWidth: 1, borderColor: '#ef6077', borderRadius: 10, padding: 11, color: '#ffd5dc', backgroundColor: '#451923', fontWeight: '700' }, errorLight: { color: '#8f2638', backgroundColor: '#fff0f3' },

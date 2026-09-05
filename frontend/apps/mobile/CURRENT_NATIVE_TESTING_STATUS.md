@@ -64,7 +64,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 161 suites, 903 tests;
+- native Jest: 162 suites, 913 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 10 tests;
@@ -602,6 +602,55 @@ painting. Native runtime diagnostics recorded a 9 ms median touch-to-next-frame
 delay, 12.19 ms median frame-time p95, and 3.33% median janky frames across the
 workflow. The complete native checkpoint remains green at 161 suites and 903
 tests, with mobile typecheck and lint clean.
+
+The 2026-09-05 authentication and session-lifecycle pass now covers login,
+email registration, Google/Discord/Facebook registration completion, password
+recovery, password-reset confirmation, cold session restoration, refresh-token
+rotation, logout, and post-logout relaunch. Native password recovery is again an
+in-place modal like Vite rather than a separate request page; a missing reset
+token remains an incomplete-link state, while a successful reset uses Vite's
+exact confirmation and 2.5-second return-to-login lifecycle. Registration now
+includes Vite's username-as-Pokémon-GO-name choice, exact location privacy
+semantics, device coordinates, reverse-geocoded broad-place selection, and a
+native MapLibre picker. The registration route stays behind the protected
+session gate while restoration is unresolved, preventing signed-in users from
+seeing a registration flash.
+
+Issued password, registration, OAuth-login, and OAuth-registration sessions now
+share one persistence boundary. If SecureStore cannot save an issued refresh
+token, Native attempts immediate server logout before surfacing the error;
+refresh requests are coalesced, remote logout failure still clears the local
+session, and local-clear failure cannot leave React in a falsely signed-in
+state. The physical lifecycle fixture proved sign-in and secure save, process
+death and relaunch, refresh rotation, logout, a second process death and
+relaunch, and a still-signed-out result. Separate phone workflows passed email
+registration, all three OAuth registration paths, recovery and confirmation,
+and actual Android location permission through native map selection. During
+that pass a Fast Refresh MapLibre double-registration crash was found and
+removed by accessing the already-linked location TurboModule without
+reevaluating the package's native view registry.
+
+Authentication now has the same interaction-to-painted-result probes as the
+feature pages. Five repetitions on the same 120 Hz Pixel 8 Pro put Native ahead
+of physical Vite Chrome at median, p95, and worst observed sample for every
+measured interaction. Native/Vite medians were 22/118.2 ms for password reveal,
+127/272.8 ms for opening recovery, 79/293.8 ms for the privacy-safe recovery
+result, 79/194.8 ms for choosing email registration, 78/184.0 ms across twenty
+registration step changes, 52/191.0 ms for synchronizing the Pokémon GO name,
+and 44/170.3 ms for password-reset success. Native worst cases were respectively
+30, 138, 90, 114, 124, 58, and 50 ms; each remained below Vite's corresponding
+p95 and worst case. These Native measurements use a production-mode minified
+bundle in the installed development client and therefore remain diagnostic,
+not standalone-release authority.
+
+The final checkpoint passes 162 native suites / 913 tests, all 13 focused Vite
+mobile-Chromium auth/lifecycle cases, the complete 1,720-test Vite unit and
+integration suite, TypeScript, ESLint, stylelint, and all 19 performance-report
+contract tests. The physical functional and performance workflows completed
+without an app crash; timing-only fixtures pre-seed valid text so repeated
+measurements do not depend on Maestro's intermittent Android keyboard injection.
+The ordinary functional workflows continue to exercise real typing and form
+validation.
 
 ## Remaining approval gate
 

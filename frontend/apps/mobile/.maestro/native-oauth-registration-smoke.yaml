@@ -33,11 +33,26 @@ tags:
 - hideKeyboard
 - tapOn: "Continue ›"
 - assertVisible: POKÉMON GO IDENTITY
+- scrollUntilVisible:
+    element:
+      text: "Continue ›"
+    direction: DOWN
+    timeout: 10000
 - tapOn: "Continue ›"
 - assertVisible: YOUR AREA
+- scrollUntilVisible:
+    element:
+      text: "Continue ›"
+    direction: DOWN
+    timeout: 10000
 - tapOn: "Continue ›"
 - assertVisible: READY TO JOIN
 - assertVisible: visual@example.invalid
+- scrollUntilVisible:
+    element:
+      text: "Create account ✓"
+    direction: DOWN
+    timeout: 10000
 - tapOn: "Create account ✓"
 - extendedWaitUntil:
     visible: "Account created."

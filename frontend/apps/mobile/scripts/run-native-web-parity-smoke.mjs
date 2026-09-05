@@ -53,7 +53,7 @@ const routeCases = [
   ['public?page=terms', 'native-information-terms'],
   ['public?page=data-deletion', 'native-information-data-deletion'],
   ['public?page=register', 'native-register-screen'],
-  ['public?page=reset', 'native-password-reset-screen'],
+  ['public?page=reset', 'native-password-reset-overlay'],
   ['public?page=reset-confirm', 'native-password-reset-screen'],
   ['verify-email-change', 'native-verify-email-change-screen'],
   ['not-found?path=%2Fnative%2Fmissing-route', 'native-not-found-screen'],
@@ -663,7 +663,7 @@ const run = async () => {
         }
 
         if (route === 'public?page=reset') {
-          await page.getByLabel('Username or email').fill('trainer@example.com');
+          await page.getByLabel('Recovery username or email').fill('trainer@example.com');
         }
 
         if (route === 'public?page=reset-confirm') {

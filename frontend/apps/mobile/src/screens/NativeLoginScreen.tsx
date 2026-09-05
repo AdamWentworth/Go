@@ -16,6 +16,7 @@ import { ApiClientError } from '@pokemongonexus/shared-api-client';
 import { theme } from '../ui/theme';
 import { NativeSocialProviderIcon } from '../components/NativeSocialProviderIcon';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
 
 type NativeLoginScreenProps = {
   notice?: string | null;
@@ -103,6 +104,18 @@ export const NativeLoginScreen = ({
     }
   };
 
+  const togglePasswordVisibility = () => {
+    const startedAt = Date.now();
+    setPasswordVisible((visible) => !visible);
+    markNativeUiPerformanceAfterPaint('auth_login_password_visibility_painted', startedAt);
+  };
+
+  const openPasswordReset = () => {
+    const startedAt = Date.now();
+    onOpenPasswordReset();
+    markNativeUiPerformanceAfterPaint('auth_recovery_open_painted', startedAt);
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -160,7 +173,7 @@ export const NativeLoginScreen = ({
               accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'}
               accessibilityRole="button"
               accessibilityState={{ selected: passwordVisible }}
-              onPress={() => setPasswordVisible((visible) => !visible)}
+              onPress={togglePasswordVisibility}
               style={({ pressed }) => [styles.passwordToggle, pressed && styles.pressed]}
             >
               <NativeUiIcon color="#536b75" name="eye" size={18} />
@@ -194,7 +207,7 @@ export const NativeLoginScreen = ({
           <Pressable
             accessibilityRole="button"
             disabled={isSubmitting}
-            onPress={onOpenPasswordReset}
+            onPress={openPasswordReset}
             style={({ pressed }) => [styles.resetButton, pressed && styles.pressed]}
           >
             <Text style={[styles.resetButtonText, light && styles.resetButtonTextLight]}>Reset Password</Text>

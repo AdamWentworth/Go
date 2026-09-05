@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,11 +14,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { validateNativePassword } from "../features/auth/nativeRegistrationModel";
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
 
 type Props = {
+  initialPassword?: string;
   onBackToLogin: () => void;
   onConfirm: (token: string, password: string) => Promise<void>;
-  onRequest: (identifier: string) => Promise<void>;
   token?: string | null;
 };
 
@@ -42,47 +43,50 @@ const PasswordRuleGlyph = ({ color }: { color: string }) => (
 );
 
 const NativePasswordResetForm = ({
+  initialPassword = "",
   onBackToLogin,
   onConfirm,
-  onRequest,
   token = null,
 }: Props) => {
   const light = useNativeColorScheme() === "light";
   const insets = useSafeAreaInsets();
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmation, setConfirmation] = useState("");
+  const [password, setPassword] = useState(initialPassword);
+  const [confirmation, setConfirmation] = useState(initialPassword);
   const [submitting, setSubmitting] = useState(false);
   const [complete, setComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const confirming = Boolean(token);
   const passwordError = useMemo(
     () => validateNativePassword(password),
     [password],
   );
 
+  useEffect(() => {
+    if (!complete) return undefined;
+    const timeout = setTimeout(onBackToLogin, 2500);
+    return () => clearTimeout(timeout);
+  }, [complete, onBackToLogin]);
+
   const submit = async () => {
     if (submitting) return;
     setError(null);
-    if (confirming) {
-      if (!token) return;
-      if (passwordError) {
-        setError(passwordError);
-        return;
-      }
-      if (password !== confirmation) {
-        setError("Passwords do not match.");
-        return;
-      }
-    } else if (!identifier.trim()) {
-      setError("Enter your username or email.");
+    if (!token) {
+      setError("This reset link is incomplete.");
+      return;
+    }
+    if (passwordError) {
+      setError("Choose a password that meets every requirement.");
+      return;
+    }
+    if (password !== confirmation) {
+      setError("Passwords do not match.");
       return;
     }
     setSubmitting(true);
+    const startedAt = Date.now();
     try {
-      if (confirming && token) await onConfirm(token, password);
-      else await onRequest(identifier.trim());
+      await onConfirm(token, password);
       setComplete(true);
+      markNativeUiPerformanceAfterPaint('auth_password_reset_result_painted', startedAt);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -115,40 +119,15 @@ const NativePasswordResetForm = ({
             style={[styles.title, light && styles.textLight]}
           >
             {complete
-              ? confirming
-                ? "Password updated"
-                : "Check your email"
-              : confirming
-                ? "Choose a new password"
-                : "Reset your password"}
+              ? "Password updated"
+              : "Choose a new password"}
           </Text>
           <Text style={[styles.intro, light && styles.mutedLight]}>
             {complete
-              ? confirming
-                ? "Your other sessions have been signed out. You can now sign in with your new password."
-                : "If that account exists, a secure single-use reset link is on the way."
-              : confirming
-                ? "Use a strong password you do not use on another site."
-                : "Enter the username or email attached to your account. The reset link expires after 30 minutes."}
+              ? "Your other sessions have been signed out. Taking you back to login…"
+              : "Use a strong password you do not use on another site."}
           </Text>
-          {!complete && !confirming ? (
-            <View style={styles.field}>
-              <Text style={[styles.label, light && styles.textLight]}>
-                Username or email
-              </Text>
-              <TextInput
-                accessibilityLabel="Username or email"
-                autoCapitalize="none"
-                autoComplete="username"
-                onChangeText={setIdentifier}
-                placeholder="you@example.com"
-                placeholderTextColor="#718087"
-                style={[styles.input, light && styles.inputLight]}
-                value={identifier}
-              />
-            </View>
-          ) : null}
-          {!complete && confirming ? (
+          {!complete ? (
             <View style={styles.fields}>
               <View style={styles.field}>
                 <Text style={[styles.label, light && styles.textLight]}>
@@ -186,7 +165,11 @@ const NativePasswordResetForm = ({
               </View>
             </View>
           ) : null}
-          {error ? (
+          {!complete && !token ? (
+            <Text accessibilityRole="alert" style={[styles.error, light && styles.errorLight]}>
+              This reset link is incomplete.
+            </Text>
+          ) : error ? (
             <Text
               accessibilityRole="alert"
               style={[styles.error, light && styles.errorLight]}
@@ -197,9 +180,9 @@ const NativePasswordResetForm = ({
           {!complete ? (
             <Pressable
               accessibilityRole="button"
-              disabled={submitting}
+              disabled={submitting || !token}
               onPress={() => void submit()}
-              style={styles.primaryButton}
+              style={[styles.primaryButton, !token && styles.disabled]}
             >
               <Svg height="100%" style={StyleSheet.absoluteFill} width="100%">
                 <Defs>
@@ -214,7 +197,7 @@ const NativePasswordResetForm = ({
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.primaryText}>
-                  {confirming ? "Update password" : "Email reset link"}
+                  Update password
                 </Text>
               )}
             </Pressable>
@@ -225,15 +208,9 @@ const NativePasswordResetForm = ({
             style={styles.secondaryButton}
           >
             <Text style={[styles.secondaryText, light && styles.secondaryTextLight]}>
-              Return to login
+              {complete ? "Continue to login" : "Return to login"}
             </Text>
           </Pressable>
-          {!complete && !confirming ? (
-            <Text style={[styles.privacy, light && styles.mutedLight]}>
-              For your privacy, we show the same confirmation whether or not an
-              account matches.
-            </Text>
-          ) : null}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -241,7 +218,7 @@ const NativePasswordResetForm = ({
 };
 
 export const NativePasswordResetScreen = (props: Props) => (
-  <NativePasswordResetForm key={props.token ?? "request"} {...props} />
+  <NativePasswordResetForm key={props.token ?? "missing-token"} {...props} />
 );
 
 const styles = StyleSheet.create({
@@ -323,6 +300,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#005bb5",
   },
   primaryText: { color: "#fff", fontSize: 16, fontWeight: "900" },
+  disabled: { opacity: 0.5 },
   secondaryButton: {
     minHeight: 46,
     alignItems: "flex-start",
@@ -332,13 +310,6 @@ const styles = StyleSheet.create({
   },
   secondaryText: { color: "#58abff", fontWeight: "900", textDecorationLine: 'underline' },
   secondaryTextLight: { color: '#005bb5' },
-  privacy: {
-    marginTop: 12,
-    color: "#9caab0",
-    fontSize: 10.5,
-    lineHeight: 15,
-    textAlign: "center",
-  },
   textLight: { color: "#142126" },
   mutedLight: { color: "#5e7077" },
 });

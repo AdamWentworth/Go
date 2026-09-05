@@ -32,5 +32,12 @@ tags:
 - tapOn: Show password
 - assertVisible: Hide password
 - tapOn: Reset Password
-- assertVisible: Password reset opens the secure account recovery flow.
+- assertVisible: Reset your password
+- tapOn: Recovery username or email
+- inputText: visual@example.invalid
+- hideKeyboard
+- tapOn: Email reset link
+- extendedWaitUntil:
+    visible: If that account exists, reset instructions are on the way.
+    timeout: 10000
 - takeScreenshot: native-login-password-reset-feedback

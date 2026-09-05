@@ -1,6 +1,7 @@
 import { locationContract } from '@pokemongonexus/shared-contracts/location';
 import {
   formatNativeLocationSuggestions,
+  getNativeLocationOptions,
   getNativeLocationSuggestions,
 } from '../../../src/services/locationApi';
 
@@ -42,5 +43,20 @@ describe('native location API', () => {
     const client = { get: jest.fn() } as never;
     await expect(getNativeLocationSuggestions('BC', client)).resolves.toEqual([]);
     expect((client as { get: jest.Mock }).get).not.toHaveBeenCalled();
+  });
+
+  it('uses the canonical reverse endpoint for coordinate choices', async () => {
+    const client = {
+      get: jest.fn().mockResolvedValue({
+        locations: [{ name: 'Vancouver', state_or_province: 'British Columbia', country: 'Canada' }],
+      }),
+    } as never;
+    await expect(getNativeLocationOptions(49.2827, -123.1207, client)).resolves.toEqual([
+      expect.objectContaining({ displayName: 'Vancouver, British Columbia, Canada' }),
+    ]);
+    expect((client as { get: jest.Mock }).get).toHaveBeenCalledWith(
+      locationContract.endpoints.reverse,
+      { query: { lat: 49.2827, lon: -123.1207 } },
+    );
   });
 });

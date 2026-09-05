@@ -13,6 +13,8 @@ import {
 import { useState } from 'react';
 import { nativeLoginOAuthNotice } from '../../features/auth/nativeAuthRouteFeedback';
 import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
+import { NativePasswordResetOverlay } from '../../components/NativePasswordResetOverlay';
+import { mobileSessionApi } from '../../auth/mobileSessionApi';
 
 export default function NativeLoginRoute() {
   const router = useRouter();
@@ -31,12 +33,16 @@ export default function NativeLoginRoute() {
     user,
   } = useNativeSession();
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [passwordResetOpen, setPasswordResetOpen] = useState(false);
+  const [passwordResetNotice, setPasswordResetNotice] = useState<string | null>(null);
   const requestedReturnTo = Array.isArray(params.returnTo)
     ? params.returnTo[0]
     : params.returnTo;
   const explicitNotice = Array.isArray(params.notice) ? params.notice[0] : params.notice;
   const oauthStatus = Array.isArray(params.oauth) ? params.oauth[0] : params.oauth;
-  const notice = explicitNotice ?? nativeLoginOAuthNotice(oauthStatus?.trim() || null);
+  const notice = passwordResetNotice
+    ?? explicitNotice
+    ?? nativeLoginOAuthNotice(oauthStatus?.trim() || null);
   const returnTo = resolveNativeLoginReturnTo(requestedReturnTo);
   const returnHref = returnTo as Parameters<typeof router.replace>[0];
 
@@ -104,11 +110,22 @@ export default function NativeLoginRoute() {
     <View style={styles.screen}>
       <NativeLoginScreen
         notice={notice}
-        onOpenPasswordReset={() => router.push('/native/reset-password')}
+        onOpenPasswordReset={() => setPasswordResetOpen(true)}
         onSignIn={signIn}
         onSignedIn={() => router.replace(returnHref)}
         onSocialSignIn={authenticateWithProvider}
       />
+      {passwordResetOpen ? (
+        <NativePasswordResetOverlay
+          onClose={() => setPasswordResetOpen(false)}
+          onRequest={(identifier) => mobileSessionApi.requestPasswordReset({ identifier })}
+          onRequested={() => {
+            setPasswordResetOpen(false);
+            setPasswordResetNotice('If that account exists, reset instructions are on the way.');
+          }}
+          visible
+        />
+      ) : null}
       <NativeActionMenuAnchor
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}
         onPress={() => setActionMenuOpen(true)}

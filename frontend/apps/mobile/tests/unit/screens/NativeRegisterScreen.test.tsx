@@ -25,6 +25,8 @@ describe('NativeRegisterScreen', () => {
     const onRegistered = jest.fn();
     render(
       <NativeRegisterScreen
+        getCurrentCoordinates={async () => ({ latitude: 49.28, longitude: -123.12 })}
+        getLocationOptions={async () => [{ displayName: 'Cerulean City' }]}
         onBackToLogin={jest.fn()}
         onOpenPrivacy={jest.fn()}
         onOpenTerms={jest.fn()}
@@ -41,8 +43,8 @@ describe('NativeRegisterScreen', () => {
     fireEvent.changeText(screen.getByPlaceholderText('you@example.com'), 'MISTY@example.com ');
     fireEvent.press(screen.getByText('Continue ›'));
 
-    fireEvent.changeText(screen.getByPlaceholderText('Create a password'), 'Strong_password_42');
-    fireEvent.changeText(screen.getByPlaceholderText('Enter it again'), 'Strong_password_42');
+    fireEvent.changeText(screen.getByPlaceholderText('Create a password'), 'Strong_password_42!');
+    fireEvent.changeText(screen.getByPlaceholderText('Enter it again'), 'Strong_password_42!');
     fireEvent.press(screen.getByText('Continue ›'));
 
     fireEvent.changeText(screen.getByPlaceholderText('Optional'), 'MistyGo');
@@ -50,23 +52,54 @@ describe('NativeRegisterScreen', () => {
     fireEvent.press(screen.getByText('Continue ›'));
 
     fireEvent.changeText(
-      screen.getByPlaceholderText('City, region, country (optional)'),
+      screen.getByPlaceholderText('City, region, country'),
       'Cerulean City',
     );
-    fireEvent(screen.getByRole('switch'), 'valueChange', true);
+    fireEvent.press(screen.getByRole('checkbox', { name: 'Use this device’s location' }));
+    fireEvent.press(await screen.findByRole('button', { name: 'Cerulean City' }));
     fireEvent.press(screen.getByText('Continue ›'));
 
     fireEvent.press(screen.getByText('Create account ✓'));
     await waitFor(() => expect(onRegister).toHaveBeenCalledWith({
       allowLocation: true,
+      coordinates: { latitude: 49.28, longitude: -123.12 },
       email: 'misty@example.com',
       location: 'Cerulean City',
-      password: 'Strong_password_42',
+      password: 'Strong_password_42!',
       pokemonGoName: 'MistyGo',
       trainerCode: '123456789012',
       username: 'Misty_42',
     }));
     expect(onRegistered).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the Pokémon GO name synchronized when the canonical same-name choice is enabled', async () => {
+    const onRegister = jest.fn().mockResolvedValue(undefined);
+    render(
+      <NativeRegisterScreen
+        onBackToLogin={jest.fn()}
+        onOpenPrivacy={jest.fn()}
+        onOpenTerms={jest.fn()}
+        onOAuthRegister={jest.fn()}
+        onOAuthStart={jest.fn()}
+        onRegister={onRegister}
+        onRegistered={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByText('Continue with email'));
+    fireEvent.changeText(screen.getByLabelText('Username'), 'Misty_42');
+    fireEvent.changeText(screen.getByLabelText('Email'), 'misty@example.com');
+    fireEvent.press(screen.getByText('Continue ›'));
+    fireEvent.changeText(screen.getByLabelText('Password'), 'Strong_password_42!');
+    fireEvent.changeText(screen.getByLabelText('Confirm password'), 'Strong_password_42!');
+    fireEvent.press(screen.getByText('Continue ›'));
+
+    const sameName = screen.getByRole('checkbox', { name: 'Use Misty_42 as my Pokémon GO name' });
+    fireEvent.press(sameName);
+    expect(sameName.props.accessibilityState).toEqual(expect.objectContaining({ checked: true }));
+    expect(screen.getByLabelText('Pokémon GO name')).toBeDisabled();
+    expect(screen.getByLabelText('Pokémon GO name')).toHaveProp('value', 'Misty_42');
   });
 
   it('keeps the user on the current step when validation fails', () => {
@@ -124,6 +157,7 @@ describe('NativeRegisterScreen', () => {
       'native-oauth-result-code',
       {
         allowLocation: false,
+        coordinates: null,
         location: null,
         pokemonGoName: null,
         trainerCode: null,

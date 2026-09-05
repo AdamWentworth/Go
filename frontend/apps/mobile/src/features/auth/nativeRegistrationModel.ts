@@ -1,12 +1,15 @@
 import type { MobileRegisterRequest } from '@pokemongonexus/shared-contracts/auth';
+import type { Coordinates } from '@pokemongonexus/shared-contracts/location';
 
 export type NativeRegistrationDraft = {
   allowLocation: boolean;
   confirmPassword: string;
+  coordinates: Coordinates | null;
   email: string;
   location: string;
   password: string;
   pokemonGoName: string;
+  useUsernameAsPokemonGoName: boolean;
   trainerCode: string;
   username: string;
 };
@@ -14,10 +17,12 @@ export type NativeRegistrationDraft = {
 export const createNativeRegistrationDraft = (): NativeRegistrationDraft => ({
   allowLocation: false,
   confirmPassword: '',
+  coordinates: null,
   email: '',
   location: '',
   password: '',
   pokemonGoName: '',
+  useUsernameAsPokemonGoName: false,
   trainerCode: '',
   username: '',
 });
@@ -27,7 +32,7 @@ export const validateNativePassword = (password: string): string | null => {
   if (!/[A-Z]/.test(password)) return 'Add an uppercase letter.';
   if (!/[a-z]/.test(password)) return 'Add a lowercase letter.';
   if (!/\d/.test(password)) return 'Add a number.';
-  if (!/[^A-Za-z\d]/.test(password)) return 'Add a symbol.';
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return 'Add a symbol.';
   return null;
 };
 
@@ -50,7 +55,7 @@ export const validateNativeRegistrationStep = (
   }
   if (step === 2) {
     const pokemonGoName = draft.pokemonGoName.trim();
-    if (pokemonGoName && !/^[A-Za-z0-9_]{4,15}$/.test(pokemonGoName)) {
+    if (!draft.useUsernameAsPokemonGoName && pokemonGoName && !/^[A-Za-z0-9_]{4,15}$/.test(pokemonGoName)) {
       return 'Pokémon GO name must be 4–15 letters, numbers, or underscores.';
     }
     const trainerCode = draft.trainerCode.replace(/\s+/g, '');
@@ -65,10 +70,13 @@ export const buildNativeRegistrationRequest = (
   draft: NativeRegistrationDraft,
 ): Omit<MobileRegisterRequest, 'device_id'> => ({
   allowLocation: draft.allowLocation,
+  coordinates: draft.coordinates,
   email: draft.email.trim().toLocaleLowerCase(),
   location: draft.location.trim() || null,
   password: draft.password,
-  pokemonGoName: draft.pokemonGoName.trim() || null,
+  pokemonGoName: draft.useUsernameAsPokemonGoName
+    ? draft.username.trim()
+    : draft.pokemonGoName.trim() || null,
   trainerCode: draft.trainerCode.replace(/\s+/g, '') || null,
   username: draft.username.trim(),
 });

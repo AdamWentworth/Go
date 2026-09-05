@@ -11,6 +11,7 @@ import {
   type BrowserContext,
   type Locator,
   type Page,
+  type Route,
 } from '@playwright/test';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 
@@ -738,6 +739,128 @@ const collectHomeInteractions = async (
   }
 };
 
+const installAuthPerformanceRoutes = async (page: Page) => {
+  const handleAuthRequest = async (route: Route) => {
+    const request = route.request();
+    if (request.method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    const path = new URL(request.url()).pathname.replace(/^\/(?:__e2e|api)\/auth/, '');
+    if (path === '/reset-password') {
+      await route.fulfill({
+        body: JSON.stringify({ message: 'Reset instructions sent.' }),
+        contentType: 'application/json',
+        status: 202,
+      });
+      return;
+    }
+    if (path === '/reset-password/confirm') {
+      await route.fulfill({
+        body: JSON.stringify({ message: 'Password updated.' }),
+        contentType: 'application/json',
+        status: 200,
+      });
+      return;
+    }
+    await route.fallback();
+  };
+  await page.route('**/__e2e/auth/**', handleAuthRequest);
+  await page.route('**/api/auth/**', handleAuthRequest);
+};
+
+const collectAuthInteractions = async (
+  context: BrowserContext,
+  sampleIndex: number,
+) => {
+  const login = await createMeasuredPage(context, 'guest', 'dark');
+  try {
+    await installAuthPerformanceRoutes(login);
+    await login.goto(`${webBaseUrl}/login`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(login);
+
+    const showPassword = login.getByRole('button', { name: 'Show password' });
+    await activateMeasuredControl(showPassword);
+    const hidePassword = login.getByRole('button', { name: 'Hide password' });
+    await expect(hidePassword).toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(login, 'interaction.auth.login.password-visibility', sampleIndex);
+
+    await activateMeasuredControl(login.getByRole('button', { name: 'Reset Password' }));
+    const recovery = login.getByRole('dialog', { name: 'Reset your password' });
+    await recovery.waitFor({ state: 'visible' });
+    await recordInteraction(login, 'interaction.auth.recovery.open', sampleIndex);
+
+    await recovery.getByPlaceholder('you@example.com').fill('PerfAuth');
+    await activateMeasuredControl(recovery.getByRole('button', { name: 'Email reset link' }));
+    await expect(recovery).toHaveCount(0);
+    await expect(login.getByText('If that account exists, reset instructions are on the way.'))
+      .toBeVisible();
+    await recordInteraction(login, 'interaction.auth.recovery.request-result', sampleIndex);
+    await captureWorkflowScreenshot(login, sampleIndex, 'auth-login-recovery-result');
+  } finally {
+    await closeMeasuredPage(login);
+  }
+
+  const register = await createMeasuredPage(context, 'guest', 'dark');
+  try {
+    await register.goto(`${webBaseUrl}/register`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(register);
+    await activateMeasuredControl(register.getByRole('button', { name: 'Continue with email' }));
+    await register.getByRole('heading', { name: 'Your account', exact: true })
+      .waitFor({ state: 'visible' });
+    await recordInteraction(register, 'interaction.auth.registration.method-result', sampleIndex);
+
+    await register.getByLabel('Username', { exact: true }).fill('PerfAuth');
+    await register.getByLabel('Email', { exact: true }).fill('performance@example.invalid');
+    await activateMeasuredControl(register.getByRole('button', { name: /Continue/ }));
+    await register.getByRole('heading', { name: 'Protect your account' }).waitFor({ state: 'visible' });
+    await recordInteraction(register, 'interaction.auth.registration.step-result', sampleIndex * 4);
+
+    await register.getByLabel('Password', { exact: true }).fill('Strong_password_42!');
+    await register.getByLabel('Confirm password', { exact: true }).fill('Strong_password_42!');
+    await activateMeasuredControl(register.getByRole('button', { name: /Continue/ }));
+    await register.getByRole('heading', { name: 'Your Pokémon GO identity' })
+      .waitFor({ state: 'visible' });
+    await recordInteraction(register, 'interaction.auth.registration.step-result', sampleIndex * 4 + 1);
+
+    const sameName = register.getByRole('checkbox', { name: /Use PerfAuth as my Pokémon GO name/ });
+    await activateMeasuredControl(sameName);
+    await expect(sameName).toBeChecked();
+    await expect(register.getByRole('textbox', { name: 'Pokémon GO name', exact: true }))
+      .toHaveValue('PerfAuth');
+    await recordInteraction(register, 'interaction.auth.registration.same-name-result', sampleIndex);
+
+    await activateMeasuredControl(register.getByRole('button', { name: /Continue/ }));
+    await register.getByRole('heading', { name: 'Your area' }).waitFor({ state: 'visible' });
+    await recordInteraction(register, 'interaction.auth.registration.step-result', sampleIndex * 4 + 2);
+    await activateMeasuredControl(register.getByRole('button', { name: /Continue/ }));
+    const review = register.getByRole('heading', { name: 'Ready to join' });
+    await review.waitFor({ state: 'visible' });
+    await recordInteraction(register, 'interaction.auth.registration.step-result', sampleIndex * 4 + 3);
+    await captureWorkflowScreenshot(register, sampleIndex, 'auth-registration-review');
+  } finally {
+    await closeMeasuredPage(register);
+  }
+
+  const reset = await createMeasuredPage(context, 'guest', 'dark');
+  try {
+    await installAuthPerformanceRoutes(reset);
+    await reset.goto(`${webBaseUrl}/reset-password?token=${'a'.repeat(64)}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await waitUntilVisuallyReady(reset);
+    await reset.getByLabel('New password', { exact: true }).fill('Strong_password_42!');
+    await reset.getByLabel('Confirm new password', { exact: true }).fill('Strong_password_42!');
+    await activateMeasuredControl(reset.getByRole('button', { name: 'Update password' }));
+    const complete = reset.getByRole('heading', { name: 'Password updated' });
+    await complete.waitFor({ state: 'visible' });
+    await recordInteraction(reset, 'interaction.auth.password-reset.result', sampleIndex);
+    await captureWorkflowScreenshot(reset, sampleIndex, 'auth-password-reset-result');
+  } finally {
+    await closeMeasuredPage(reset);
+  }
+};
+
 const collectSharedInteractions = async (
   context: BrowserContext,
   sampleIndex: number,
@@ -772,6 +895,10 @@ const collectSharedInteractions = async (
   }
   if (workflowFilter === 'home') {
     await collectHomeInteractions(context, sampleIndex);
+    return;
+  }
+  if (workflowFilter === 'auth') {
+    await collectAuthInteractions(context, sampleIndex);
     return;
   }
   if (workflowFilter !== 'collection') {
@@ -1846,6 +1973,28 @@ const closeUninitializedAndroidChromeTargets = async (timeoutMs = 10_000) => {
   throw new Error('Android Chrome retained uninitialized DevTools targets.');
 };
 
+const closeStaleAndroidPerformanceTargets = async () => {
+  const response = await fetch(`${androidCdpUrl}/json/list`);
+  if (!response.ok) throw new Error(`${androidCdpUrl}/json/list returned ${response.status}`);
+  const targets = await response.json() as Array<{
+    id?: string;
+    type?: string;
+    url?: string;
+  }>;
+  // Chrome keeps real user tabs across the force-stop used by the harness.
+  // Preserve those tabs and the newest localhost test target, but close older
+  // PokeGoNexus performance targets so they cannot retain IndexedDB handles or
+  // confuse foreground-page selection on later physical runs.
+  const performanceTargets = targets.filter((target) => (
+    target.type === 'page'
+    && target.id
+    && target.url?.startsWith(`${webBaseUrl}/`)
+  ));
+  await Promise.all(performanceTargets.slice(1).map(async (target) => {
+    await fetch(`${androidCdpUrl}/json/close/${encodeURIComponent(target.id!)}`);
+  }));
+};
+
 const prepareAndroidChrome = async () => {
   if (!androidDeviceId) {
     throw new Error('POKEGONEXUS_ANDROID_DEVICE_ID is required for physical-android performance.');
@@ -1876,6 +2025,7 @@ const prepareAndroidChrome = async () => {
   // commands. Playwright waits for every attached target, so remove only these
   // target-less tabs before connecting while preserving real user tabs.
   await closeUninitializedAndroidChromeTargets();
+  await closeStaleAndroidPerformanceTargets();
 };
 
 const parseChromeProcessPssBytes = (text: string) => {

@@ -16,11 +16,20 @@ name: Native password recovery smoke
     commands:
       - tapOn: Close
 - assertVisible: "Reset your password"
-- tapOn: "Username or email"
+- tapOn: "Recovery username or email"
 - inputText: "visual@example.invalid"
+- hideKeyboard
 - tapOn: "Email reset link"
-- assertVisible: "Check your email"
+- assertVisible: "If that account exists, reset instructions are on the way."
 - openLink: "${APP_LINK_BASE}/device-smoke/public?page=reset-confirm"
 - assertVisible: "Choose a new password"
-- assertVisible: "Update password"
+- tapOn: "New password"
+- inputText: "Strong_password_42!"
+- tapOn: "Confirm new password"
+- inputText: "Strong_password_42!"
+- hideKeyboard
+- tapOn: "Update password"
+- assertVisible: "Password updated"
+- assertVisible: "Your other sessions have been signed out. Taking you back to login…"
+- assertVisible: "Continue to login"
 - takeScreenshot: "native-password-recovery"

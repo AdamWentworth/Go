@@ -37,6 +37,29 @@ const createApi = (patch: Record<string, jest.Mock> = {}) => ({
 });
 
 describe('NativeSessionProvider', () => {
+  it('settles signed out when no refresh token is stored', async () => {
+    const api = createApi();
+    const persistence = {
+      read: jest.fn().mockResolvedValue(null),
+      store: jest.fn(),
+      clear: jest.fn().mockResolvedValue(undefined),
+    };
+    const getDeviceId = jest.fn().mockResolvedValue('native-device');
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <NativeSessionProvider
+        api={api}
+        getDeviceId={getDeviceId}
+        persistence={persistence}
+      >
+        {children}
+      </NativeSessionProvider>
+    );
+    const { result } = renderHook(() => useNativeSession(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('signed-out'));
+    expect(api.refresh).not.toHaveBeenCalled();
+    expect(result.current.user).toBeNull();
+  });
+
   it('restores and rotates a persisted session before exposing the user', async () => {
     const api = createApi({ refresh: jest.fn().mockResolvedValue(session('rotated')) });
     const persistence = {
@@ -125,6 +148,37 @@ describe('NativeSessionProvider', () => {
     expect(result.current.getAccessToken()).toBe('access-retry');
   });
 
+  it('coalesces concurrent refresh requests into one token rotation', async () => {
+    let resolveRefresh: (value: ReturnType<typeof session>) => void = () => undefined;
+    const pendingRefresh = new Promise<ReturnType<typeof session>>((resolve) => {
+      resolveRefresh = resolve;
+    });
+    const api = createApi({ refresh: jest.fn().mockReturnValue(pendingRefresh) });
+    const persistence = {
+      read: jest.fn().mockResolvedValue('refresh-stored'),
+      store: jest.fn().mockResolvedValue(undefined),
+      clear: jest.fn().mockResolvedValue(undefined),
+    };
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <NativeSessionProvider api={api} persistence={persistence}>{children}</NativeSessionProvider>
+    );
+    const { result } = renderHook(() => useNativeSession(), { wrapper });
+    await waitFor(() => expect(api.refresh).toHaveBeenCalledTimes(1));
+    let first: Promise<string | null> | undefined;
+    let second: Promise<string | null> | undefined;
+    act(() => {
+      first = result.current.refreshAccessToken();
+      second = result.current.refreshAccessToken();
+    });
+    expect(api.refresh).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveRefresh(session('coalesced'));
+      await Promise.all([first, second]);
+    });
+    expect(result.current.status).toBe('signed-in');
+    expect(result.current.getAccessToken()).toBe('access-coalesced');
+  });
+
   it('creates an account with the stable device ID and applies its mobile session', async () => {
     const api = createApi({ register: jest.fn().mockResolvedValue(session('register')) });
     const persistence = {
@@ -178,6 +232,117 @@ describe('NativeSessionProvider', () => {
     const { result } = renderHook(() => useNativeSession(), { wrapper });
     await waitFor(() => expect(result.current.status).toBe('signed-out'));
     expect(persistence.clear).toHaveBeenCalledTimes(1);
+  });
+
+  it('cleans up a server session when secure persistence fails during sign-in', async () => {
+    const api = createApi({
+      login: jest.fn().mockResolvedValue(session('unpersisted')),
+      logout: jest.fn().mockResolvedValue(undefined),
+    });
+    const persistence = {
+      read: jest.fn().mockResolvedValue(null),
+      store: jest.fn().mockRejectedValue(new Error('SecureStore unavailable')),
+      clear: jest.fn().mockResolvedValue(undefined),
+    };
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <NativeSessionProvider
+        api={api}
+        getDeviceId={jest.fn().mockResolvedValue('native-device')}
+        persistence={persistence}
+      >
+        {children}
+      </NativeSessionProvider>
+    );
+    const { result } = renderHook(() => useNativeSession(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('signed-out'));
+    let caught: unknown;
+    await act(async () => {
+      try {
+        await result.current.signIn('misty', 'password');
+      } catch (error) {
+        caught = error;
+      }
+    });
+    expect(caught).toEqual(expect.objectContaining({ message: 'SecureStore unavailable' }));
+    expect(api.login).toHaveBeenCalledTimes(1);
+    expect(api.logout).toHaveBeenCalledWith('refresh-unpersisted');
+    expect(result.current.status).toBe('signed-out');
+    expect(result.current.user).toBeNull();
+  });
+
+  it('stays locally signed out when the server logout request fails', async () => {
+    const api = createApi({ logout: jest.fn().mockRejectedValue(new Error('offline')) });
+    const persistence = {
+      read: jest.fn().mockResolvedValue('refresh-stored'),
+      store: jest.fn().mockResolvedValue(undefined),
+      clear: jest.fn().mockResolvedValue(undefined),
+    };
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <NativeSessionProvider api={api} persistence={persistence}>{children}</NativeSessionProvider>
+    );
+    const { result } = renderHook(() => useNativeSession(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('unavailable'));
+    await act(async () => result.current.signOut());
+    expect(result.current.status).toBe('signed-out');
+    expect(result.current.getAccessToken()).toBeNull();
+    expect(persistence.clear).toHaveBeenCalled();
+  });
+
+  it('clears the in-memory session even when secure storage cannot be cleared', async () => {
+    const api = createApi({
+      refresh: jest.fn().mockResolvedValue(session('restored')),
+      logout: jest.fn().mockResolvedValue(undefined),
+    });
+    const persistence = {
+      read: jest.fn().mockResolvedValue('refresh-stored'),
+      store: jest.fn().mockResolvedValue(undefined),
+      clear: jest.fn().mockRejectedValue(new Error('SecureStore unavailable')),
+    };
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <NativeSessionProvider api={api} persistence={persistence}>{children}</NativeSessionProvider>
+    );
+    const { result } = renderHook(() => useNativeSession(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('signed-in'));
+    await act(async () => result.current.signOut());
+    expect(result.current.status).toBe('signed-out');
+    expect(result.current.user).toBeNull();
+    expect(result.current.getAccessToken()).toBeNull();
+    expect(api.logout).toHaveBeenCalledWith('refresh-stored');
+  });
+
+  it('cleans up an OAuth registration session when secure persistence fails', async () => {
+    const api = createApi({
+      completeOAuthRegistration: jest.fn().mockResolvedValue({
+        provider: 'google',
+        status: 'authenticated',
+        session: session('oauth-unpersisted'),
+      }),
+      logout: jest.fn().mockResolvedValue(undefined),
+    });
+    const persistence = {
+      read: jest.fn().mockResolvedValue(null),
+      store: jest.fn().mockRejectedValue(new Error('SecureStore unavailable')),
+      clear: jest.fn().mockResolvedValue(undefined),
+    };
+    const getDeviceId = jest.fn().mockResolvedValue('native-device');
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <NativeSessionProvider api={api} getDeviceId={getDeviceId} persistence={persistence}>
+        {children}
+      </NativeSessionProvider>
+    );
+    const { result } = renderHook(() => useNativeSession(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('signed-out'));
+    let caught: unknown;
+    await act(async () => {
+      try {
+        await result.current.completeOAuthRegistration('oauth-code', { username: 'misty' });
+      } catch (error) {
+        caught = error;
+      }
+    });
+    expect(caught).toEqual(expect.objectContaining({ message: 'SecureStore unavailable' }));
+    expect(api.logout).toHaveBeenCalledWith('refresh-oauth-unpersisted');
+    expect(result.current.status).toBe('signed-out');
   });
 
   it('applies a validated account profile response without replacing session tokens', async () => {

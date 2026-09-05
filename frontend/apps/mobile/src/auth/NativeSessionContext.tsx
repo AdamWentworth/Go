@@ -105,6 +105,19 @@ export const NativeSessionProvider = ({
     setStatus('signed-in');
   }, [persistence]);
 
+  const applyIssuedSession = useCallback(async (session: MobileSessionResponse) => {
+    try {
+      await applySession(session);
+    } catch (error) {
+      try {
+        await api.logout(session.refreshToken);
+      } catch {
+        // Server expiry is the fallback if cleanup cannot be completed.
+      }
+      throw error;
+    }
+  }, [api, applySession]);
+
   const refreshAccessToken = useCallback(async (): Promise<string | null> => {
     if (refreshPromiseRef.current) return refreshPromiseRef.current;
 
@@ -146,32 +159,14 @@ export const NativeSessionProvider = ({
       password,
       device_id: deviceId,
     });
-    try {
-      await applySession(session);
-    } catch (error) {
-      try {
-        await api.logout(session.refreshToken);
-      } catch {
-        // Server expiry is the fallback if cleanup cannot be completed.
-      }
-      throw error;
-    }
-  }, [api, applySession, getDeviceId]);
+    await applyIssuedSession(session);
+  }, [api, applyIssuedSession, getDeviceId]);
 
   const register = useCallback(async (request: Omit<MobileRegisterRequest, 'device_id'>) => {
     const deviceId = await getDeviceId();
     const nextSession = await api.register({ ...request, device_id: deviceId });
-    try {
-      await applySession(nextSession);
-    } catch (error) {
-      try {
-        await api.logout(nextSession.refreshToken);
-      } catch {
-        // Server expiry is the fallback if local persistence fails.
-      }
-      throw error;
-    }
-  }, [api, applySession, getDeviceId]);
+    await applyIssuedSession(nextSession);
+  }, [api, applyIssuedSession, getDeviceId]);
 
   const authenticateWithOAuth = useCallback(async (
     provider: OAuthProvider,
@@ -186,10 +181,10 @@ export const NativeSessionProvider = ({
     });
     if (result?.status === 'authenticated') {
       if (!result.session) throw new Error('Provider sign-in returned an invalid mobile session.');
-      await applySession(result.session);
+      await applyIssuedSession(result.session);
     }
     return result;
-  }, [api, applySession, getDeviceId]);
+  }, [api, applyIssuedSession, getDeviceId]);
 
   const completeOAuthRegistration = useCallback(async (
     code: string,
@@ -204,8 +199,8 @@ export const NativeSessionProvider = ({
     if (result.status !== 'authenticated' || !result.session) {
       throw new Error('Provider registration returned an invalid mobile session.');
     }
-    await applySession(result.session);
-  }, [api, applySession, getDeviceId]);
+    await applyIssuedSession(result.session);
+  }, [api, applyIssuedSession, getDeviceId]);
 
   const retrySession = useCallback(async () => {
     setStatus('restoring');

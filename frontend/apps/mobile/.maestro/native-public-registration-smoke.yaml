@@ -32,18 +32,35 @@ name: Native registration workflow smoke
     timeout: 15000
 - takeScreenshot: "native-registration-password-step"
 - tapOn: Password
-- inputText: "Strong_password_42"
+- inputText: "Strong_password_42!"
 - tapOn: Confirm password
-- inputText: "Strong_password_42"
+- inputText: "Strong_password_42!"
 - hideKeyboard
 - tapOn: "Continue ›"
 - assertVisible: "POKÉMON GO IDENTITY"
+- tapOn: "Use VisualTrainer as my Pokémon GO name"
+- assertVisible: "VisualTrainer"
+- scrollUntilVisible:
+    element:
+      text: "Continue ›"
+    direction: DOWN
+    timeout: 10000
 - tapOn: "Continue ›"
 - assertVisible: "YOUR AREA"
+- scrollUntilVisible:
+    element:
+      text: "Continue ›"
+    direction: DOWN
+    timeout: 10000
 - tapOn: "Continue ›"
 - assertVisible: "READY TO JOIN"
 - assertVisible: "VisualTrainer"
 - assertVisible: "visual@example.invalid"
+- scrollUntilVisible:
+    element:
+      text: "Create account ✓"
+    direction: DOWN
+    timeout: 10000
 - tapOn: "Create account ✓"
 - extendedWaitUntil:
     visible: "Account created."

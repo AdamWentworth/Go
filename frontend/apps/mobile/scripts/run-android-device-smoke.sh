@@ -621,6 +621,7 @@ run_maestro_flow() {
     --no-ansi \
     -e "APP_ID=${app_id}" \
     -e "APP_LINK_BASE=${app_scheme}:/" \
+    -e "DEV_CLIENT_URL=${dev_client_url}" \
     --test-output-dir "${artifact_dir}/maestro/${output_name}" \
     "${flow}" || maestro_status="$?"
   if [[ "${smoke_performance}" == "true" ]]; then
