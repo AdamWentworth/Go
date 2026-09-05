@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useNetInfo } from '@react-native-community/netinfo';
 import { buildPokemonCatalogEntries } from '@pokemongonexus/shared-domain/catalog';
 
 import { useNativeSession } from '../../auth/NativeSessionContext';
@@ -16,6 +17,8 @@ import {
   buildNativeRankingRows,
   countNativeRankingCollectionFilters,
   filterNativeRankingRowsByCollection,
+  getNativeRankingCollectionDestination,
+  getNativeRankingsErrorMessage,
 } from '../../features/tools/nativeRankingsModel';
 import {
   useNativeCommunityRankingsQuery,
@@ -36,6 +39,7 @@ export default function NativeRankingsRoute() {
     view?: RouteParam;
   }>();
   const session = useNativeSession();
+  const network = useNetInfo();
   const routeState = parseNativeRankingsRouteState(params, Boolean(session.user));
   const catalogQuery = useNativeToolCatalogQuery();
   const rankingsQuery = useNativeCommunityRankingsQuery();
@@ -51,21 +55,17 @@ export default function NativeRankingsRoute() {
     () => buildPokemonCatalogEntries(catalogQuery.data ?? []),
     [catalogQuery.data],
   );
-  const deferredCategory = useDeferredValue(category);
-  const deferredCollectionFilter = useDeferredValue(collectionFilter);
-  const deferredMode = useDeferredValue(mode);
-  const deferredQuery = useDeferredValue(query);
   const rowsBeforeCollectionFilter = useMemo(
     () => buildNativeRankingRows({
       catalog: rankingCatalog,
-      category: deferredCategory,
+      category,
       collectionFilter: 'all',
       instances: snapshotQuery.data?.instances,
-      mode: deferredMode,
+      mode,
       payload: rankingsQuery.data,
-      query: deferredQuery,
+      query,
     }),
-    [deferredCategory, deferredMode, deferredQuery, rankingCatalog, rankingsQuery.data, snapshotQuery.data?.instances],
+    [category, mode, query, rankingCatalog, rankingsQuery.data, snapshotQuery.data?.instances],
   );
   const collectionFilterCounts = useMemo(
     () => countNativeRankingCollectionFilters(rowsBeforeCollectionFilter),
@@ -74,15 +74,17 @@ export default function NativeRankingsRoute() {
   const rows = useMemo(
     () => filterNativeRankingRowsByCollection(
       rowsBeforeCollectionFilter,
-      session.user ? deferredCollectionFilter : 'all',
+      session.user ? collectionFilter : 'all',
     ),
-    [deferredCollectionFilter, rowsBeforeCollectionFilter, session.user],
+    [collectionFilter, rowsBeforeCollectionFilter, session.user],
   );
   const error = [
     catalogQuery.error,
     rankingsQuery.error,
     snapshotQuery.error,
   ].find((value): value is Error => value instanceof Error)?.message ?? null;
+  const online = network.isConnected !== false && network.isInternetReachable !== false;
+  const actionableError = error ? getNativeRankingsErrorMessage(error, online) : null;
   const updatedAt = rankingsQuery.data?.snapshot.updated_at;
   const snapshotLabel = updatedAt && !Number.isNaN(new Date(updatedAt).getTime())
     ? `Updated ${new Date(updatedAt).toLocaleString(undefined, {
@@ -106,21 +108,23 @@ export default function NativeRankingsRoute() {
     void rankingsQuery.refetch();
     if (session.user) void snapshotQuery.refetch();
   };
+  const updateRouteState = useCallback((patch: {
+    category?: NativeRankingCategory;
+    collectionFilter?: NativeRankingCollectionFilter;
+    mode?: NativeRankingMode;
+    query?: string;
+  }) => {
+    const next: Record<string, string | undefined> = {};
+    if ('mode' in patch) next.view = patch.mode === 'wanted' ? undefined : patch.mode;
+    if ('category' in patch) next.category = patch.category === 'all' ? undefined : patch.category;
+    if ('collectionFilter' in patch) next.collection = patch.collectionFilter === 'all' ? undefined : patch.collectionFilter;
+    if ('query' in patch) next.search = patch.query || undefined;
+    router.setParams(next);
+  }, [router]);
   const openRankingEntry = ({ entry, personal }: (typeof rows)[number]) => {
-    if (!session.user) {
-      router.push({ pathname: '/native/pokedex/[variantId]', params: { variantId: entry.id } });
-      return;
-    }
-    const filter = personal.tradeCount > 0
-      ? 'trade'
-      : personal.wanted
-        ? 'wanted'
-        : personal.registered
-          ? 'caught'
-          : '';
     router.push({
       pathname: '/native/collection',
-      params: { ...(filter ? { filter } : {}), search: entry.name },
+      params: getNativeRankingCollectionDestination({ entry, personal }),
     });
   };
 
@@ -132,9 +136,9 @@ export default function NativeRankingsRoute() {
         rankingsQuery.data?.snapshot.collector_users ?? 0,
         rankingsQuery.data?.snapshot.wishlist_users ?? 0,
       )}
-      error={error}
+      error={actionableError}
       hasSnapshot={Boolean(rankingsQuery.data)}
-      initialQuery={routeState.query}
+      query={query}
       isLoading={catalogQuery.isPending
         || rankingsQuery.isPending
         || Boolean(session.user && snapshotQuery.isPending)}
@@ -142,14 +146,29 @@ export default function NativeRankingsRoute() {
         || rankingsQuery.isFetching
         || Boolean(session.user && snapshotQuery.isFetching)}
       onBack={() => router.canGoBack() ? router.back() : router.replace('/native')}
-      onChangeCategory={setCategory}
-      onChangeCollectionFilter={setCollectionFilter}
+      onChangeCategory={(next) => {
+        setCategory(next);
+        updateRouteState({ category: next });
+      }}
+      onChangeCollectionFilter={(next) => {
+        setCollectionFilter(next);
+        updateRouteState({ collectionFilter: next });
+      }}
       onChangeMode={(next) => {
         setMode(next);
-        if (next === 'wanted' && category === 'shadow') setCategory('all');
+        const nextCategory = next === 'wanted' && category === 'shadow' ? 'all' : category;
+        if (nextCategory !== category) setCategory(nextCategory);
+        updateRouteState({ category: nextCategory, mode: next });
       }}
-      onChangeQuery={setQuery}
+      onChangeQuery={(next) => {
+        setQuery(next);
+        updateRouteState({ query: next });
+      }}
       onOpenEntry={openRankingEntry}
+      onOpenPokemon={(filter) => router.push({
+        pathname: '/native/collection',
+        params: filter ? { filter } : {},
+      })}
       onRetry={retry}
       privacyThreshold={rankingsQuery.data?.privacy_threshold ?? 3}
       rows={rows}

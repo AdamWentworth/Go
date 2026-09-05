@@ -231,12 +231,32 @@ else
     gradle_task="app:assembleDebug"
     apk_variant="debug"
   fi
+  react_native_architectures="${POKEGONEXUS_ANDROID_ARCHITECTURES:-x86_64}"
+  if [[ -n "${requested_device_id}" ]] \
+    && "${adb_bin}" devices | awk -v requested="${requested_device_id}" \
+      '$1 == requested && $2 == "device" { found = 1 } END { exit(found ? 0 : 1) }'; then
+    requested_device_abi="$(${adb_bin} -s "${requested_device_id}" shell getprop ro.product.cpu.abi | tr -d '\r')"
+    case "${requested_device_abi}" in
+      arm64-v8a|armeabi-v7a|x86|x86_64)
+        react_native_architectures="${requested_device_abi}"
+        ;;
+      *)
+        echo "Unsupported Android device ABI: ${requested_device_abi}" >&2
+        exit 1
+        ;;
+    esac
+    if [[ "${requested_device_id}" != emulator-* ]]; then
+      device_smoke_host="127.0.0.1"
+      packager_host="127.0.0.1"
+    fi
+  fi
   echo "Synchronizing the Android native project and ${smoke_runtime} APK."
   if ! env \
     NODE_ENV="${node_environment}" \
     EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview \
     EXPO_PUBLIC_DEVICE_SMOKE_MODE=true \
     EXPO_PUBLIC_DEVICE_SMOKE_COLOR_SCHEME="${color_scheme}" \
+    EXPO_PUBLIC_DEVICE_SMOKE_HOST="${device_smoke_host}" \
     CI=1 \
     nice -n 10 npx expo prebuild --platform android --no-install \
       >"${artifact_dir}/expo-prebuild.log" 2>&1; then
@@ -249,9 +269,10 @@ else
     EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview \
     EXPO_PUBLIC_DEVICE_SMOKE_MODE=true \
     EXPO_PUBLIC_DEVICE_SMOKE_COLOR_SCHEME="${color_scheme}" \
+    EXPO_PUBLIC_DEVICE_SMOKE_HOST="${device_smoke_host}" \
     CI=1 \
     nice -n 10 ./android/gradlew -p android "${gradle_task}" \
-      -PreactNativeArchitectures=x86_64 \
+      -PreactNativeArchitectures="${react_native_architectures}" \
       --no-daemon \
       --max-workers=2 \
       >"${artifact_dir}/gradle-build.log" 2>&1; then
@@ -406,7 +427,7 @@ if [[ "${smoke_skip_apk_install}" == "false" ]]; then
     fi
   fi
 else
-  echo "Reusing the development client already installed on ${device_id}."
+  echo "Reusing the ${smoke_runtime} app already installed on ${device_id}."
   if ! "${adb_bin}" -s "${device_id}" shell pm path "${app_id}" >/dev/null; then
     echo "POKEGONEXUS_SMOKE_SKIP_APK_INSTALL=true requires ${app_id} to be installed first." >&2
     exit 1
@@ -609,7 +630,8 @@ run_maestro_flow() {
       wait "${performance_logcat_pid}" 2>/dev/null || true
     fi
     performance_logcat_pid=""
-    if [[ "$(basename "${flow}")" == "native-pvp-performance.yaml" ]]; then
+    if [[ "$(basename "${flow}")" == "native-pvp-performance.yaml" ]] \
+      || [[ "$(basename "${flow}")" == "native-rankings-performance.yaml" ]]; then
       # SurfaceFlinger's FrameTimeline measures the same warmed physical scroll
       # against the actual Chrome and React Native content surfaces. gfxinfo
       # does not expose Chrome's child surface and is retained only as a raw
@@ -707,7 +729,7 @@ if [[ "${smoke_performance}" == "true" ]]; then
     performance_frame_timeline="${artifact_dir}/maestro/${successful_output}-frame-timeline.json"
     if [[ -f "${performance_frame_timeline}" ]]; then
       performance_frame_timeline_logs+=("${performance_frame_timeline}")
-      # Memory is sampled at the same canonical PvP endpoint as Vite instead
+      # Memory is sampled only at a workflow's matched frame endpoint instead
       # of pooling unrelated screens into a misleading global distribution.
       performance_memory_logs+=("${artifact_dir}/maestro/${successful_output}-meminfo.txt")
     fi

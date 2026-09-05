@@ -15,15 +15,36 @@ export type NativeRankingRow = {
   wantedUsers: number | null;
 };
 
+export const getNativeRankingsErrorMessage = (error: string, online = true): string => {
+  if (!online) {
+    return 'You appear to be offline. Check your connection and try again.';
+  }
+  const normalized = error.toLocaleLowerCase();
+  if (normalized.includes('timeout') || normalized.includes('timed out')) {
+    return 'The rankings service took too long to respond. Try again in a moment.';
+  }
+  if (normalized.includes('503') || normalized.includes('502') || normalized.includes('service unavailable')) {
+    return 'The community rankings service is temporarily unavailable.';
+  }
+  return 'Community rankings could not be refreshed. Try again in a moment.';
+};
+
 const emptyPersonalStatus = (): NativeRankingPersonalStatus => ({ caughtCount: 0, registered: false, tradeCount: 0, wanted: false });
 const canBeTraded = (instance: PokemonInstance): boolean => Boolean(
   instance.is_caught && !instance.shadow && !instance.lucky && !instance.mega
   && !instance.is_mega && !instance.is_fused && ![2270, 2271].includes(Number(instance.pokemon_id)),
 );
 
+const personalStatusCache = new WeakMap<
+  Record<string, PokemonInstance>,
+  Map<string, NativeRankingPersonalStatus>
+>();
+
 export const buildNativeRankingPersonalStatuses = (
   instances: Record<string, PokemonInstance>,
 ): Map<string, NativeRankingPersonalStatus> => {
+  const cached = personalStatusCache.get(instances);
+  if (cached) return cached;
   const statuses = new Map<string, NativeRankingPersonalStatus>();
   Object.values(instances).forEach((instance) => {
     const variantId = String(instance.variant_id ?? '').trim();
@@ -35,16 +56,79 @@ export const buildNativeRankingPersonalStatuses = (
     if (instance.is_for_trade && canBeTraded(instance)) status.tradeCount += 1;
     statuses.set(variantId, status);
   });
+  personalStatusCache.set(instances, statuses);
   return statuses;
 };
 
-const rankingCategory = (entry: PokemonCatalogEntry): NativeRankingCategory => {
-  const id = entry.id.toLocaleLowerCase();
-  if (entry.maxKind) return 'max';
-  if (id.includes('shadow')) return 'shadow';
-  if (id.includes('shiny')) return 'shiny';
-  const suffix = id.slice(id.indexOf('-') + 1);
-  return suffix && suffix !== 'default' ? 'costume' : 'all';
+const variantSuffix = (entry: PokemonCatalogEntry): string => (
+  entry.id.slice(entry.id.indexOf('-') + 1).toLocaleLowerCase()
+);
+
+const inferredVariantType = (entry: PokemonCatalogEntry): string => {
+  if (entry.variantType) return entry.variantType.toLocaleLowerCase();
+  const suffix = variantSuffix(entry);
+  if (
+    ['default', 'shiny', 'shadow', 'shiny_shadow', 'dynamax', 'shiny_dynamax', 'gigantamax', 'shiny_gigantamax', 'primal', 'shiny_primal'].includes(suffix)
+    || suffix.startsWith('mega')
+    || suffix.startsWith('shiny_mega')
+    || suffix.startsWith('fusion_')
+    || suffix.startsWith('shiny_fusion_')
+  ) return suffix;
+  return `costume_${suffix}`;
+};
+
+export const matchesNativeRankingCategory = (
+  entry: PokemonCatalogEntry,
+  category: NativeRankingCategory,
+): boolean => {
+  if (category === 'all') return true;
+  const variantType = inferredVariantType(entry);
+  if (category === 'shiny') return variantType.includes('shiny');
+  if (category === 'costume') return variantType.includes('costume');
+  if (category === 'shadow') return variantType.includes('shadow');
+  return variantType.includes('dynamax') || variantType.includes('gigantamax');
+};
+
+export const getNativeRankingCatalogSearch = (entry: PokemonCatalogEntry): string => {
+  const terms = [entry.speciesName || entry.name];
+  const variantType = inferredVariantType(entry);
+  if (variantType.includes('shiny')) terms.push('shiny');
+  if (variantType.includes('shadow')) terms.push('shadow');
+  if (variantType.includes('costume')) terms.push('costume');
+  if (variantType.includes('gigantamax')) terms.push('gigantamax');
+  else if (variantType.includes('dynamax')) terms.push('dynamax');
+  return terms
+    .map((term) => term.trim().toLocaleLowerCase())
+    .filter(Boolean)
+    .join('&');
+};
+
+const formatFormName = (value: string): string => value
+  .replace(/_/g, ' ')
+  .replace(/\b\w/g, (letter) => letter.toLocaleUpperCase());
+
+export const getNativeRankingDisplayName = (entry: PokemonCatalogEntry): string => {
+  const form = String(entry.form ?? '').trim();
+  if (!form) return entry.name;
+  const escapedForm = form.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const formAlreadyNamed = new RegExp(`(?:^|[\\s(_-])${escapedForm}(?:$|[\\s)_-])`, 'i')
+    .test(entry.name);
+  return formAlreadyNamed ? entry.name : `${entry.name} ${formatFormName(form)}`;
+};
+
+export const getNativeRankingCollectionDestination = (
+  row: Pick<NativeRankingRow, 'entry' | 'personal'>,
+): { filter?: 'caught' | 'trade' | 'wanted'; search?: string } => {
+  const filter = row.personal.tradeCount > 0
+    ? 'trade'
+    : row.personal.wanted
+      ? 'wanted'
+      : row.personal.registered
+        ? 'caught'
+        : null;
+  return filter
+    ? { filter, search: getNativeRankingCatalogSearch(row.entry) }
+    : {};
 };
 const matchesCollection = (personal: NativeRankingPersonalStatus, filter: NativeRankingCollectionFilter): boolean => {
   if (filter === 'owned') return personal.registered;
@@ -68,13 +152,6 @@ export const countNativeRankingCollectionFilters = (
   wanted: filterNativeRankingRowsByCollection(rows, 'wanted').length,
   missing: filterNativeRankingRowsByCollection(rows, 'missing').length,
 });
-
-const collapsibleVariantClass = (entry: PokemonCatalogEntry): string | null => {
-  const suffix = entry.id.slice(entry.id.indexOf('-') + 1).toLocaleLowerCase();
-  return ['default', 'shiny', 'shadow', 'shiny_shadow', 'dynamax', 'shiny_dynamax', 'gigantamax', 'shiny_gigantamax'].includes(suffix)
-    ? suffix
-    : null;
-};
 
 const collapseRarestEvolutionFamilies = <T extends { entry: PokemonCatalogEntry }>(
   rows: T[],
@@ -127,13 +204,14 @@ const collapseRarestEvolutionFamilies = <T extends { entry: PokemonCatalogEntry 
   };
   const selected = new Map<string, T>();
   rows.forEach((row) => {
-    const variantClass = collapsibleVariantClass(row.entry);
-    if (!variantClass) {
+    const variantType = inferredVariantType(row.entry);
+    if (variantType.includes('costume')) {
       selected.set(`variant:${row.entry.id}`, row);
       return;
     }
     const family = familyByPokemon.get(row.entry.pokemonId) ?? row.entry.pokemonId;
-    const key = `${family}:${variantClass}`;
+    const form = String(row.entry.form ?? '').trim().toLocaleLowerCase();
+    const key = `${family}:${variantType}:${form}`;
     const current = selected.get(key);
     if (!current || depth(row.entry.pokemonId) < depth(current.entry.pokemonId)) {
       selected.set(key, row);
@@ -167,10 +245,11 @@ export const buildNativeRankingRows = ({ catalog, collectionFilter = 'all', inst
     : joined;
   return prepared.flatMap(({ entry, ranking }, index) => {
     if (mode === 'wanted' && entry.id.toLocaleLowerCase().includes('shadow')) return [];
-    if (category !== 'all' && rankingCategory(entry) !== category) return [];
+    if (!matchesNativeRankingCategory(entry, category)) return [];
     if (normalized && !entry.name.toLocaleLowerCase().includes(normalized)
       && !String(entry.pokedexNumber).includes(normalized)
-      && !entry.id.toLocaleLowerCase().includes(normalized)) return [];
+      && !(entry.speciesName ?? '').toLocaleLowerCase().includes(normalized)
+      && !inferredVariantType(entry).includes(normalized)) return [];
     const personal = statuses.get(entry.id) ?? emptyPersonalStatus();
     if (!matchesCollection(personal, collectionFilter)) return [];
     return [{ caughtUsers: ranking.caught_users, entry, mostWantedUsers: ranking.most_wanted_users, personal, rank: index + 1, wantedUsers: ranking.wanted_users }];

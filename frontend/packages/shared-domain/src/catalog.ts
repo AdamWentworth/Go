@@ -5,6 +5,9 @@ export type PokemonCatalogEntry = {
   pokemonId: number;
   pokedexNumber: number;
   name: string;
+  speciesName?: string;
+  variantType?: string;
+  form?: string | null;
   imageUri: string | null;
   typeIconUris: string[];
   maxKind: 'dynamax' | 'gigantamax' | null;
@@ -60,6 +63,8 @@ export const buildPokemonCatalogEntries = (
     options: {
       maxKind?: PokemonCatalogEntry['maxKind'];
       icons?: string[];
+      variantType?: string;
+      form?: string | null;
     } = {},
   ) => {
     if (!imageUri) return;
@@ -68,6 +73,9 @@ export const buildPokemonCatalogEntries = (
       pokemonId: pokemon.pokemon_id,
       pokedexNumber: pokemon.pokedex_number,
       name,
+      speciesName: pokemon.name,
+      variantType: options.variantType,
+      form: options.form === undefined ? pokemon.form : options.form,
       imageUri,
       typeIconUris: options.icons ?? baseTypeIcons(pokemon),
       maxKind: options.maxKind ?? null,
@@ -76,17 +84,18 @@ export const buildPokemonCatalogEntries = (
     });
   };
 
-  add(`${dexId}-default`, pokemon.name, pokemon.image_url);
+  add(`${dexId}-default`, pokemon.name, pokemon.image_url, { variantType: 'default' });
   if (pokemon.shiny_available) {
-    add(`${dexId}-shiny`, `Shiny ${pokemon.name}`, pokemon.image_url_shiny);
+    add(`${dexId}-shiny`, `Shiny ${pokemon.name}`, pokemon.image_url_shiny, { variantType: 'shiny' });
   }
   if (pokemon.date_shadow_available) {
-    add(`${dexId}-shadow`, `Shadow ${pokemon.name}`, pokemon.image_url_shadow);
+    add(`${dexId}-shadow`, `Shadow ${pokemon.name}`, pokemon.image_url_shadow, { variantType: 'shadow' });
     if (pokemon.date_shiny_shadow_available) {
       add(
         `${dexId}-shiny_shadow`,
         `Shiny Shadow ${pokemon.name}`,
         pokemon.image_url_shiny_shadow,
+        { variantType: 'shiny_shadow' },
       );
     }
   }
@@ -96,12 +105,14 @@ export const buildPokemonCatalogEntries = (
       `${dexId}-${costume.name}_default`,
       costumeName(pokemon, costume, []),
       costume.image_url,
+      { variantType: `costume_${costume.costume_id}` },
     );
     if (costume.shiny_available) {
       add(
         `${dexId}-${costume.name}_shiny`,
         costumeName(pokemon, costume, ['Shiny']),
         costume.image_url_shiny,
+        { variantType: `costume_${costume.costume_id}_shiny` },
       );
     }
     if (costume.shadow_costume) {
@@ -109,11 +120,13 @@ export const buildPokemonCatalogEntries = (
         `${dexId}-shadow_${costume.name}_default`,
         costumeName(pokemon, costume, ['Shadow']),
         costume.shadow_costume.image_url_shadow_costume,
+        { variantType: `shadow_costume_${costume.costume_id}` },
       );
       add(
         `${dexId}-shadow_${costume.name}_shiny`,
         costumeName(pokemon, costume, ['Shiny', 'Shadow']),
         costume.shadow_costume.image_url_shiny_shadow_costume,
+        { variantType: `shiny_shadow_costume_${costume.costume_id}` },
       );
     }
   });
@@ -121,13 +134,14 @@ export const buildPokemonCatalogEntries = (
   if (pokemon.max?.some((form) => Boolean(form.dynamax))) {
     add(`${dexId}-dynamax`, `Dynamax ${pokemon.name}`, pokemon.image_url, {
       maxKind: 'dynamax',
+      variantType: 'dynamax',
     });
     if (pokemon.shiny_available) {
       add(
         `${dexId}-shiny_dynamax`,
         `Shiny Dynamax ${pokemon.name}`,
         pokemon.image_url_shiny,
-        { maxKind: 'dynamax' },
+        { maxKind: 'dynamax', variantType: 'shiny_dynamax' },
       );
     }
   }
@@ -136,14 +150,14 @@ export const buildPokemonCatalogEntries = (
       `${dexId}-gigantamax`,
       `Gigantamax ${pokemon.name}`,
       form.gigantamax_image_url,
-      { maxKind: 'gigantamax' },
+      { maxKind: 'gigantamax', variantType: 'gigantamax' },
     );
     if (pokemon.shiny_available) {
       add(
         `${dexId}-shiny_gigantamax`,
         `Shiny Gigantamax ${pokemon.name}`,
         form.shiny_gigantamax_image_url,
-        { maxKind: 'gigantamax' },
+        { maxKind: 'gigantamax', variantType: 'shiny_gigantamax' },
       );
     }
   });
@@ -157,13 +171,21 @@ export const buildPokemonCatalogEntries = (
       ? 'primal'
       : `mega${form ? `_${form.toLowerCase()}` : ''}`;
     const icons = typeIcons(mega.type1_name, mega.type2_name);
-    add(`${dexId}-${idSuffix}`, `${kind} ${pokemon.name}${suffix}`, mega.image_url, { icons });
+    add(`${dexId}-${idSuffix}`, `${kind} ${pokemon.name}${suffix}`, mega.image_url, {
+      icons,
+      form: form ?? null,
+      variantType: mega.primal ? 'primal' : `mega${form ? `_${form.toLowerCase()}` : ''}`,
+    });
     if (pokemon.shiny_available) {
       add(
         `${dexId}-shiny_${idSuffix}`,
         `Shiny ${kind} ${pokemon.name}${suffix}`,
         mega.image_url_shiny,
-        { icons },
+        {
+          icons,
+          form: form ?? null,
+          variantType: mega.primal ? 'shiny_primal' : `shiny_mega${form ? `_${form.toLowerCase()}` : ''}`,
+        },
       );
     }
   });
@@ -171,12 +193,15 @@ export const buildPokemonCatalogEntries = (
   pokemon.fusion?.forEach((fusion) => {
     if (pokemon.pokemon_id !== fusion.base_pokemon_id1 || fusion.fusion_id == null) return;
     const icons = typeIcons(fusion.type1_name, fusion.type2_name);
-    add(`${dexId}-fusion_${fusion.fusion_id}`, fusion.name, fusion.image_url, { icons });
+    add(`${dexId}-fusion_${fusion.fusion_id}`, fusion.name, fusion.image_url, {
+      icons,
+      variantType: `fusion_${fusion.fusion_id}`,
+    });
     add(
       `${dexId}-shiny_fusion_${fusion.fusion_id}`,
       `Shiny ${fusion.name}`,
       fusion.image_url_shiny,
-      { icons },
+      { icons, variantType: `shiny_fusion_${fusion.fusion_id}` },
     );
   });
 

@@ -6,7 +6,9 @@ import type {
   Move,
   PokemonPvPRankingsPayload,
 } from "@pokemongonexus/shared-contracts/pokemon";
+import type { PokemonCommunityRankingsPayload } from "@pokemongonexus/shared-contracts/search";
 import type { PokemonInstance } from "@pokemongonexus/shared-contracts/instances";
+import { buildPokemonCatalogEntries } from "@pokemongonexus/shared-domain/catalog";
 import { runtimeConfig } from "../../config/runtimeConfig";
 import { NativeMaxScreen } from "../../screens/NativeMaxScreen";
 import { NativePokedexDetailScreen } from "../../screens/NativePokedexDetailScreen";
@@ -20,6 +22,11 @@ import type {
   NativeRankingCategory,
   NativeRankingCollectionFilter,
   NativeRankingMode,
+} from "../../features/tools/nativeRankingsModel";
+import {
+  buildNativeRankingRows,
+  countNativeRankingCollectionFilters,
+  filterNativeRankingRowsByCollection,
 } from "../../features/tools/nativeRankingsModel";
 import { NativeRouteActionMenu } from "../../components/NativeRouteActionMenu";
 
@@ -620,25 +627,81 @@ function DeviceSmokePokedex({ catalog }: { catalog: BasePokemon[] }) {
   />;
 }
 
-function DeviceSmokeRankings() {
+function DeviceSmokeRankings({ catalog }: { catalog: BasePokemon[] }) {
   const [category, setCategory] = useState<NativeRankingCategory>('all');
   const [collectionFilter, setCollectionFilter] = useState<NativeRankingCollectionFilter>('all');
   const [mode, setMode] = useState<NativeRankingMode>('wanted');
-  const [, setQuery] = useState('');
+  const [query, setQuery] = useState('');
+  const rankingCatalog = useMemo(() => buildPokemonCatalogEntries(catalog), [catalog]);
+  const fixtureEntries = useMemo(() => {
+    const priorityIds = [
+      '0001-shiny',
+      '0001-default',
+      rankingCatalog.find((entry) => entry.variantType?.includes('shiny_shadow'))?.id,
+      rankingCatalog.find((entry) => entry.variantType?.includes('shiny_dynamax'))?.id,
+      rankingCatalog.find((entry) => entry.variantType?.includes('costume'))?.id,
+    ].filter((id): id is string => Boolean(id));
+    const byId = new Map(rankingCatalog.map((entry) => [entry.id, entry]));
+    return [...new Set([...priorityIds, ...rankingCatalog.map((entry) => entry.id)])]
+      .flatMap((id) => byId.get(id) ?? [])
+      .slice(0, 90);
+  }, [rankingCatalog]);
+  const instances = useMemo<Record<string, PokemonInstance>>(() => {
+    const wanted = fixtureEntries.find((entry) => entry.id === '0001-shiny') ?? fixtureEntries[0];
+    const trade = fixtureEntries.find((entry) => entry.id === '0001-default') ?? fixtureEntries[1];
+    const owned = fixtureEntries[2];
+    const next: Record<string, PokemonInstance> = {};
+    if (wanted) next['rankings-wanted'] = { instance_id: 'rankings-wanted', pokemon_id: wanted.pokemonId, variant_id: wanted.id, is_caught: false, is_for_trade: false, is_wanted: true, registered: false, disabled: false } as PokemonInstance;
+    if (trade) next['rankings-trade'] = { instance_id: 'rankings-trade', pokemon_id: trade.pokemonId, variant_id: trade.id, is_caught: true, is_for_trade: true, is_wanted: false, registered: true, disabled: false } as PokemonInstance;
+    if (owned) next['rankings-owned'] = { instance_id: 'rankings-owned', pokemon_id: owned.pokemonId, variant_id: owned.id, is_caught: true, is_for_trade: false, is_wanted: false, registered: true, disabled: false } as PokemonInstance;
+    return next;
+  }, [fixtureEntries]);
+  const payload = useMemo<PokemonCommunityRankingsPayload>(() => {
+    const ranking = (variantId: string, index: number) => ({
+      caught_users: Math.max(1, 100 - index),
+      most_wanted_users: Math.max(1, 20 - Math.floor(index / 5)),
+      variant_id: variantId,
+      wanted_users: Math.max(0, 120 - index),
+    });
+    return {
+      most_wanted: fixtureEntries.map((entry, index) => ranking(entry.id, index)),
+      privacy_threshold: 5,
+      rarest: [...fixtureEntries].reverse().map((entry, index) => ranking(entry.id, index)),
+      snapshot: { collector_users: 120, wishlist_users: 140, updated_at: '2026-07-25T12:00:00Z' },
+    };
+  }, [fixtureEntries]);
+  const rowsBeforeCollection = useMemo(() => buildNativeRankingRows({
+    catalog: rankingCatalog,
+    category,
+    instances,
+    mode,
+    payload,
+    query,
+  }), [category, instances, mode, payload, query, rankingCatalog]);
+  const collectionFilterCounts = useMemo(
+    () => countNativeRankingCollectionFilters(rowsBeforeCollection),
+    [rowsBeforeCollection],
+  );
+  const rows = useMemo(
+    () => filterNativeRankingRowsByCollection(rowsBeforeCollection, collectionFilter),
+    [collectionFilter, rowsBeforeCollection],
+  );
   return (
     <NativeRankingsScreen
       assetBaseUrl={ASSET_BASE_URL}
-      collectionFilterCounts={{ all: 0, missing: 0, owned: 0, trade: 0, wanted: 0 }}
-      collectorCount={0}
+      collectionFilterCounts={collectionFilterCounts}
+      collectorCount={140}
       onBack={noOp}
       onChangeCategory={setCategory}
       onChangeCollectionFilter={setCollectionFilter}
       onChangeMode={setMode}
       onChangeQuery={setQuery}
       onOpenEntry={noOp}
+      onOpenPokemon={noOp}
       onRetry={noOp}
       privacyThreshold={5}
-      rows={[]}
+      query={query}
+      rows={rows}
       selectedCategory={category}
       selectedCollectionFilter={collectionFilter}
       selectedMode={mode}
@@ -656,7 +719,7 @@ export default function DeviceSmokeToolsRoute() {
   const tool = Array.isArray(params.tool) ? params.tool[0] : params.tool;
   const ownedParam = Array.isArray(params.owned) ? params.owned[0] : params.owned;
   const ownedFixture = ownedParam === "1";
-  const needsCatalog = tool === "pokedex" || tool === "raid" || tool === "pvp" || tool === "max";
+  const needsCatalog = tool === "pokedex" || tool === "raid" || tool === "pvp" || tool === "max" || tool === "rankings";
   const [catalog, setCatalog] = useState<BasePokemon[]>(FALLBACK_BATTLE_CATALOG);
   const [catalogReady, setCatalogReady] = useState(false);
   useEffect(() => {
@@ -744,7 +807,7 @@ export default function DeviceSmokeToolsRoute() {
   if (tool === "rankings") {
     return (
       <DeviceSmokeToolChrome currentPath="/rankings" ready={!needsCatalog || catalogReady}>
-        <DeviceSmokeRankings />
+        <DeviceSmokeRankings catalog={catalog} />
       </DeviceSmokeToolChrome>
     );
   }

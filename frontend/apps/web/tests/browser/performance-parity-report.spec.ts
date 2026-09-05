@@ -12,6 +12,7 @@ import {
   type Locator,
   type Page,
 } from '@playwright/test';
+import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 
 import { installE2eRoutes, pvpDataFixture } from './support/e2eRoutes';
 import { openCaughtPokemonList, openPokemonPage } from './support/pokemonApp';
@@ -122,13 +123,14 @@ const allPerformanceInstances = JSON.parse(readFileSync(
   ),
   'utf8',
 ).replace(/^\uFEFF/, '')) as Record<string, Record<string, unknown>>;
-const performanceCatalogEntries = (JSON.parse(readFileSync(
+const performanceCatalog = JSON.parse(readFileSync(
   path.resolve(
     frontendDirectory,
     'packages/app-core/tests/__helpers__/fixtures/pokemons.json',
   ),
   'utf8',
-).replace(/^\uFEFF/, '')) as unknown[]).length;
+).replace(/^\uFEFF/, '')) as BasePokemon[];
+const performanceCatalogEntries = performanceCatalog.length;
 const performanceInstances = Object.fromEntries(
   Object.entries(allPerformanceInstances).slice(0, 180).map(([instanceId, instance], index) => {
     const normalized = {
@@ -183,6 +185,54 @@ const performanceInstances = Object.fromEntries(
     return [instanceId, normalized];
   }),
 );
+const performanceRankingCatalogIds = performanceCatalog.flatMap((pokemon) => {
+  const dexId = String(pokemon.pokemon_id).padStart(4, '0');
+  const ids = pokemon.image_url ? [`${dexId}-default`] : [];
+  if (pokemon.shiny_available && pokemon.image_url_shiny) ids.push(`${dexId}-shiny`);
+  if (pokemon.date_shadow_available && pokemon.image_url_shadow) ids.push(`${dexId}-shadow`);
+  if (pokemon.date_shiny_shadow_available && pokemon.image_url_shiny_shadow) ids.push(`${dexId}-shiny_shadow`);
+  for (const costume of pokemon.costumes ?? []) {
+    if (costume.image_url) ids.push(`${dexId}-${costume.name}_default`);
+    if (costume.shiny_available && costume.image_url_shiny) ids.push(`${dexId}-${costume.name}_shiny`);
+    if (costume.shadow_costume?.image_url_shadow_costume) ids.push(`${dexId}-shadow_${costume.name}_default`);
+    if (costume.shadow_costume?.image_url_shiny_shadow_costume) ids.push(`${dexId}-shadow_${costume.name}_shiny`);
+  }
+  if ((pokemon.max ?? []).some((form) => Boolean(form.dynamax))) {
+    ids.push(`${dexId}-dynamax`);
+    if (pokemon.shiny_available && pokemon.image_url_shiny) ids.push(`${dexId}-shiny_dynamax`);
+  }
+  if ((pokemon.max ?? []).some((form) => Boolean(form.gigantamax))) {
+    ids.push(`${dexId}-gigantamax`);
+    if (pokemon.shiny_available) ids.push(`${dexId}-shiny_gigantamax`);
+  }
+  return ids;
+});
+const performanceRankingIds = [...new Set([
+  '0001-shiny',
+  '0001-default',
+  ...Object.values(performanceInstances).map((instance) => String(instance.variant_id ?? '')),
+  ...performanceRankingCatalogIds,
+])].filter((id) => performanceRankingCatalogIds.includes(id)).slice(0, 90);
+const performanceCommunityRankings = {
+  privacy_threshold: 5,
+  snapshot: {
+    collector_users: 120,
+    wishlist_users: 140,
+    updated_at: '2026-07-25T12:00:00Z',
+  },
+  most_wanted: performanceRankingIds.map((variantId, index) => ({
+    variant_id: variantId,
+    wanted_users: Math.max(0, 120 - index),
+    most_wanted_users: Math.max(1, 20 - Math.floor(index / 5)),
+    caught_users: Math.max(1, 100 - index),
+  })),
+  rarest: [...performanceRankingIds].reverse().map((variantId, index) => ({
+    variant_id: variantId,
+    wanted_users: Math.max(0, 120 - index),
+    most_wanted_users: Math.max(1, 20 - Math.floor(index / 5)),
+    caught_users: Math.max(1, 100 - index),
+  })),
+};
 const performanceTradeInstanceIds = Object.keys(performanceInstances).slice(0, 4);
 const [
   performanceIncomingMineId,
@@ -281,6 +331,7 @@ const performanceSearchResults = [{
 }];
 const performanceRouteOptions = {
   baseUrl: webBaseUrl,
+  communityRankings: performanceCommunityRankings,
   locationSuggestions: [{
     displayName: 'Vancouver, British Columbia, Canada',
     latitude: 49.2827,
@@ -645,6 +696,10 @@ const collectSharedInteractions = async (
     await collectMaxInteractions(context, sampleIndex);
     return;
   }
+  if (workflowFilter === 'rankings') {
+    await collectRankingsInteractions(context, sampleIndex);
+    return;
+  }
   if (workflowFilter !== 'collection') {
     const home = await createMeasuredPage(context, 'signed-in', 'dark');
     try {
@@ -775,6 +830,75 @@ const collectSharedInteractions = async (
   await collectSearchInteractions(context, sampleIndex);
   await collectTradeInteractions(context, sampleIndex);
   await collectMaxInteractions(context, sampleIndex);
+  await collectRankingsInteractions(context, sampleIndex);
+};
+
+const collectRankingsInteractions = async (
+  context: BrowserContext,
+  sampleIndex: number,
+) => {
+  const page = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    await page.goto(`${webBaseUrl}/rankings`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(page);
+    await page.getByRole('heading', { name: 'Community Rankings', exact: true }).waitFor({ state: 'visible' });
+
+    const rarest = page.getByRole('tab', { name: 'Rarest owned', exact: true });
+    await activateMeasuredControl(rarest);
+    await expect(rarest).toHaveAttribute('aria-selected', 'true');
+    await page.getByText(/Owned by \d+ trainers?/).first().waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.rankings.mode-result', sampleIndex);
+
+    const shiny = page.getByRole('button', { name: 'Shiny', exact: true });
+    await activateMeasuredControl(shiny);
+    await expect(shiny).toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.rankings.category-result', sampleIndex);
+
+    await activateMeasuredControl(page.getByRole('button', { name: 'All', exact: true }).first());
+    const forTrade = page.getByRole('button', { name: 'For trade', exact: true });
+    await activateMeasuredControl(forTrade);
+    await expect(forTrade).toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.rankings.collection-result', sampleIndex);
+
+    await activateMeasuredControl(page.getByRole('button', { name: 'All', exact: true }).last());
+    const query = page.getByRole('searchbox', { name: 'Search rankings' }).first();
+    await query.fill('Bulbasaur');
+    await page.getByText(/Bulbasaur/).first().waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.rankings.query-result', sampleIndex);
+    await activateMeasuredControl(page.getByRole('button', { name: 'Clear', exact: true }));
+    await expect(query).toHaveValue('');
+    await recordInteraction(page, 'interaction.rankings.clear-result', sampleIndex);
+
+    const wanted = page.getByRole('tab', { name: 'Most wanted', exact: true });
+    await activateMeasuredControl(wanted);
+    await expect(wanted).toHaveAttribute('aria-selected', 'true');
+    const showMore = page.getByRole('button', { name: 'Show more', exact: true });
+    await showMore.scrollIntoViewIfNeeded();
+    const rowsBefore = await page.locator('.community-ranking-row').count();
+    await activateMeasuredControl(showMore);
+    await expect.poll(() => page.locator('.community-ranking-row').count()).toBeGreaterThan(rowsBefore);
+    await recordInteraction(page, 'interaction.rankings.more-result', sampleIndex);
+
+    await page.locator('.community-ranking-filter-summary').evaluate((element) => {
+      window.scrollTo({ top: element.getBoundingClientRect().bottom + window.scrollY + 50 });
+    });
+    await page.getByRole('navigation', { name: 'Quick ranking controls' }).waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.rankings.quick-controls', sampleIndex);
+
+    const method = page.locator('.community-rankings-method summary');
+    await method.scrollIntoViewIfNeeded();
+    await activateMeasuredControl(method);
+    await expect(page.locator('.community-rankings-method')).toHaveAttribute('open', '');
+    await recordInteraction(page, 'interaction.rankings.method-result', sampleIndex);
+    await captureWorkflowScreenshot(page, sampleIndex, 'community-rankings', page.locator('.community-rankings-page'));
+    if (performanceProfile === 'physical-android') {
+      await page.waitForTimeout(250);
+      collectAndroidFrameTimelineMetrics(sampleIndex);
+      collectAndroidChromeMemoryMetric(sampleIndex);
+    }
+  } finally {
+    await closeMeasuredPage(page);
+  }
 };
 
 const collectMaxInteractions = async (

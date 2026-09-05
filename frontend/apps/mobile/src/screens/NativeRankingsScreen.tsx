@@ -1,8 +1,12 @@
-import { useMemo, useState } from 'react';
+import { Image as ExpoImage } from 'expo-image';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Image,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   Pressable,
   StyleSheet,
   Text,
@@ -17,8 +21,11 @@ import type {
   NativeRankingMode,
   NativeRankingRow,
 } from '../features/tools/nativeRankingsModel';
+import { getNativeRankingDisplayName } from '../features/tools/nativeRankingsModel';
 import { NativeUiIcon } from '../components/NativeUiIcon';
+import { NativeOptionPicker, type NativeOptionPickerEntry } from '../components/NativeOptionPicker';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
 
 type Props = {
   assetBaseUrl: string;
@@ -26,7 +33,7 @@ type Props = {
   collectorCount: number;
   error?: string | null;
   hasSnapshot?: boolean;
-  initialQuery?: string;
+  query?: string;
   isLoading?: boolean;
   isRefreshing?: boolean;
   onBack: () => void;
@@ -35,6 +42,7 @@ type Props = {
   onChangeMode: (mode: NativeRankingMode) => void;
   onChangeQuery: (query: string) => void;
   onOpenEntry: (row: NativeRankingRow) => void;
+  onOpenPokemon: (filter?: 'caught') => void;
   onRetry: () => void;
   privacyThreshold: number;
   rows: NativeRankingRow[];
@@ -85,6 +93,10 @@ const COLLECTION_LABELS: Record<NativeRankingCollectionFilter, string> = {
   missing: 'Missing',
 };
 
+const INITIAL_RESULT_COUNT = 30;
+const RESULT_INCREMENT = 30;
+const FALLBACK_IMAGE = '/images/default_pokemon.png';
+
 const absoluteUri = (base: string, value: string | null): string | undefined => {
   if (!value) return undefined;
   try {
@@ -102,27 +114,107 @@ const emptyCopy = ({
   category: NativeRankingCategory;
   collectionFilter: NativeRankingCollectionFilter;
   query: string;
-}): { action?: string; body: string; title: string } => {
+}): { action?: string; body: string; kind?: 'browse' | 'caught' | 'clear-all' | 'clear-category' | 'clear-query'; title: string } => {
   if (query.trim()) {
-    return { action: 'Clear search', body: 'Try another name, form, or Pokédex number.', title: 'No matching Pokémon' };
+    return { action: 'Clear search', body: 'Try another name, form, or Pokédex number.', kind: 'clear-query', title: 'No matching Pokémon' };
   }
   if (collectionFilter === 'owned') {
-    return { action: 'Show all rankings', body: 'Caught Pokémon and Pokédex registrations appear here.', title: 'None of these are in your collection' };
+    return { action: 'Browse Pokémon', body: 'Caught Pokémon and Pokédex registrations appear here.', kind: 'browse', title: 'None of these are in your collection' };
   }
   if (collectionFilter === 'trade') {
-    return { action: 'Show all rankings', body: 'Mark a caught copy for trade to see it in this ranking.', title: 'Nothing is listed for trade' };
+    return { action: 'View my Pokémon', body: 'Mark a caught copy for trade to see it in this ranking.', kind: 'caught', title: 'Nothing is listed for trade' };
   }
   if (collectionFilter === 'wanted') {
-    return { action: 'Show all rankings', body: 'Add Pokémon to your wishlist to compare them here.', title: 'Nothing here is on your wishlist' };
+    return { action: 'Browse Pokémon', body: 'Add Pokémon to your wishlist to compare them here.', kind: 'browse', title: 'Nothing here is on your wishlist' };
   }
   if (collectionFilter === 'missing') {
-    return { action: 'Show all rankings', body: 'You have every Pokémon in this view registered or caught.', title: 'Nothing is missing' };
+    return { action: 'Show all rankings', body: 'You have every Pokémon in this view registered or caught.', kind: 'clear-all', title: 'Nothing is missing' };
   }
   if (category !== 'all') {
-    return { action: 'Show all categories', body: 'This community snapshot has no results in that category.', title: `No ${CATEGORY_LABELS[category].toLocaleLowerCase()} entries` };
+    return { action: 'Show all categories', body: 'This community snapshot has no results in that category.', kind: 'clear-category', title: `No ${CATEGORY_LABELS[category].toLocaleLowerCase()} entries` };
   }
   return { body: 'Rankings will appear after the next community snapshot.', title: 'No community entries yet' };
 };
+
+const RankingCard = memo(({
+  assetBaseUrl,
+  index,
+  light,
+  maximum,
+  mode,
+  onOpenEntry,
+  privacyThreshold,
+  row,
+  showCollectionFilters,
+}: {
+  assetBaseUrl: string;
+  index: number;
+  light: boolean;
+  maximum: number;
+  mode: NativeRankingMode;
+  onOpenEntry: (row: NativeRankingRow) => void;
+  privacyThreshold: number;
+  row: NativeRankingRow;
+  showCollectionFilters: boolean;
+}) => {
+  const displayName = getNativeRankingDisplayName(row.entry);
+  const primaryCount = mode === 'wanted' ? row.wantedUsers : row.caughtUsers;
+  const progress = Math.max(0.04, Number(primaryCount ?? 0) / maximum);
+  const countLabel = primaryCount == null
+    ? `Fewer than ${privacyThreshold} trainers want this`
+    : mode === 'wanted'
+      ? primaryCount === 0
+        ? 'No trainers want this'
+        : primaryCount === 1
+          ? '1 trainer wants this'
+          : `${primaryCount.toLocaleString()} trainers want this`
+      : primaryCount === 1
+        ? 'Owned by 1 trainer'
+        : `Owned by ${primaryCount.toLocaleString()} trainers`;
+  const personalLabels = [
+    row.personal.caughtCount ? `${row.personal.caughtCount} caught` : row.personal.registered ? 'Registered' : '',
+    row.personal.tradeCount ? `${row.personal.tradeCount} for trade` : '',
+    row.personal.wanted ? 'Wanted' : '',
+  ].filter(Boolean);
+  const openLabel = row.personal.tradeCount > 0
+    ? 'View trade copies'
+    : row.personal.wanted
+      ? 'View wishlist'
+      : row.personal.registered
+        ? 'View collection'
+        : 'Browse Pokémon';
+  const medalColor = row.rank === 1 ? '#f7cf58' : row.rank === 2 ? '#dbe9ed' : row.rank === 3 ? '#d99455' : null;
+  const [artworkUri, setArtworkUri] = useState(
+    absoluteUri(assetBaseUrl, row.entry.imageUri || FALLBACK_IMAGE),
+  );
+  const content = <>
+    <View style={styles.cardOverview}>
+      <View style={[styles.rank, medalColor ? { backgroundColor: medalColor, borderColor: medalColor } : null]}>
+        <Text style={[styles.rankText, medalColor ? styles.rankTextMedal : null]}>{row.rank}</Text>
+      </View>
+      <View style={styles.pokemonSummary}>
+        <View style={styles.artworkStage}>
+          <ExpoImage accessibilityLabel={displayName} cachePolicy="memory-disk" contentFit="contain" onError={() => setArtworkUri(absoluteUri(assetBaseUrl, FALLBACK_IMAGE))} source={{ uri: artworkUri }} style={styles.artwork} transition={0} />
+          {row.entry.maxKind ? <ExpoImage accessibilityLabel={row.entry.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'} cachePolicy="memory-disk" contentFit="contain" source={{ uri: absoluteUri(assetBaseUrl, `/images/${row.entry.maxKind}.png`) }} style={styles.maxIcon} transition={0} /> : null}
+        </View>
+        <View style={styles.cardIdentity}>
+          <Text numberOfLines={2} style={[styles.name, light && styles.textLight]}>{displayName}</Text>
+          {showCollectionFilters && personalLabels.length > 0 ? <View style={styles.personalRow}>{personalLabels.map((label) => <Text key={label} style={[styles.personal, light && styles.personalLight]}>{label}</Text>)}</View> : null}
+        </View>
+      </View>
+    </View>
+    <View style={styles.countBlock}>
+      <Text style={[styles.count, light && styles.textLight]}>{countLabel}</Text>
+      <View style={[styles.track, light && styles.trackLight]}><View style={[styles.fill, { width: `${Math.round(progress * 100)}%` }]} /></View>
+      {showCollectionFilters ? <Text style={[styles.openLabel, light && styles.accentLight]}>{openLabel}  →</Text> : null}
+    </View>
+  </>;
+  const cardStyle = [styles.card, light && styles.cardLight, index % 2 === 1 && (light ? styles.cardAlternateLight : styles.cardAlternate)];
+  return showCollectionFilters
+    ? <Pressable accessibilityLabel={`${openLabel}, rank ${row.rank}, ${displayName}`} accessibilityRole="button" onPress={() => onOpenEntry(row)} style={({ pressed }) => [...cardStyle, pressed && styles.pressed]}>{content}</Pressable>
+    : <View accessibilityLabel={`Rank ${row.rank}, ${displayName}`} style={cardStyle}>{content}</View>;
+});
+RankingCard.displayName = 'RankingCard';
 
 export const NativeRankingsScreen = ({
   assetBaseUrl,
@@ -130,7 +222,7 @@ export const NativeRankingsScreen = ({
   collectorCount,
   error = null,
   hasSnapshot = true,
-  initialQuery = '',
+  query = '',
   isLoading = false,
   isRefreshing = false,
   onBack: _onBack,
@@ -139,6 +231,7 @@ export const NativeRankingsScreen = ({
   onChangeMode,
   onChangeQuery,
   onOpenEntry,
+  onOpenPokemon,
   onRetry,
   privacyThreshold,
   rows,
@@ -151,23 +244,52 @@ export const NativeRankingsScreen = ({
   const light = useNativeColorScheme() === 'light';
   const insets = useSafeAreaInsets();
   const compact = useWindowDimensions().width <= 420;
-  const [query, setQuery] = useState(initialQuery);
   const [methodOpen, setMethodOpen] = useState(false);
+  const [picker, setPicker] = useState<'category' | 'collection' | 'mode' | null>(null);
+  const [pagination, setPagination] = useState({ key: '', limit: INITIAL_RESULT_COUNT });
+  const [showQuickControls, setShowQuickControls] = useState(false);
+  const summaryBottomRef = useRef(Number.POSITIVE_INFINITY);
+  const performanceStartsRef = useRef(new Map<string, number>());
+  const beginPerformance = useCallback((event: string) => {
+    performanceStartsRef.current.set(event, Date.now());
+  }, []);
+  const finishPerformance = useCallback((event: string) => {
+    const startedAt = performanceStartsRef.current.get(event);
+    if (startedAt == null) return;
+    performanceStartsRef.current.delete(event);
+    markNativeUiPerformanceAfterPaint(event, startedAt);
+  }, []);
   const maximum = useMemo(
     () => Math.max(1, ...rows.map((row) => selectedMode === 'wanted' ? row.wantedUsers ?? 0 : row.caughtUsers)),
     [rows, selectedMode],
   );
-  const availableCategories = CATEGORIES.filter(({ rarestOnly }) => !rarestOnly || selectedMode === 'rarest');
+  const availableCategories = useMemo(
+    () => CATEGORIES.filter(({ rarestOnly }) => !rarestOnly || selectedMode === 'rarest'),
+    [selectedMode],
+  );
+  const paginationKey = `${selectedMode}\u0000${selectedCategory}\u0000${selectedCollectionFilter}\u0000${query}`;
+  const visibleLimit = pagination.key === paginationKey ? pagination.limit : INITIAL_RESULT_COUNT;
+  const visibleRows = useMemo(() => rows.slice(0, visibleLimit), [rows, visibleLimit]);
   const activeFilters = selectedCategory !== 'all'
     || selectedCollectionFilter !== 'all'
     || Boolean(query.trim());
 
+  useEffect(() => finishPerformance('rankings_mode_result_painted'), [finishPerformance, rows.length, selectedMode]);
+  useEffect(() => finishPerformance('rankings_category_result_painted'), [finishPerformance, rows.length, selectedCategory]);
+  useEffect(() => finishPerformance('rankings_collection_result_painted'), [finishPerformance, rows.length, selectedCollectionFilter]);
+  useEffect(() => finishPerformance('rankings_query_result_painted'), [finishPerformance, query, rows.length]);
+  useEffect(() => finishPerformance('rankings_clear_result_painted'), [finishPerformance, query, rows.length, selectedCategory, selectedCollectionFilter]);
+  useEffect(() => finishPerformance('rankings_more_result_painted'), [finishPerformance, visibleLimit]);
+  useEffect(() => finishPerformance('rankings_method_result_painted'), [finishPerformance, methodOpen]);
+  useEffect(() => finishPerformance('rankings_quick_controls_painted'), [finishPerformance, showQuickControls]);
+
   const setSearch = (value: string) => {
-    setQuery(value);
+    beginPerformance('rankings_query_result_painted');
     onChangeQuery(value);
   };
   const clearAll = () => {
-    setSearch('');
+    beginPerformance('rankings_clear_result_painted');
+    onChangeQuery('');
     onChangeCategory('all');
     onChangeCollectionFilter('all');
   };
@@ -176,16 +298,49 @@ export const NativeRankingsScreen = ({
     collectionFilter: showCollectionFilters ? selectedCollectionFilter : 'all',
     query,
   });
-  const clearEmptyState = () => {
-    if (query.trim()) setSearch('');
-    else if (selectedCollectionFilter !== 'all') onChangeCollectionFilter('all');
-    else if (selectedCategory !== 'all') onChangeCategory('all');
+  const activateEmptyState = () => {
+    beginPerformance('rankings_clear_result_painted');
+    if (empty.kind === 'clear-query') onChangeQuery('');
+    else if (empty.kind === 'clear-all') clearAll();
+    else if (empty.kind === 'clear-category') onChangeCategory('all');
+    else if (empty.kind === 'browse') onOpenPokemon();
+    else if (empty.kind === 'caught') onOpenPokemon('caught');
   };
+  const changeMode = (value: NativeRankingMode) => {
+    if (value === selectedMode) return;
+    beginPerformance('rankings_mode_result_painted');
+    onChangeMode(value);
+  };
+  const changeCategory = (value: NativeRankingCategory) => {
+    if (value === selectedCategory) return;
+    beginPerformance('rankings_category_result_painted');
+    onChangeCategory(value);
+  };
+  const changeCollectionFilter = (value: NativeRankingCollectionFilter) => {
+    if (value === selectedCollectionFilter) return;
+    beginPerformance('rankings_collection_result_painted');
+    onChangeCollectionFilter(value);
+  };
+  const onSummaryLayout = (event: LayoutChangeEvent) => {
+    summaryBottomRef.current = event.nativeEvent.layout.y + event.nativeEvent.layout.height;
+  };
+  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const next = event.nativeEvent.contentOffset.y > summaryBottomRef.current;
+    if (next === showQuickControls) return;
+    if (next) beginPerformance('rankings_quick_controls_painted');
+    setShowQuickControls(next);
+  };
+  const pickerOptions = useMemo<NativeOptionPickerEntry[]>(() => {
+    if (picker === 'mode') return [{ key: 'wanted', label: 'Most wanted' }, { key: 'rarest', label: 'Rarest owned' }];
+    if (picker === 'category') return availableCategories.map(({ label, value }) => ({ key: value, label }));
+    if (picker === 'collection') return COLLECTION_FILTERS.map(({ label, value }) => ({ key: value, label: `${label} (${collectionFilterCounts[value].toLocaleString()})` }));
+    return [];
+  }, [availableCategories, collectionFilterCounts, picker]);
 
   const header = (
     <View>
       <View style={[styles.productHeader, compact && styles.productHeaderCompact]}>
-        <Image fadeDuration={0} accessibilityElementsHidden resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, '/images/btn_rankings.png') }} style={[styles.productIcon, compact && styles.productIconCompact]} />
+        <Image accessibilityElementsHidden fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, '/images/btn_rankings.png') }} style={[styles.productIcon, compact && styles.productIconCompact]} />
         <View style={[styles.headerCopy, compact && styles.headerCopyCompact]}>
           <Text style={[styles.eyebrow, light && styles.accentLight]}>TRAINER COLLECTIONS</Text>
           <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Community Rankings</Text>
@@ -199,7 +354,7 @@ export const NativeRankingsScreen = ({
       <View accessibilityRole="tablist" style={[styles.segment, compact && styles.segmentCompact, light && styles.panelLight]}>
         {([['wanted', '♥︎', 'Most wanted'], ['rarest', '◆', 'Rarest owned']] as const).map(([value, icon, label]) => {
           const selected = selectedMode === value;
-          return <Pressable aria-selected={selected} accessibilityRole="tab" accessibilityState={{ selected }} key={value} onPress={() => onChangeMode(value)} style={[styles.segmentButton, selected && styles.segmentActive]}><Text style={[styles.segmentIcon, light && styles.textLight, selected && styles.segmentTextActive]}>{icon}</Text><Text style={[styles.segmentText, light && styles.textLight, selected && styles.segmentTextActive]}>{label}</Text></Pressable>;
+          return <Pressable aria-selected={selected} accessibilityRole="tab" accessibilityState={{ selected }} key={value} onPress={() => changeMode(value)} style={[styles.segmentButton, selected && styles.segmentActive]}><Text style={[styles.segmentIcon, light && styles.textLight, selected && styles.segmentTextActive]}>{icon}</Text><Text style={[styles.segmentText, light && styles.textLight, selected && styles.segmentTextActive]}>{label}</Text></Pressable>;
         })}
       </View>
 
@@ -219,16 +374,16 @@ export const NativeRankingsScreen = ({
         <View style={styles.filterGrid}>
           {availableCategories.map(({ asset, label, value }) => {
             const selected = selectedCategory === value;
-            return <Pressable accessibilityRole="button" accessibilityState={{ selected }} key={value} onPress={() => onChangeCategory(value)} style={[styles.filterButton, light && styles.controlLight, selected && styles.categoryActive]}>{asset ? <Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, asset) }} style={[styles.filterIcon, { tintColor: selected ? '#141006' : light ? '#28636a' : '#9eb9bb' }]} /> : null}<Text style={[styles.filterText, light && styles.textLight, selected && styles.categoryActiveText]}>{label}</Text></Pressable>;
+            return <Pressable accessibilityRole="button" accessibilityState={{ selected }} key={value} onPress={() => changeCategory(value)} style={[styles.filterButton, light && styles.controlLight, selected && styles.categoryActive]}>{asset ? <Image accessibilityElementsHidden fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, asset) }} style={[styles.filterIcon, { tintColor: selected ? '#141006' : light ? '#28636a' : '#9eb9bb' }]} /> : null}<Text style={[styles.filterText, light && styles.textLight, selected && styles.categoryActiveText]}>{label}</Text></Pressable>;
           })}
         </View>
         {showCollectionFilters ? <><View style={[styles.filterDivider, light && styles.filterDividerLight]} /><Text style={[styles.filterLabel, light && styles.mutedLight]}>COMPARED WITH YOURS</Text><View style={styles.filterGrid}>{COLLECTION_FILTERS.map(({ label, value }) => {
           const selected = selectedCollectionFilter === value;
-          return <Pressable accessibilityRole="button" accessibilityState={{ selected }} key={value} onPress={() => onChangeCollectionFilter(value)} style={[styles.filterButton, styles.personalFilter, light && styles.controlLight, selected && styles.personalActive]}><Text numberOfLines={1} style={[styles.filterText, light && styles.textLight, selected && styles.personalActiveText]}>{label}</Text><Text style={[styles.filterCount, light && styles.filterCountLight, selected && styles.personalCountActive]}>{collectionFilterCounts[value].toLocaleString()}</Text></Pressable>;
+          return <Pressable accessibilityRole="button" accessibilityState={{ selected }} key={value} onPress={() => changeCollectionFilter(value)} style={[styles.filterButton, styles.personalFilter, light && styles.controlLight, selected && styles.personalActive]}><Text numberOfLines={1} style={[styles.filterText, light && styles.textLight, selected && styles.personalActiveText]}>{label}</Text><Text style={[styles.filterCount, light && styles.filterCountLight, selected && styles.personalCountActive]}>{collectionFilterCounts[value].toLocaleString()}</Text></Pressable>;
         })}</View></> : null}
       </View>
 
-      <View style={styles.summary}>
+      <View onLayout={onSummaryLayout} style={styles.summary} testID="native-ranking-filter-summary">
         <Text accessibilityLiveRegion="polite" style={[styles.summaryText, light && styles.mutedLight]}><Text style={[styles.summaryCount, light && styles.textLight]}>{rows.length.toLocaleString()}</Text> results<Text style={styles.summaryDot}>  ·  </Text>{CATEGORY_LABELS[selectedCategory]}{showCollectionFilters ? <Text><Text style={styles.summaryDot}>  ·  </Text>{COLLECTION_LABELS[selectedCollectionFilter]}</Text> : null}</Text>
         {activeFilters ? <Pressable accessibilityRole="button" onPress={clearAll} style={styles.clearFilters}><Text style={[styles.clearFiltersText, light && styles.accentLight]}>Clear</Text></Pressable> : null}
       </View>
@@ -239,25 +394,35 @@ export const NativeRankingsScreen = ({
     </View>
   );
 
-  const footer = hasSnapshot ? <View><View style={styles.snapshotFooter}><Text style={[styles.snapshotText, light && styles.mutedLight]}>{snapshotLabel}</Text><Pressable accessibilityLabel="Refresh community rankings" accessibilityRole="button" disabled={isRefreshing} onPress={onRetry} style={[styles.refresh, light && styles.controlLight, isRefreshing && styles.disabled]}>{isRefreshing ? <ActivityIndicator color={light ? '#08766b' : '#42d7c4'} size="small" /> : <Text style={[styles.refreshText, light && styles.accentLight]}>↻</Text>}</Pressable></View><View style={[styles.method, light && styles.panelLight]}><Pressable accessibilityRole="button" accessibilityState={{ expanded: methodOpen }} onPress={() => setMethodOpen((value) => !value)} style={styles.methodSummary}><Text style={[styles.methodInfo, light && styles.accentLight]}>ⓘ</Text><Text style={[styles.methodTitle, light && styles.textLight]}>How these rankings work</Text><Text style={[styles.methodChevron, light && styles.mutedLight]}>{methodOpen ? '⌃' : '⌄'}</Text></Pressable>{methodOpen ? <View style={[styles.methodBody, light && styles.methodBodyLight]}><Text style={[styles.methodCopy, light && styles.mutedLight]}><Text style={[styles.methodStrong, light && styles.textLight]}>Most wanted</Text> counts distinct trainer wishlists. Duplicate wanted copies do not add votes.</Text><Text style={[styles.methodCopy, light && styles.mutedLight]}><Text style={[styles.methodStrong, light && styles.textLight]}>Rarest owned</Text> counts trainers with a caught copy or Pokédex registration. Duplicate copies count once.</Text><Text style={[styles.methodCopy, light && styles.mutedLight]}>Ordinary evolution families are collapsed in rarity results, while collectible costumes remain separate. Small totals may be withheld to protect trainer privacy.</Text></View> : null}</View></View> : null;
+  const footer = hasSnapshot ? <View>{visibleRows.length < rows.length ? <Pressable accessibilityLabel={`Show ${Math.min(RESULT_INCREMENT, rows.length - visibleRows.length)} more rankings`} accessibilityRole="button" onPress={() => { beginPerformance('rankings_more_result_painted'); setPagination({ key: paginationKey, limit: Math.min(rows.length, visibleLimit + RESULT_INCREMENT) }); }} style={[styles.showMore, light && styles.controlLight]}><Text style={[styles.showMoreText, light && styles.textLight]}>Show more</Text></Pressable> : null}<View style={styles.snapshotFooter}><Text style={[styles.snapshotText, light && styles.mutedLight]}>{snapshotLabel}</Text><Pressable accessibilityLabel="Refresh community rankings" accessibilityRole="button" disabled={isRefreshing} onPress={onRetry} style={[styles.refresh, light && styles.controlLight, isRefreshing && styles.disabled]}>{isRefreshing ? <ActivityIndicator color={light ? '#08766b' : '#42d7c4'} size="small" /> : <Text style={[styles.refreshText, light && styles.accentLight]}>↻</Text>}</Pressable></View><View style={[styles.method, light && styles.panelLight]}><Pressable accessibilityRole="button" accessibilityState={{ expanded: methodOpen }} onPress={() => { beginPerformance('rankings_method_result_painted'); setMethodOpen((value) => !value); }} style={styles.methodSummary}><Text style={[styles.methodInfo, light && styles.accentLight]}>ⓘ</Text><Text style={[styles.methodTitle, light && styles.textLight]}>How these rankings work</Text><Text style={[styles.methodChevron, light && styles.mutedLight]}>{methodOpen ? '⌃' : '⌄'}</Text></Pressable>{methodOpen ? <View style={[styles.methodBody, light && styles.methodBodyLight]}><Text style={[styles.methodCopy, light && styles.mutedLight]}><Text style={[styles.methodStrong, light && styles.textLight]}>Most wanted</Text> counts distinct trainer wishlists. Duplicate wanted copies do not add votes.</Text><Text style={[styles.methodCopy, light && styles.mutedLight]}><Text style={[styles.methodStrong, light && styles.textLight]}>Rarest owned</Text> counts trainers with a caught copy or Pokédex registration. Duplicate copies count once.</Text><Text style={[styles.methodCopy, light && styles.mutedLight]}>Ordinary evolution families are collapsed in rarity results, while collectible costumes remain separate. Small totals may be withheld to protect trainer privacy.</Text></View> : null}</View></View> : null;
 
-  return <View style={[styles.root, light && styles.rootLight]} testID="native-rankings-screen"><FlatList contentContainerStyle={{ paddingBottom: 92 + insets.bottom, paddingHorizontal: 8, paddingTop: 6 + insets.top }} data={hasSnapshot ? rows : []} keyExtractor={(row) => row.entry.id} ListEmptyComponent={!isLoading && hasSnapshot ? <View style={[styles.empty, styles.emptyParity, light && styles.panelLight]}><NativeUiIcon color={light ? '#08766b' : '#42d7c4'} name="search" size={28} /><Text style={[styles.emptyTitle, light && styles.textLight]}>{empty.title}</Text><Text style={[styles.stateCopy, light && styles.mutedLight]}>{empty.body}</Text>{empty.action ? <Pressable accessibilityRole="button" onPress={clearEmptyState} style={styles.emptyAction}><Text style={styles.emptyActionText}>{empty.action}</Text></Pressable> : null}</View> : null} ListFooterComponent={footer} ListHeaderComponent={header} renderItem={({ index, item }) => {
-    const count = selectedMode === 'wanted' ? item.wantedUsers : item.caughtUsers;
-    const progress = Math.max(0.04, Number(count ?? 0) / maximum);
-    const countLabel = count == null ? selectedMode === 'wanted' ? `Fewer than ${privacyThreshold} trainers want this` : `Owned by fewer than ${privacyThreshold} trainers` : selectedMode === 'wanted' ? count === 1 ? '1 trainer wants this' : `${count.toLocaleString()} trainers want this` : count === 1 ? 'Owned by 1 trainer' : `Owned by ${count.toLocaleString()} trainers`;
-    const personalLabels = [item.personal.caughtCount ? `${item.personal.caughtCount} caught` : item.personal.registered ? 'Registered' : '', item.personal.tradeCount ? `${item.personal.tradeCount} for trade` : '', item.personal.wanted ? 'Wanted' : ''].filter(Boolean);
-    const openLabel = !showCollectionFilters
-      ? 'View Pokémon'
-      : item.personal.tradeCount > 0
-        ? 'View trade copies'
-        : item.personal.wanted
-          ? 'View wishlist'
-          : item.personal.registered
-            ? 'View collection'
-            : 'Browse Pokémon';
-    const medalColor = item.rank === 1 ? '#f7cf58' : item.rank === 2 ? '#dbe9ed' : item.rank === 3 ? '#d99455' : null;
-    return <Pressable accessibilityLabel={`Open rank ${item.rank}, ${item.entry.name}`} accessibilityRole="button" onPress={() => onOpenEntry(item)} style={({ pressed }) => [styles.card, light && styles.cardLight, index % 2 === 1 && (light ? styles.cardAlternateLight : styles.cardAlternate), pressed && styles.pressed]}><View style={styles.cardOverview}><View style={[styles.rank, medalColor ? { backgroundColor: medalColor, borderColor: medalColor } : null]}><Text style={[styles.rankText, medalColor ? styles.rankTextMedal : null]}>{item.rank}</Text></View><View style={styles.pokemonSummary}><View style={styles.artworkStage}>{item.entry.imageUri ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, item.entry.imageUri) }} style={styles.artwork} /> : null}{item.entry.maxKind ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, `/images/${item.entry.maxKind}.png`) }} style={styles.maxIcon} /> : null}</View><View style={styles.cardIdentity}><Text numberOfLines={2} style={[styles.name, light && styles.textLight]}>{item.entry.name}</Text>{showCollectionFilters && personalLabels.length > 0 ? <View style={styles.personalRow}>{personalLabels.map((label) => <Text key={label} style={[styles.personal, light && styles.personalLight]}>{label}</Text>)}</View> : null}</View></View></View><View style={styles.countBlock}><Text style={[styles.count, light && styles.textLight]}>{countLabel}</Text><View style={[styles.track, light && styles.trackLight]}><View style={[styles.fill, { width: `${Math.round(progress * 100)}%` }]} /></View><Text style={[styles.openLabel, light && styles.accentLight]}>{openLabel}  →</Text></View></Pressable>;
-  }} /></View>;
+  const selectedPickerKey = picker === 'mode' ? selectedMode : picker === 'category' ? selectedCategory : selectedCollectionFilter;
+  return <View style={[styles.root, light && styles.rootLight]} testID="native-rankings-screen">
+    <FlatList
+      contentContainerStyle={{ paddingBottom: 92 + insets.bottom, paddingHorizontal: 8, paddingTop: 6 + insets.top }}
+      data={hasSnapshot ? visibleRows : []}
+      initialNumToRender={30}
+      keyboardShouldPersistTaps="always"
+      keyExtractor={(row) => row.entry.id}
+      ListEmptyComponent={!isLoading && hasSnapshot ? <View style={[styles.empty, styles.emptyParity, light && styles.panelLight]}><NativeUiIcon color={light ? '#08766b' : '#42d7c4'} name="search" size={28} /><Text style={[styles.emptyTitle, light && styles.textLight]}>{empty.title}</Text><Text style={[styles.stateCopy, light && styles.mutedLight]}>{empty.body}</Text>{empty.action ? <Pressable accessibilityRole="button" onPress={activateEmptyState} style={styles.emptyAction}><Text style={styles.emptyActionText}>{empty.action}</Text></Pressable> : null}</View> : null}
+      ListFooterComponent={footer}
+      ListHeaderComponent={header}
+      maxToRenderPerBatch={30}
+      onScroll={onScroll}
+      renderItem={({ index, item }) => <RankingCard assetBaseUrl={assetBaseUrl} index={index} light={light} maximum={maximum} mode={selectedMode} onOpenEntry={onOpenEntry} privacyThreshold={privacyThreshold} row={item} showCollectionFilters={showCollectionFilters} />}
+      scrollEventThrottle={32}
+      testID="native-rankings-list"
+      updateCellsBatchingPeriod={16}
+      windowSize={21}
+    />
+    {showQuickControls ? <View accessibilityLabel="Quick ranking controls" accessibilityRole="toolbar" style={[styles.quickControls, { top: insets.top + 4 }, light && styles.quickControlsLight]}>
+      <Pressable accessibilityLabel="Ranking view" accessibilityRole="button" onPress={() => setPicker('mode')} style={[styles.quickButton, light && styles.controlLight]}><Text numberOfLines={1} style={[styles.quickText, light && styles.textLight]}>{selectedMode === 'wanted' ? 'Wanted' : 'Rarest'}</Text></Pressable>
+      <Pressable accessibilityLabel="Pokémon category" accessibilityRole="button" onPress={() => setPicker('category')} style={[styles.quickButton, light && styles.controlLight]}><Text numberOfLines={1} style={[styles.quickText, light && styles.textLight]}>{selectedCategory === 'all' ? 'All' : CATEGORY_LABELS[selectedCategory]}</Text></Pressable>
+      {showCollectionFilters ? <Pressable accessibilityLabel="Compared with yours" accessibilityRole="button" onPress={() => setPicker('collection')} style={[styles.quickButton, light && styles.controlLight]}><Text numberOfLines={1} style={[styles.quickText, light && styles.textLight]}>{COLLECTION_LABELS[selectedCollectionFilter]}</Text></Pressable> : null}
+      <View style={[styles.quickSearch, light && styles.controlLight]}><NativeUiIcon color={light ? '#08766b' : '#42d7c4'} name="search" size={14} /><TextInput accessibilityLabel="Quick ranking search" autoCapitalize="none" onChangeText={setSearch} placeholder="Search" placeholderTextColor={light ? '#697c7c' : '#7f9395'} style={[styles.quickSearchInput, light && styles.textLight]} value={query} /></View>
+    </View> : null}
+    <NativeOptionPicker onClose={() => setPicker(null)} onSelect={(entry) => { if (picker === 'mode') changeMode(entry.key as NativeRankingMode); else if (picker === 'category') changeCategory(entry.key as NativeRankingCategory); else if (picker === 'collection') changeCollectionFilter(entry.key as NativeRankingCollectionFilter); setPicker(null); }} options={pickerOptions} selectedKey={selectedPickerKey} title={picker === 'mode' ? 'Ranking view' : picker === 'category' ? 'Pokémon category' : 'Compared with yours'} visible={picker != null} />
+  </View>;
 };
 
 const styles = StyleSheet.create({
@@ -272,4 +437,12 @@ const styles = StyleSheet.create({
   card: { minHeight: 116, gap: 6, padding: 8, borderWidth: 1, borderBottomWidth: 0, borderColor: 'rgba(66,215,196,0.3)', backgroundColor: '#141a1b' }, cardLight: { borderColor: 'rgba(21,117,119,0.3)', backgroundColor: '#fffdf7' }, cardAlternate: { backgroundColor: '#171e1f' }, cardAlternateLight: { backgroundColor: '#f8f8f2' }, pressed: { opacity: 0.72 }, cardOverview: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 6 }, rank: { width: 35, height: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(66,215,196,0.3)', borderRadius: 18 }, rankText: { color: '#42d7c4', fontSize: 13, fontWeight: '900' }, rankTextMedal: { color: '#17130a' }, pokemonSummary: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }, artworkStage: { position: 'relative', width: 67, height: 67, alignItems: 'center', justifyContent: 'center' }, artwork: { width: 72, height: 72 }, maxIcon: { position: 'absolute', right: -1, top: 0, width: 19, height: 19 }, cardIdentity: { minWidth: 0, flex: 1 }, name: { color: '#f4ffff', fontSize: 15, fontWeight: '900', lineHeight: 18 }, personalRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, marginTop: 4 }, personal: { paddingHorizontal: 5, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(66,215,196,0.35)', borderRadius: 4, color: '#9eb9bb', backgroundColor: 'rgba(66,215,196,0.07)', fontSize: 8, fontWeight: '900', textTransform: 'uppercase' }, personalLight: { color: '#405b56' }, countBlock: { minWidth: 0, marginLeft: 41, gap: 4 }, count: { color: '#f4ffff', fontSize: 11, fontWeight: '900' }, track: { height: 5, overflow: 'hidden', borderRadius: 3, backgroundColor: 'rgba(159,191,193,0.14)' }, trackLight: { backgroundColor: 'rgba(21,117,119,0.13)' }, fill: { height: '100%', borderRadius: 3, backgroundColor: '#42d7c4' }, openLabel: { alignSelf: 'flex-start', color: '#42d7c4', fontSize: 9, fontWeight: '900' },
   empty: { alignItems: 'center', gap: 7, padding: 32, borderWidth: 1, borderColor: 'rgba(66,215,196,0.3)', backgroundColor: '#141a1b' }, emptyIcon: { color: '#42d7c4', fontSize: 28 }, emptyTitle: { color: '#f4ffff', fontSize: 16, fontWeight: '900', textAlign: 'center' }, emptyAction: { minHeight: 40, justifyContent: 'center', marginTop: 4, paddingHorizontal: 13, borderRadius: 6, backgroundColor: '#42d7c4' }, emptyActionText: { color: '#071312', fontSize: 11, fontWeight: '900' }, snapshotFooter: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 6 }, snapshotText: { flex: 1, color: '#9eb9bb', fontSize: 10, fontWeight: '700' }, refresh: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(66,215,196,0.3)', borderRadius: 5 }, refreshText: { color: '#42d7c4', fontSize: 23, fontWeight: '800' }, disabled: { opacity: 0.55 }, method: { overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(66,215,196,0.3)', borderRadius: 7, backgroundColor: '#141a1b' }, methodSummary: { minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 11 }, methodInfo: { color: '#42d7c4', fontSize: 17 }, methodTitle: { flex: 1, color: '#9eb9bb', fontSize: 12, fontWeight: '900' }, methodChevron: { color: '#9eb9bb', fontSize: 17 }, methodBody: { gap: 8, padding: 11, borderTopWidth: 1, borderColor: 'rgba(66,215,196,0.3)' }, methodBodyLight: { borderColor: 'rgba(21,117,119,0.3)' }, methodCopy: { color: '#9eb9bb', fontSize: 11, lineHeight: 16 }, methodStrong: { color: '#f4ffff', fontWeight: '900' },
   emptyParity: { minHeight: 157, justifyContent: 'center', marginTop: 10 },
+  showMore: { minHeight: 46, alignItems: 'center', justifyContent: 'center', marginTop: 10, borderWidth: 1, borderColor: 'rgba(66,215,196,0.3)', borderRadius: 7, backgroundColor: '#141a1b' },
+  showMoreText: { color: '#f4ffff', fontSize: 12, fontWeight: '900' },
+  quickControls: { position: 'absolute', zIndex: 60, left: 4, right: 4, minHeight: 48, flexDirection: 'row', alignItems: 'stretch', gap: 3, padding: 3, borderWidth: 1, borderColor: 'rgba(66,215,196,0.4)', borderRadius: 7, backgroundColor: 'rgba(16,22,23,0.98)', elevation: 8 },
+  quickControlsLight: { borderColor: 'rgba(21,117,119,0.35)', backgroundColor: 'rgba(255,253,247,0.98)' },
+  quickButton: { minWidth: 0, minHeight: 40, flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 1, borderColor: 'rgba(157,190,193,0.34)', borderRadius: 5, backgroundColor: '#141a1b' },
+  quickText: { color: '#f4ffff', fontSize: 9, fontWeight: '900' },
+  quickSearch: { minWidth: 0, minHeight: 40, flex: 2, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, borderWidth: 1, borderColor: 'rgba(157,190,193,0.34)', borderRadius: 5, backgroundColor: '#141a1b' },
+  quickSearchInput: { minWidth: 0, flex: 1, paddingVertical: 0, color: '#f4ffff', fontSize: 10, fontWeight: '800' },
 });
