@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
@@ -14,7 +14,7 @@ import {
 } from '../../features/tools/nativeToolQueries';
 import { parseNativeMaxRouteState } from '../../features/tools/nativeToolRouteState';
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
-import { NativeMaxScreen } from '../../screens/NativeMaxScreen';
+import { NativeMaxScreen, type NativeMaxRoutePatch } from '../../screens/NativeMaxScreen';
 
 type RouteParam = string | string[] | undefined;
 
@@ -61,6 +61,22 @@ export default function NativeMaxRoute() {
     }
     router.push({ pathname: '/web', params: { path: destination.path } });
   };
+  const updateRouteState = useCallback((patch: NativeMaxRoutePatch) => {
+    const next: Record<string, string | undefined> = {};
+    if ('view' in patch) next.view = patch.view === 'rankings' ? undefined : patch.view;
+    if ('role' in patch) next.role = patch.role === 'damage' ? undefined : patch.role;
+    if ('scope' in patch) {
+      const defaultScope = session.user ? 'owned' : 'catalog';
+      next.scope = patch.scope === defaultScope ? undefined : patch.scope;
+    }
+    if ('selectedType' in patch) next.type = patch.selectedType || undefined;
+    if ('bossId' in patch) next.boss = patch.bossId || undefined;
+    if ('difficulty' in patch) next.difficulty = patch.difficulty ?? undefined;
+    if ('trainerCount' in patch) next.trainers = patch.trainerCount == null
+      ? undefined
+      : String(patch.trainerCount);
+    router.setParams(next);
+  }, [router, session.user]);
 
   return <>
     <NativeMaxScreen
@@ -100,6 +116,7 @@ export default function NativeMaxRoute() {
         void maxQuery.refetch();
         if (session.user) void snapshotQuery.refetch();
       }}
+      onRouteStateChange={updateRouteState}
       signedIn={Boolean(session.user)}
     />
     <NativeActionMenuAnchor

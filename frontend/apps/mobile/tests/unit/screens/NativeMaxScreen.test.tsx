@@ -5,7 +5,10 @@ import type { BasePokemon, Move } from '@pokemongonexus/shared-contracts/pokemon
 import { NativeMaxScreen } from '../../../src/screens/NativeMaxScreen';
 const fast = { move_id: 1, name: 'Vine Whip', raid_power: 10, raid_energy: 8, raid_cooldown: 1, is_fast: 1, type_name: 'grass', type: 'grass' } as Move;
 const charged = { ...fast, move_id: 2, name: 'Power Whip', raid_power: 90, raid_energy: -50, raid_cooldown: 2.5, is_fast: 0 } as Move;
-const catalog = [{ pokemon_id: 1, name: 'Bulbasaur', pokedex_number: 1, attack: 118, defense: 111, stamina: 128, available: 1, cp40: 1000, cp50: 1200, type1_name: 'grass', type2_name: 'poison', image_url: '/1.png', moves: [fast, charged], max: [{ pokemon_id: 1, dynamax: 1, gigantamax: 0, dynamax_release_date: null, gigantamax_release_date: null }] }] as BasePokemon[];
+const catalog = [
+  { pokemon_id: 1, name: 'Bulbasaur', pokedex_number: 1, attack: 118, defense: 111, stamina: 128, available: 1, cp40: 1000, cp50: 1200, type1_name: 'grass', type2_name: 'poison', image_url: '/1.png', moves: [fast, charged], max: [{ pokemon_id: 1, dynamax: 1, gigantamax: 0, dynamax_release_date: null, gigantamax_release_date: null }] },
+  { pokemon_id: 2, name: 'Ivysaur', pokedex_number: 2, attack: 151, defense: 143, stamina: 155, available: 1, cp40: 1700, cp50: 1900, type1_name: 'grass', type2_name: 'poison', image_url: '/2.png', moves: [fast, charged], max: [{ pokemon_id: 2, dynamax: 1, gigantamax: 0, dynamax_release_date: null, gigantamax_release_date: null }] },
+] as BasePokemon[];
 const owned = {
   instance_id: 'leafy',
   variant_id: '0001-default',
@@ -98,5 +101,42 @@ describe('NativeMaxScreen', () => {
 
     fireEvent.press(screen.getByLabelText('Show 1 more Max rankings'));
     expect(screen.queryByLabelText('Show 1 more Max rankings')).toBeNull();
+  });
+
+  it('matches Vite boss search, ranking filters, methodology, and shareable route state', () => {
+    const onRouteStateChange = jest.fn();
+    render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}>
+        <NativeMaxScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalog={catalog}
+          onBack={jest.fn()}
+          onOpenPokemon={jest.fn()}
+          onRetry={jest.fn()}
+          onRouteStateChange={onRouteStateChange}
+          signedIn={false}
+        />
+      </SafeAreaProvider>,
+    );
+
+    fireEvent.press(screen.getByText('Tank'));
+    expect(screen.getByText('Top tanks')).toBeTruthy();
+    expect(onRouteStateChange).toHaveBeenCalledWith({ role: 'tank' });
+    fireEvent.press(screen.getByLabelText('grass'));
+    expect(screen.getByText('Top tanks vs Grass')).toBeTruthy();
+    fireEvent.changeText(screen.getByLabelText('Search Max rankings'), 'Ivy');
+    expect(screen.getByText('Dynamax Ivysaur')).toBeTruthy();
+
+    fireEvent.press(screen.getByText('▸  How Max roles are ranked'));
+    expect(screen.getByText(/Damage uses Attack/)).toBeTruthy();
+    fireEvent.press(screen.getByText('Boss teams'));
+    fireEvent.changeText(screen.getByLabelText('Search Max Battle bosses'), 'Ivy');
+    fireEvent.press(screen.getByLabelText('Select Dynamax Ivysaur Max boss'));
+    expect(screen.getByText('Can this group beat Dynamax Ivysaur?')).toBeTruthy();
+    expect(onRouteStateChange).toHaveBeenCalledWith({
+      bossId: '0002-dynamax',
+      difficulty: null,
+      trainerCount: null,
+    });
   });
 });

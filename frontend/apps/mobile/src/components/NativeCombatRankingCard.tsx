@@ -1,4 +1,6 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { memo } from 'react';
+import { Image as ExpoImage } from 'expo-image';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { MaxRankingEntry } from '@pokemongonexus/app-core/max-battle-model';
 import type { NativeCombatEntry } from '../features/tools/nativeBattleModels';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
@@ -62,7 +64,7 @@ const roleMetrics = (entry: MaxRankingEntry) => {
     ];
 };
 
-export const NativeCombatRankingCard = ({ assetBaseUrl, entry, metricLabel, rank, onPress }: Props) => {
+export const NativeCombatRankingCard = memo(function NativeCombatRankingCard({ assetBaseUrl, entry, metricLabel, rank, onPress }: Props) {
   const light = useNativeColorScheme() === 'light';
   const max = entry.maxRanking;
   const summary = max ? moveSummary(max) : null;
@@ -82,8 +84,8 @@ export const NativeCombatRankingCard = ({ assetBaseUrl, entry, metricLabel, rank
       <View style={styles.topRow}>
         <View style={[styles.rank, rank <= 3 && styles.rankTop]}><Text style={styles.rankText}>{rank}</Text></View>
         <View style={styles.stage}>
-          {entry.imageUri ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: uri(assetBaseUrl, entry.imageUri) }} style={styles.image} /> : null}
-          {entry.maxKind ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: uri(assetBaseUrl, `/images/${entry.maxKind}.png`) }} style={styles.maxIcon} /> : null}
+          {entry.imageUri ? <ExpoImage cachePolicy="memory-disk" contentFit="contain" source={{ uri: uri(assetBaseUrl, entry.imageUri) }} style={styles.image} transition={0} /> : null}
+          {entry.maxKind ? <ExpoImage cachePolicy="memory-disk" contentFit="contain" source={{ uri: uri(assetBaseUrl, `/images/${entry.maxKind}.png`) }} style={styles.maxIcon} transition={0} /> : null}
         </View>
         <View style={styles.copy}>
           <Text numberOfLines={2} style={[styles.name, light && styles.textLight]}>{entry.name}</Text>
@@ -97,7 +99,7 @@ export const NativeCombatRankingCard = ({ assetBaseUrl, entry, metricLabel, rank
           ) : null}
           {summary ? (
             <View style={[styles.maxMove, light && styles.maxMoveLight]}>
-              {summary.icon ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: uri(assetBaseUrl, summary.icon) }} style={styles.moveTypeIcon} /> : null}
+              {summary.icon ? <ExpoImage cachePolicy="memory-disk" contentFit="contain" source={{ uri: uri(assetBaseUrl, summary.icon) }} style={styles.moveTypeIcon} transition={0} /> : null}
               <Text numberOfLines={1} style={[styles.maxMoveText, light && styles.textLight]}>{summary.label}</Text>
             </View>
           ) : (
@@ -106,7 +108,7 @@ export const NativeCombatRankingCard = ({ assetBaseUrl, entry, metricLabel, rank
           {max ? (
             <View style={styles.fastMove}>
               <Text style={[styles.fastLabel, light && styles.mutedLight]}>FAST</Text>
-              <Image fadeDuration={0} resizeMode="contain" source={{ uri: uri(assetBaseUrl, `/images/types/${fastType}.png`) }} style={styles.fastIcon} />
+              <ExpoImage cachePolicy="memory-disk" contentFit="contain" source={{ uri: uri(assetBaseUrl, `/images/types/${fastType}.png`) }} style={styles.fastIcon} transition={0} />
               <Text numberOfLines={1} style={[styles.fastName, light && styles.textLight]}>{max.fastMove.name}</Text>
               <Text style={[styles.fastSeconds, light && styles.mutedLight]}>{decimal(max.meterSeconds)}s</Text>
             </View>
@@ -126,7 +128,13 @@ export const NativeCombatRankingCard = ({ assetBaseUrl, entry, metricLabel, rank
       ) : null}
     </Pressable>
   );
-};
+}, (previous, next) => (
+  previous.assetBaseUrl === next.assetBaseUrl
+  && previous.entry === next.entry
+  && previous.metricLabel === next.metricLabel
+  && previous.rank === next.rank
+  && Boolean(previous.onPress) === Boolean(next.onPress)
+));
 const styles = StyleSheet.create({
   card: { minHeight: 100, gap: 6, marginBottom: 7, borderWidth: 1, borderColor: '#34434b', borderRadius: 8, padding: 7, backgroundColor: '#1a2021' },
   cardLight: { borderColor: '#c1cdd3', backgroundColor: '#fff' },

@@ -44,6 +44,13 @@ describe('native battle models', () => {
     expect(buildNativeRaidAttackers({ catalog: hydrated })[0]?.fastMove?.name).toBe('Vine Whip');
     expect(buildNativeMaxRankings({ catalog: hydrated, role: 'damage' })[0]?.maxKind).toBe('dynamax');
   });
+  it('reuses immutable Max ranking projections without mixing filter settings', () => {
+    const catalog = [{ ...pokemon, moves: [fast, charged] }] as BasePokemon[];
+    const damage = buildNativeMaxRankings({ catalog, role: 'damage' });
+    expect(buildNativeMaxRankings({ catalog, role: 'damage' })).toBe(damage);
+    expect(buildNativeMaxRankings({ catalog, role: 'tank' })).not.toBe(damage);
+    expect(buildNativeMaxRankings({ catalog, role: 'damage', selectedType: 'grass' })).not.toBe(damage);
+  });
   it('applies both defending types', () => expect(nativeTypeEffectiveness('grass', ['water', 'ground'])).toBeCloseTo(2.56));
   it('ranks each caught copy using its recorded build instead of a species proxy', () => {
     const hydrated = { ...pokemon, moves: [fast, charged, secondCharged] } as BasePokemon;

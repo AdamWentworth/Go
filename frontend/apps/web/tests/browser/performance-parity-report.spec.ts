@@ -641,6 +641,10 @@ const collectSharedInteractions = async (
     await collectTradeInteractions(context, sampleIndex);
     return;
   }
+  if (workflowFilter === 'max') {
+    await collectMaxInteractions(context, sampleIndex);
+    return;
+  }
   if (workflowFilter !== 'collection') {
     const home = await createMeasuredPage(context, 'signed-in', 'dark');
     try {
@@ -770,6 +774,112 @@ const collectSharedInteractions = async (
   await collectPvpInteractions(context, sampleIndex);
   await collectSearchInteractions(context, sampleIndex);
   await collectTradeInteractions(context, sampleIndex);
+  await collectMaxInteractions(context, sampleIndex);
+};
+
+const collectMaxInteractions = async (
+  context: BrowserContext,
+  sampleIndex: number,
+) => {
+  const page = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    await page.goto(`${webBaseUrl}/max`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(page);
+    await page.getByRole('heading', { name: 'Max Battles', exact: true }).waitFor({ state: 'visible' });
+
+    const allPokemon = page.getByRole('button', { name: 'All Pokémon', exact: true });
+    await activateMeasuredControl(allPokemon);
+    await expect(allPokemon).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('heading', { name: 'Top damage dealers', exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.max.scope-result', sampleIndex);
+
+    const tank = page.getByRole('button', { name: 'Tank', exact: true });
+    await activateMeasuredControl(tank);
+    await page.getByRole('heading', { name: 'Top tanks', exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.max.role-result', sampleIndex);
+
+    const water = page.getByRole('button', { name: 'Water', exact: true });
+    await activateMeasuredControl(water);
+    await page.getByRole('heading', { name: 'Top tanks vs Water', exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.max.type-result', sampleIndex);
+
+    const allTypes = page.getByRole('button', { name: 'All types', exact: true });
+    await activateMeasuredControl(allTypes);
+    const rankingSearch = page.getByRole('searchbox', { name: 'Search Max rankings' });
+    await rankingSearch.fill('z');
+    await page.locator('.max-ranking-row').first().waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.max.query-result', sampleIndex);
+    await rankingSearch.fill('');
+
+    const showMore = page.getByRole('button', { name: /Show \d+ more/ });
+    await showMore.scrollIntoViewIfNeeded();
+    const rowsBefore = await page.locator('.max-ranking-row').count();
+    await activateMeasuredControl(showMore);
+    await expect.poll(() => page.locator('.max-ranking-row').count()).toBeGreaterThan(rowsBefore);
+    await recordInteraction(page, 'interaction.max.more-result', sampleIndex);
+
+    const method = page.locator('.max-method-note summary');
+    await activateMeasuredControl(method);
+    await expect(page.locator('.max-method-note')).toHaveAttribute('open', '');
+    await recordInteraction(page, 'interaction.max.method-result', sampleIndex);
+
+    const bosses = page.getByRole('button', { name: 'Boss teams', exact: true });
+    await activateMeasuredControl(bosses);
+    await page.locator('.max-simulator').waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.max.view-result', sampleIndex);
+
+    const addTrainer = page.getByRole('button', { name: 'Add one Trainer', exact: true });
+    const trainerCount = page.getByLabel('Trainer count');
+    const trainersBefore = Number(await trainerCount.inputValue());
+    await activateMeasuredControl(addTrainer);
+    await expect(trainerCount).toHaveValue(String(trainersBefore + 1));
+    await recordInteraction(page, 'interaction.max.trainer-result', sampleIndex);
+
+    const damagePicker = page.getByLabel('Damage team member');
+    const replacement = await damagePicker.locator('option').nth(1).getAttribute('value');
+    if (!replacement) throw new Error('Max damage team member has no alternate candidate.');
+    await damagePicker.selectOption(replacement);
+    await expect(damagePicker).toHaveValue(replacement);
+    await recordInteraction(page, 'interaction.max.party-result', sampleIndex);
+
+    const advanced = page.locator('.max-simulator-advanced summary');
+    await activateMeasuredControl(advanced);
+    await expect(page.locator('.max-simulator-advanced')).toHaveAttribute('open', '');
+    await recordInteraction(page, 'interaction.max.advanced-result', sampleIndex);
+
+    const execution = page.getByLabel('Max Battle execution');
+    await execution.selectOption('stress-test');
+    await expect(execution).toHaveValue('stress-test');
+    await recordInteraction(page, 'interaction.max.execution-result', sampleIndex);
+
+    const difficulty = page.getByLabel('Max Battle difficulty');
+    await difficulty.selectOption('two-star');
+    await expect(difficulty).toHaveValue('two-star');
+    await recordInteraction(page, 'interaction.max.difficulty-result', sampleIndex);
+
+    const bossHp = page.getByLabel('Boss HP estimate');
+    await bossHp.fill('50009');
+    await expect(bossHp).toHaveValue('50009');
+    await recordInteraction(page, 'interaction.max.hp-result', sampleIndex);
+
+    await activateMeasuredControl(page.getByRole('button', { name: 'Reset recommendations', exact: true }));
+    await expect(execution).toHaveValue('standard');
+    await recordInteraction(page, 'interaction.max.reset-result', sampleIndex);
+
+    const bossSearch = page.getByRole('searchbox', { name: 'Search Max Battle bosses' });
+    await bossSearch.fill('z');
+    const charizard = page
+      .getByRole('listbox', { name: 'Boss results' })
+      .getByRole('option', { name: /Gigantamax Charizard/ });
+    await charizard.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.max.boss-query-result', sampleIndex);
+    await activateMeasuredControl(charizard);
+    await page.locator('.max-selected-boss h2', { hasText: 'Gigantamax Charizard' }).waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.max.boss-result', sampleIndex);
+    await captureWorkflowScreenshot(page, sampleIndex, 'max-battle-simulator');
+  } finally {
+    await closeMeasuredPage(page);
+  }
 };
 
 const collectTradeInteractions = async (

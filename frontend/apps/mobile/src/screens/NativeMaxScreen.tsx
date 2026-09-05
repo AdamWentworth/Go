@@ -1,10 +1,9 @@
-import { useDeferredValue, useMemo, useState } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { Image as ExpoImage } from 'expo-image';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -13,7 +12,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
-import type { MaxBattleTier } from '@pokemongonexus/app-core/max-battle-simulation';
+import {
+  getDefaultMaxBattleTier,
+  type MaxBattleTier,
+} from '@pokemongonexus/app-core/max-battle-simulation';
 import { NativeCombatRankingCard } from '../components/NativeCombatRankingCard';
 import { NativeMaxBattleSimulator } from '../components/tools/NativeMaxBattleSimulator';
 import {
@@ -28,6 +30,17 @@ import {
 } from '../features/tools/nativeBattleModels';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import { NativeUiIcon } from '../components/NativeUiIcon';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
+
+export type NativeMaxRoutePatch = Partial<{
+  bossId: string;
+  difficulty: MaxBattleTier | null;
+  role: NativeMaxRole;
+  scope: NativeRosterScope;
+  selectedType: string;
+  trainerCount: number | null;
+  view: MaxView;
+}>;
 
 type Props = {
   assetBaseUrl: string;
@@ -45,12 +58,15 @@ type Props = {
   onBack: () => void;
   onOpenPokemon: (entry: NativeCombatEntry) => void;
   onRetry: () => void;
+  onRouteStateChange?: (patch: NativeMaxRoutePatch) => void;
   signedIn: boolean;
 };
 type MaxView = 'rankings' | 'bosses';
 
 const EMPTY_MAX_ROLE_CANDIDATES = { damage: [], healing: [], tank: [] };
 const MAX_RESULTS_PAGE_SIZE = 18;
+const MAX_BOSS_RESULTS_INITIAL_SIZE = 3;
+const MAX_BOSS_RESULTS_PAGE_SIZE = 9;
 
 const absoluteUri = (base: string, value?: string | null) => {
   if (!value) return undefined;
@@ -74,6 +90,38 @@ const roleMetric = (role: NativeMaxRole): string => {
   return 'Team sustain';
 };
 
+const NativeMaxTypeGrid = memo(function NativeMaxTypeGrid({
+  assetBaseUrl,
+  light,
+  onSelect,
+  selectedType,
+}: {
+  assetBaseUrl: string;
+  light: boolean;
+  onSelect: (type: string) => void;
+  selectedType: string;
+}) {
+  return (
+    <View style={styles.typeGrid}>
+      {NATIVE_BATTLE_TYPES.map((type) => {
+        const selected = selectedType === type;
+        return (
+          <Pressable
+            accessibilityLabel={type}
+            accessibilityRole="button"
+            accessibilityState={{ selected }}
+            key={type}
+            onPress={() => onSelect(type)}
+            style={[styles.typeButton, light && styles.typeButtonLight, selected && styles.typeActive]}
+          >
+            <ExpoImage cachePolicy="memory-disk" contentFit="contain" source={{ uri: absoluteUri(assetBaseUrl, `/images/types/${type}.png`) }} style={styles.typeIcon} transition={0} />
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+});
+
 export const NativeMaxScreen = ({
   assetBaseUrl,
   catalog,
@@ -90,6 +138,7 @@ export const NativeMaxScreen = ({
   onBack: _onBack,
   onOpenPokemon,
   onRetry,
+  onRouteStateChange,
   signedIn,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
@@ -100,8 +149,19 @@ export const NativeMaxScreen = ({
   const [selectedType, setSelectedType] = useState(initialSelectedType);
   const [query, setQuery] = useState('');
   const [bossId, setBossId] = useState(initialBossId);
+  const [bossQuery, setBossQuery] = useState('');
   const [methodOpen, setMethodOpen] = useState(false);
   const [pagination, setPagination] = useState({ key: '', limit: MAX_RESULTS_PAGE_SIZE });
+  const performanceStartsRef = useRef(new Map<string, number>());
+  const beginPerformance = useCallback((event: string) => {
+    performanceStartsRef.current.set(event, Date.now());
+  }, []);
+  const finishPerformance = useCallback((event: string) => {
+    const startedAt = performanceStartsRef.current.get(event);
+    if (startedAt == null) return;
+    performanceStartsRef.current.delete(event);
+    markNativeUiPerformanceAfterPaint(event, startedAt);
+  }, []);
 
   // Canonical Max eligibility also includes special attackers such as crowned
   // Zacian/Zamazenta and Eternatus; they are not guaranteed to carry max[].
@@ -115,64 +175,171 @@ export const NativeMaxScreen = ({
   const effectiveScope = signedIn
     ? scopeOverride ?? initialScope ?? 'owned'
     : 'catalog';
-  const deferredBoss = useDeferredValue(selectedBoss);
+  const deferredBossQuery = useDeferredValue(bossQuery);
   const deferredQuery = useDeferredValue(query);
-  const deferredRole = useDeferredValue(role);
-  const deferredScope = useDeferredValue(effectiveScope);
-  const deferredSelectedType = useDeferredValue(selectedType);
   const rosterSummary = useMemo(
     () => buildNativeMaxRosterSummary(catalog, instances),
     [catalog, instances],
   );
   const candidates = useMemo(
-    () => view === 'bosses' && deferredBoss
+    () => view === 'bosses' && selectedBoss
       ? buildNativeMaxRoleCandidates({
-          bossVariant: deferredBoss,
+          bossVariant: selectedBoss,
           catalog,
           instances,
-          scope: deferredScope,
+          scope: effectiveScope,
         })
       : EMPTY_MAX_ROLE_CANDIDATES,
-    [catalog, deferredBoss, deferredScope, instances, view],
+    [catalog, effectiveScope, instances, selectedBoss, view],
   );
   const rankings = useMemo(() => {
     const normalized = deferredQuery.trim().toLocaleLowerCase();
     const entries = buildNativeMaxRankings({
-      bossVariant: view === 'bosses' ? deferredBoss : null,
+      bossVariant: view === 'bosses' ? selectedBoss : null,
       catalog,
       instances,
-      role: deferredRole,
-      scope: deferredScope,
-      selectedType: view === 'rankings' ? deferredSelectedType : '',
+      role,
+      scope: effectiveScope,
+      selectedType: view === 'rankings' ? selectedType : '',
     });
     return entries.filter((entry) => !normalized || [
       entry.name,
       entry.fastMove?.name,
       entry.chargedMove?.name,
+      entry.maxRanking?.maxMoveName,
+      entry.maxRanking?.maxMoveType,
       ...entry.types,
     ].some((value) => value?.toLocaleLowerCase().includes(normalized)));
-  }, [catalog, deferredBoss, deferredQuery, deferredRole, deferredScope, deferredSelectedType, instances, view]);
+  }, [catalog, deferredQuery, effectiveScope, instances, role, selectedBoss, selectedType, view]);
   const paginationKey = [bossId, query, role, effectiveScope, selectedType, view].join('\u0000');
+  const initialVisibleLimit = view === 'bosses'
+    ? MAX_BOSS_RESULTS_INITIAL_SIZE
+    : MAX_RESULTS_PAGE_SIZE;
+  const resultsPageSize = view === 'bosses'
+    ? MAX_BOSS_RESULTS_PAGE_SIZE
+    : MAX_RESULTS_PAGE_SIZE;
   const visibleLimit = pagination.key === paginationKey
     ? pagination.limit
-    : MAX_RESULTS_PAGE_SIZE;
+    : initialVisibleLimit;
   const visibleRankings = useMemo(
     () => rankings.slice(0, visibleLimit),
     [rankings, visibleLimit],
   );
+  const bossSuggestions = useMemo(() => {
+    const normalized = deferredBossQuery.trim().toLocaleLowerCase();
+    if (!normalized) return [];
+    return bossVariants.filter((boss) => (
+      `${boss.name} ${boss.pokedex_number}`.toLocaleLowerCase().includes(normalized)
+    )).slice(0, 8);
+  }, [bossVariants, deferredBossQuery]);
 
-  const switchView = (next: MaxView) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const scopes: NativeRosterScope[] = signedIn ? ['owned', 'catalog'] : ['catalog'];
+      scopes.forEach((scope) => {
+        (['damage', 'tank', 'healing'] as NativeMaxRole[]).forEach((nextRole) => {
+          buildNativeMaxRankings({
+            catalog,
+            instances,
+            role: nextRole,
+            scope,
+          });
+        });
+        if (selectedBoss) {
+          buildNativeMaxRoleCandidates({
+            bossVariant: selectedBoss,
+            catalog,
+            instances,
+            scope,
+          });
+        }
+      });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [catalog, instances, selectedBoss, signedIn]);
+
+  useEffect(() => {
+    if (bossSuggestions.length === 0) return undefined;
+    const timer = setTimeout(() => {
+      bossSuggestions.forEach((boss) => {
+        buildNativeMaxRoleCandidates({
+          bossVariant: boss,
+          catalog,
+          instances,
+          scope: effectiveScope,
+        });
+      });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [bossSuggestions, catalog, effectiveScope, instances]);
+
+  useEffect(() => finishPerformance('max_view_result_painted'), [candidates, finishPerformance, rankings.length, view]);
+  useEffect(() => finishPerformance('max_scope_result_painted'), [effectiveScope, finishPerformance, rankings.length]);
+  useEffect(() => finishPerformance('max_role_result_painted'), [finishPerformance, rankings.length, role]);
+  useEffect(() => finishPerformance('max_type_result_painted'), [finishPerformance, rankings.length, selectedType]);
+  useEffect(() => {
+    if (query === deferredQuery) finishPerformance('max_query_result_painted');
+  }, [deferredQuery, finishPerformance, query, rankings.length]);
+  useEffect(() => {
+    if (bossQuery === deferredBossQuery) finishPerformance('max_boss_query_result_painted');
+  }, [bossQuery, bossSuggestions.length, deferredBossQuery, finishPerformance]);
+  useEffect(() => finishPerformance('max_boss_result_painted'), [candidates, finishPerformance, selectedBoss?.variant_id]);
+  useEffect(() => finishPerformance('max_more_result_painted'), [finishPerformance, visibleLimit]);
+  useEffect(() => finishPerformance('max_method_result_painted'), [finishPerformance, methodOpen]);
+
+  const switchView = useCallback((next: MaxView) => {
+    if (next === view) return;
+    beginPerformance('max_view_result_painted');
     setView(next);
     setQuery('');
+    onRouteStateChange?.({ view: next });
+  }, [beginPerformance, onRouteStateChange, view]);
+  const changeScope = useCallback((next: NativeRosterScope) => {
+    if (next === effectiveScope) return;
+    beginPerformance('max_scope_result_painted');
+    setScope(next);
+    onRouteStateChange?.({ scope: next });
+  }, [beginPerformance, effectiveScope, onRouteStateChange]);
+  const changeRole = (next: NativeMaxRole) => {
+    if (next === role) return;
+    beginPerformance('max_role_result_painted');
+    setRole(next);
+    onRouteStateChange?.({ role: next });
+  };
+  const changeType = useCallback((next: string) => {
+    if (next === selectedType) return;
+    beginPerformance('max_type_result_painted');
+    setSelectedType(next);
+    onRouteStateChange?.({ selectedType: next });
+  }, [beginPerformance, onRouteStateChange, selectedType]);
+  const changeQuery = (next: string) => {
+    beginPerformance('max_query_result_painted');
+    setQuery(next);
+  };
+  const changeBossQuery = (next: string) => {
+    beginPerformance('max_boss_query_result_painted');
+    setBossQuery(next);
+  };
+  const selectBoss = (nextBossId: string) => {
+    if (nextBossId === selectedBoss?.variant_id) {
+      setBossQuery('');
+      return;
+    }
+    beginPerformance('max_boss_result_painted');
+    setBossId(nextBossId);
+    setBossQuery('');
+    onRouteStateChange?.({ bossId: nextBossId, difficulty: null, trainerCount: null });
   };
 
-  const productHeader = (
+  const productHeader = useMemo(() => (
     <View style={styles.productHeader}>
-      <Image fadeDuration={0}
+      <ExpoImage
         accessibilityElementsHidden
-        resizeMode="contain"
+        cachePolicy="memory-disk"
+        contentFit="contain"
         source={{ uri: absoluteUri(assetBaseUrl, '/images/dynamax.png') }}
         style={styles.productIcon}
+        transition={0}
       />
       <View style={styles.headerCopy}>
         <Text style={[styles.eyebrow, light && styles.accentLight]}>POWER SPOT STRATEGY</Text>
@@ -180,9 +347,9 @@ export const NativeMaxScreen = ({
       </View>
       <Text style={[styles.countPill, light && styles.countPillLight]}>{bossVariants.length} Max-ready Pokémon</Text>
     </View>
-  );
+  ), [assetBaseUrl, bossVariants.length, light]);
 
-  const viewTabs = (
+  const viewTabs = useMemo(() => (
     <View accessibilityRole="tablist" style={[styles.viewTabs, light && styles.panelLight]}>
       {([['rankings', 'Max rankings'], ['bosses', 'Boss teams']] as const).map(([value, label]) => (
         <Pressable
@@ -198,9 +365,9 @@ export const NativeMaxScreen = ({
         </Pressable>
       ))}
     </View>
-  );
+  ), [light, switchView, view]);
 
-  const roster = (
+  const roster = useMemo(() => (
     <View accessibilityLabel="Max Battle roster" style={[styles.roster, light && styles.panelLight]}>
       {([['catalog', 'ALL POKÉMON'], ['owned', `MY POKÉMON${effectiveScope === 'owned' ? `   ${isLoading ? '…' : rosterSummary.eligibleCount}` : ''}`]] as const).map(([value, label]) => (
         <Pressable
@@ -208,7 +375,7 @@ export const NativeMaxScreen = ({
           accessibilityState={{ disabled: value === 'owned' && !signedIn, selected: effectiveScope === value }}
           disabled={value === 'owned' && !signedIn}
           key={value}
-          onPress={() => setScope(value)}
+          onPress={() => changeScope(value)}
           style={[
             styles.rosterButton,
             light && styles.controlLight,
@@ -235,7 +402,7 @@ export const NativeMaxScreen = ({
         </Text>
       ) : null}
     </View>
-  );
+  ), [changeScope, effectiveScope, isLoading, light, rosterSummary, signedIn]);
 
   const roleTabs = (
     <View accessibilityLabel="Max Battle role" style={styles.roleTabs}>
@@ -244,7 +411,7 @@ export const NativeMaxScreen = ({
           accessibilityRole="button"
           accessibilityState={{ selected: role === value }}
           key={value}
-          onPress={() => setRole(value)}
+          onPress={() => changeRole(value)}
           style={[styles.roleButton, light && styles.controlLight, role === value && styles.roleActive]}
         >
           <NativeUiIcon
@@ -258,62 +425,84 @@ export const NativeMaxScreen = ({
     </View>
   );
 
+  const typeFilterLabel = role === 'damage' ? 'Max Move type' : 'Incoming attack type';
   const typeFilter = view === 'rankings' ? (
-    <View accessibilityLabel="Max Move type" style={[styles.typeDeck, light && styles.panelLight]}>
-      <Text style={[styles.fieldLabel, light && styles.mutedLight]}>MAX MOVE TYPE</Text>
+    <View accessibilityLabel={typeFilterLabel} style={[styles.typeDeck, light && styles.panelLight]}>
+      <Text style={[styles.fieldLabel, light && styles.mutedLight]}>
+        {role === 'damage' ? 'MAX MOVE TYPE' : 'INCOMING ATTACK TYPE'}
+      </Text>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ selected: selectedType === '' }}
-        onPress={() => setSelectedType('')}
+        onPress={() => changeType('')}
         style={[styles.allTypes, selectedType === '' && styles.allTypesActive]}
       >
         <Text style={styles.allTypesText}>All types</Text>
       </Pressable>
-      <View style={styles.typeGrid}>
-        {NATIVE_BATTLE_TYPES.map((type) => {
-          const selected = selectedType === type;
-          return (
-            <Pressable
-              accessibilityLabel={type}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              key={type}
-              onPress={() => setSelectedType(type)}
-              style={[styles.typeButton, light && styles.typeButtonLight, selected && styles.typeActive]}
-            >
-              <Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, `/images/types/${type}.png`) }} style={styles.typeIcon} />
-            </Pressable>
-          );
-        })}
-      </View>
+      <NativeMaxTypeGrid
+        assetBaseUrl={assetBaseUrl}
+        light={light}
+        onSelect={changeType}
+        selectedType={selectedType}
+      />
     </View>
   ) : null;
 
-  const bossPicker = view === 'bosses' ? (
-    <View style={[styles.bossPicker, light && styles.panelLight]}>
-      <Text style={[styles.fieldLabel, light && styles.mutedLight]}>MAX BOSS</Text>
-      <ScrollView contentContainerStyle={styles.bossRail} horizontal showsHorizontalScrollIndicator={false}>
-        {bossVariants.slice(0, 100).map((boss) => {
-          const selected = selectedBoss?.variant_id === boss.variant_id;
-          const maxKind = boss.variantType.includes('gigantamax') ? 'gigantamax' : 'dynamax';
-          return (
-            <Pressable
-              accessibilityLabel={`Select ${boss.name} Max boss`}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              key={boss.variant_id}
-              onPress={() => setBossId(boss.variant_id)}
-              style={[styles.bossCard, light && styles.cardLight, selected && styles.bossActive]}
-            >
-              <View style={styles.bossStage}>
-                <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, boss.currentImage || boss.image_url) }} style={styles.bossImage} />
-                <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, `/images/${maxKind}.png`) }} style={styles.maxIcon} />
-              </View>
-              <Text numberOfLines={2} style={[styles.bossName, light && styles.textLight, selected && styles.activeText]}>{boss.name}</Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+  const bossPicker = view === 'bosses' && selectedBoss ? (
+    <View accessibilityLabel="Max Battle boss" style={[styles.bossPicker, light && styles.panelLight]}>
+      <View style={styles.selectedBoss}>
+        <View style={[styles.selectedBossStage, light && styles.cardLight]}>
+          <ExpoImage
+            cachePolicy="memory-disk"
+            contentFit="contain"
+            source={{ uri: absoluteUri(assetBaseUrl, selectedBoss.currentImage || selectedBoss.image_url) }}
+            style={styles.selectedBossImage}
+            transition={0}
+          />
+        </View>
+        <View style={styles.selectedBossCopy}>
+          <Text style={[styles.fieldLabel, light && styles.accentLight]}>MAX BATTLE BOSS</Text>
+          <Text style={[styles.selectedBossName, light && styles.textLight]}>{selectedBoss.name}</Text>
+          <Text style={[styles.selectedBossTypes, light && styles.mutedLight]}>
+            {[selectedBoss.type1_name, selectedBoss.type2_name].filter(Boolean).join(' / ')}
+          </Text>
+        </View>
+      </View>
+      <TextInput
+        accessibilityLabel="Search Max Battle bosses"
+        onChangeText={changeBossQuery}
+        onSubmitEditing={() => { if (bossSuggestions[0]) selectBoss(bossSuggestions[0].variant_id); }}
+        placeholder="Search Max Battle bosses"
+        placeholderTextColor={light ? '#718283' : '#829394'}
+        returnKeyType="search"
+        style={[styles.search, styles.bossSearch, light && styles.inputLight]}
+        value={bossQuery}
+      />
+      {deferredBossQuery.trim() ? (
+        <View accessibilityLabel="Boss results" style={styles.bossResults}>
+          {bossSuggestions.length ? bossSuggestions.map((boss) => {
+            const maxKind = boss.variantType.includes('gigantamax') ? 'gigantamax' : 'dynamax';
+            return (
+              <Pressable
+                accessibilityLabel={`Select ${boss.name} Max boss`}
+                accessibilityRole="button"
+                key={boss.variant_id}
+                onPress={() => selectBoss(boss.variant_id)}
+                style={[styles.bossResult, light && styles.cardLight]}
+              >
+                <View style={styles.bossResultStage}>
+                  <ExpoImage cachePolicy="memory-disk" contentFit="contain" source={{ uri: absoluteUri(assetBaseUrl, boss.currentImage || boss.image_url) }} style={styles.bossResultImage} transition={0} />
+                  <ExpoImage cachePolicy="memory-disk" contentFit="contain" source={{ uri: absoluteUri(assetBaseUrl, `/images/${maxKind}.png`) }} style={styles.bossResultMaxIcon} transition={0} />
+                </View>
+                <Text numberOfLines={2} style={[styles.bossResultName, light && styles.textLight]}>{boss.name}</Text>
+                <Text style={[styles.bossResultNumber, light && styles.mutedLight]}>#{String(boss.pokedex_number).padStart(4, '0')}</Text>
+              </Pressable>
+            );
+          }) : (
+            <Text style={[styles.stateCopy, light && styles.mutedLight]}>No matching Max boss found.</Text>
+          )}
+        </View>
+      ) : null}
     </View>
   ) : null;
 
@@ -331,15 +520,21 @@ export const NativeMaxScreen = ({
         <Text style={[styles.rankedPill, light && styles.rankedPillLight]}>{rankings.length} RANKED</Text>
       </View>
       <Text style={[styles.resultsTitle, light && styles.textLight]}>{heading}</Text>
-      <Text style={[styles.assumptions, light && styles.mutedLight]}>{assumptions}</Text>
-      <TextInput
-        accessibilityLabel="Search Max rankings"
-        onChangeText={setQuery}
-        placeholder="Pokémon or move"
-        placeholderTextColor={light ? '#718283' : '#829394'}
-        style={[styles.search, light && styles.inputLight]}
-        value={query}
-      />
+      <Text style={[styles.assumptions, light && styles.mutedLight]}>
+        {view === 'bosses'
+          ? 'Compare replacements for the selected role in your three-Pokémon party.'
+          : assumptions}
+      </Text>
+      {view === 'rankings' ? (
+        <TextInput
+          accessibilityLabel="Search Max rankings"
+          onChangeText={changeQuery}
+          placeholder="Pokémon or move"
+          placeholderTextColor={light ? '#718283' : '#829394'}
+          style={[styles.search, light && styles.inputLight]}
+          value={query}
+        />
+      ) : null}
       {isLoading ? (
         <View style={styles.state}>
           <ActivityIndicator color="#42d6c8" />
@@ -362,6 +557,21 @@ export const NativeMaxScreen = ({
     </View>
   );
 
+  const bossBenchmarkNote = view === 'bosses' && selectedBoss ? (
+    <View accessibilityLabel="Boss ranking method" style={[styles.benchmark, light && styles.panelLight]}>
+      <Text style={[styles.benchmarkTitle, light && styles.textLight]}>Standardized matchup</Text>
+      <Text style={[styles.benchmarkCopy, light && styles.mutedLight]}>
+        {effectiveScope === 'owned'
+          ? 'Recorded level, IVs, Fast Move, and unlocked Max Move levels'
+          : 'Level 50 · 15/15/15 IVs · level-3 Max moves'}
+        {' · '}
+        {rankings[0]?.maxRanking?.bossBenchmark?.pressureSource === 'legal-movesets'
+          ? 'expected pressure across legal boss movesets'
+          : 'typed benchmark pressure when boss moves are unavailable'}
+      </Text>
+    </View>
+  ) : null;
+
   const header = (
     <View style={styles.headerStack}>
       {productHeader}
@@ -369,7 +579,7 @@ export const NativeMaxScreen = ({
       {roster}
       {view === 'rankings'
         ? <>{roleTabs}{typeFilter}</>
-        : <>{bossPicker}{deferredBoss ? <NativeMaxBattleSimulator assetBaseUrl={assetBaseUrl} boss={deferredBoss} candidates={candidates} initialDifficulty={initialDifficulty} initialTrainerCount={initialTrainerCount} key={`${deferredBoss.variant_id}-${deferredScope}`} rosterScope={deferredScope} /> : null}{roleTabs}</>}
+        : <>{bossPicker}{selectedBoss ? <NativeMaxBattleSimulator assetBaseUrl={assetBaseUrl} boss={selectedBoss} candidates={candidates} initialDifficulty={initialDifficulty} initialTrainerCount={initialTrainerCount} key={`${selectedBoss.variant_id}-${effectiveScope}`} onDifficultyChange={(difficulty) => onRouteStateChange?.({ difficulty: difficulty === getDefaultMaxBattleTier(selectedBoss) ? null : difficulty })} onTrainerCountChange={(trainerCount) => onRouteStateChange?.({ trainerCount })} rosterScope={effectiveScope} /> : null}{roleTabs}{bossBenchmarkNote}</>}
       {resultsHeader}
     </View>
   );
@@ -379,23 +589,29 @@ export const NativeMaxScreen = ({
     <View style={styles.footer}>
       {remainingRankings > 0 ? (
         <Pressable
-          accessibilityLabel={`Show ${Math.min(MAX_RESULTS_PAGE_SIZE, remainingRankings)} more Max rankings`}
+          accessibilityLabel={`Show ${Math.min(resultsPageSize, remainingRankings)} more Max rankings`}
           accessibilityRole="button"
-          onPress={() => setPagination({
-            key: paginationKey,
-            limit: Math.min(rankings.length, visibleLimit + MAX_RESULTS_PAGE_SIZE),
-          })}
+          onPress={() => {
+            beginPerformance('max_more_result_painted');
+            setPagination({
+              key: paginationKey,
+              limit: Math.min(rankings.length, visibleLimit + resultsPageSize),
+            });
+          }}
           style={[styles.showMore, light && styles.controlLight]}
         >
           <Text style={[styles.showMoreText, light && styles.textLight]}>
-            Show {Math.min(MAX_RESULTS_PAGE_SIZE, remainingRankings)} more
+            Show {Math.min(resultsPageSize, remainingRankings)} more
           </Text>
         </Pressable>
       ) : null}
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: methodOpen }}
-        onPress={() => setMethodOpen((current) => !current)}
+        onPress={() => {
+          beginPerformance('max_method_result_painted');
+          setMethodOpen((current) => !current);
+        }}
         style={styles.method}
       >
         <Text style={[styles.methodTitle, light && styles.textLight]}>▸  How Max roles are ranked</Text>
@@ -413,9 +629,13 @@ export const NativeMaxScreen = ({
       <FlatList
         contentContainerStyle={{ paddingHorizontal: 7, paddingTop: 3 + insets.top, paddingBottom: 96 + insets.bottom }}
         data={visibleRankings}
-        keyExtractor={(entry) => entry.id}
+        initialNumToRender={2}
+        keyExtractor={(_entry, index) => String(index)}
         keyboardShouldPersistTaps="always"
+        maxToRenderPerBatch={2}
         nestedScrollEnabled
+        removeClippedSubviews
+        updateCellsBatchingPeriod={100}
         ListFooterComponent={footer}
         ListHeaderComponent={header}
         ListEmptyComponent={null}
@@ -428,6 +648,7 @@ export const NativeMaxScreen = ({
             rank={index + 1}
           />
         )}
+        windowSize={1}
       />
     </View>
   );
@@ -437,6 +658,9 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#090d0d' },
   rootLight: { backgroundColor: '#f8fff9' },
   footer: { gap: 9 },
+  benchmark: { gap: 3, borderWidth: 1, borderColor: '#365052', borderRadius: 10, padding: 10, backgroundColor: '#10191a' },
+  benchmarkTitle: { color: '#eef7f6', fontSize: 10, fontWeight: '900' },
+  benchmarkCopy: { color: '#9aacaa', fontSize: 8.5, lineHeight: 12 },
   showMore: { minHeight: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#405354', borderRadius: 12, backgroundColor: '#11191a' },
   showMoreText: { color: '#edf6f5', fontSize: 11, fontWeight: '900', textTransform: 'uppercase' },
   textLight: { color: '#102829' },
@@ -484,14 +708,21 @@ const styles = StyleSheet.create({
   typeButtonLight: { borderColor: '#aabcbc', backgroundColor: '#fff' },
   typeActive: { borderColor: '#f1d46f', backgroundColor: '#4a4224' },
   typeIcon: { width: '72%', height: '72%', resizeMode: 'contain' },
-  bossPicker: { gap: 7, borderWidth: 1, borderColor: '#315253', borderRadius: 9, padding: 9, backgroundColor: '#0f1819' },
-  bossRail: { gap: 7, paddingRight: 8 },
-  bossCard: { width: 102, minHeight: 119, alignItems: 'center', borderWidth: 1, borderColor: '#344a4b', borderRadius: 8, padding: 6, backgroundColor: '#111b1c' },
-  bossActive: { borderColor: '#43d7ca', backgroundColor: '#1c5a56' },
-  bossStage: { width: 70, height: 70, alignItems: 'center', justifyContent: 'center' },
-  bossImage: { width: '92%', height: '92%' },
-  maxIcon: { position: 'absolute', right: 0, top: 0, width: 22, height: 22 },
-  bossName: { minHeight: 30, color: '#eef6f5', fontSize: 9, lineHeight: 12, fontWeight: '900', textAlign: 'center' },
+  bossPicker: { gap: 8, borderWidth: 1, borderColor: '#315253', borderRadius: 9, padding: 9, backgroundColor: '#0f1819' },
+  selectedBoss: { minHeight: 88, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  selectedBossStage: { width: 82, height: 82, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#344a4b', borderRadius: 8, backgroundColor: '#111b1c' },
+  selectedBossImage: { width: 76, height: 76 },
+  selectedBossCopy: { minWidth: 0, flex: 1 },
+  selectedBossName: { marginTop: 3, color: '#eef6f5', fontSize: 18, lineHeight: 22, fontWeight: '900' },
+  selectedBossTypes: { marginTop: 3, color: '#9bb0af', fontSize: 10, textTransform: 'capitalize' },
+  bossSearch: { marginTop: 0 },
+  bossResults: { gap: 5, borderTopWidth: 1, borderTopColor: '#315253', paddingTop: 8 },
+  bossResult: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#344a4b', borderRadius: 8, paddingHorizontal: 8, backgroundColor: '#111b1c' },
+  bossResultStage: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  bossResultImage: { width: 42, height: 42 },
+  bossResultMaxIcon: { position: 'absolute', right: 0, top: 0, width: 15, height: 15 },
+  bossResultName: { minWidth: 0, flex: 1, color: '#eef6f5', fontSize: 11, lineHeight: 14, fontWeight: '900' },
+  bossResultNumber: { color: '#9bb0af', fontSize: 9, fontWeight: '800' },
   resultsPanel: { gap: 4, marginTop: 2, borderWidth: 1, borderColor: '#315253', borderRadius: 8, padding: 12, backgroundColor: '#0e1718' },
   resultsContext: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   rankedPill: { borderWidth: 1, borderColor: '#3b5c5d', borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2, color: '#a9c2c1', fontSize: 6.5, fontWeight: '900' },

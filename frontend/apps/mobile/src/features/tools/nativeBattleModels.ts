@@ -92,6 +92,13 @@ const nativeMaxRosterCache = new WeakMap<
   PokemonVariant[],
   WeakMap<Record<string, PokemonInstance>, MaxRosterSummary>
 >();
+
+const nativeMaxCatalogCache = new WeakMap<PokemonVariant[], PokemonVariant[]>();
+const nativeMaxRankingCache = new WeakMap<
+  PokemonVariant[],
+  Map<string, MaxRankingEntry[]>
+>();
+const nativeMaxCombatEntryCache = new WeakMap<MaxRankingEntry[], NativeCombatEntry[]>();
 const nativeMaxRoster = (
   variants: PokemonVariant[],
   instances: Record<string, PokemonInstance>,
@@ -488,8 +495,16 @@ export const buildNativeRaidBosses = (catalog: BasePokemon[]): NativeRaidBossEnt
 
 export type NativeMaxRole = 'damage' | 'tank' | 'healing';
 
+const nativeMaxCatalog = (variants: PokemonVariant[]): PokemonVariant[] => {
+  const cached = nativeMaxCatalogCache.get(variants);
+  if (cached) return cached;
+  const maxCatalog = getMaxBattleCatalog(variants);
+  nativeMaxCatalogCache.set(variants, maxCatalog);
+  return maxCatalog;
+};
+
 export const buildNativeMaxVariants = (catalog: BasePokemon[]): PokemonVariant[] =>
-  getMaxBattleCatalog(nativeCatalogVariants(catalog));
+  nativeMaxCatalog(nativeCatalogVariants(catalog));
 
 export const buildNativeMaxRosterSummary = (
   catalog: BasePokemon[],
@@ -528,12 +543,20 @@ export const buildNativeMaxCanonicalRankings = ({
   const variants = nativeCatalogVariants(catalog);
   const rankingVariants = scope === 'owned'
     ? nativeMaxRoster(variants, instances).pokemon
-    : getMaxBattleCatalog(variants);
-  return rankMaxBattlePokemon(rankingVariants, {
-    boss: bossVariant ?? buildNativeMaxBossVariant(boss),
+    : nativeMaxCatalog(variants);
+  const resolvedBoss = bossVariant ?? buildNativeMaxBossVariant(boss);
+  const cacheKey = [resolvedBoss?.variant_id ?? '', role, selectedType].join('\u0000');
+  const bySettings = nativeMaxRankingCache.get(rankingVariants) ?? new Map<string, MaxRankingEntry[]>();
+  const cached = bySettings.get(cacheKey);
+  if (cached) return cached;
+  const rankings = rankMaxBattlePokemon(rankingVariants, {
+    boss: resolvedBoss,
     role: role as MaxRole,
     selectedType,
   });
+  bySettings.set(cacheKey, rankings);
+  nativeMaxRankingCache.set(rankingVariants, bySettings);
+  return rankings;
 };
 
 export const buildNativeMaxRoleCandidates = (
@@ -546,7 +569,11 @@ export const buildNativeMaxRoleCandidates = (
 
 export const buildNativeMaxRankings = (
   options: NativeMaxRankingOptions,
-): NativeCombatEntry[] => buildNativeMaxCanonicalRankings(options).map((entry) => ({
+): NativeCombatEntry[] => {
+  const rankings = buildNativeMaxCanonicalRankings(options);
+  const cached = nativeMaxCombatEntryCache.get(rankings);
+  if (cached) return cached;
+  const entries = rankings.map((entry) => ({
     chargedMove: entry.chargedMove,
     cp: entry.cp,
     dps: entry.bossBenchmark?.maxHitDamage ?? entry.attackIndex,
@@ -569,3 +596,6 @@ export const buildNativeMaxRankings = (
       .map((type) => type.toLocaleLowerCase()),
     variantId: entry.variant.variant_id,
   }));
+  nativeMaxCombatEntryCache.set(rankings, entries);
+  return entries;
+};
