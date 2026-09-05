@@ -28,10 +28,26 @@ tags:
 - assertVisible: Done
 - assertVisible: Closed
 - assertVisible: Needs your response
-- assertVisible: YOU OFFER
-- assertVisible: OTHERTRAINER OFFERS
+- assertVisible: FOR TRADE
+- assertVisible: OFFERED
+- assertVisible: AdamZilla
+- assertVisible: OtherTrainer
 - assertVisible: Gigantamax Charizard
 - assertVisible: Shiny Mewtwo
+- tapOn:
+    id: trade-pokemon-details-mine-incoming
+- assertVisible: Hide Details
+- assertVisible: Fire Spin
+- assertVisible: Blast Burn
+- assertVisible: STAMINA
+- scrollUntilVisible:
+    element:
+      text: ".*Vancouver, BC.*"
+    direction: DOWN
+    speed: 70
+    visibilityPercentage: 100
+    timeout: 30000
+- assertVisible: ".*Vancouver, BC.*"
 - takeScreenshot: 01-incoming-remote-offer
 - tapOn:
     id: trade-filter-Proposed
@@ -77,13 +93,20 @@ tags:
 - tapOn:
     id: trade-action-coordinate-active
 - extendedWaitUntil:
-    visible: COORDINATE EXTERNALLY
+    visible: Coordinate the exchange
     timeout: 10000
-- assertVisible: "Pokémon GO name: OtherPogoName"
-- assertVisible: "Trainer code: 1234 5678 9012"
-- assertVisible: Pokémon Go Nexus does not include chat.*
+- assertVisible: Add trainer
+- assertVisible: Message externally
+- assertVisible: Trade in Pokémon GO
+- assertVisible: OtherPogoName
+- assertVisible: 1234 5678 9012
+- assertVisible: Open Campfire
 - takeScreenshot: 04-external-coordination
-- tapOn: Done
+- tapOn:
+    id: trade-copy-trainer-code
+- assertVisible: Copied
+- tapOn:
+    id: trade-partner-close
 - scrollUntilVisible:
     element:
       id: trade-filter-Accepting
@@ -152,9 +175,8 @@ tags:
 - assertVisible: Confirm the exchange happened?
 - tapOn: Confirm complete
 - extendedWaitUntil:
-    visible: Trade updated from the server response.
+    notVisible: Shiny Rayquaza
     timeout: 10000
-- assertNotVisible: Shiny Rayquaza
 - scrollUntilVisible:
     element:
       id: trade-filter-Completed
@@ -177,29 +199,9 @@ tags:
     timeout: 30000
 - tapOn:
     id: trade-action-satisfy-completed
-- assertVisible: Mark this trade as satisfying?
-- tapOn: Save feedback
 - extendedWaitUntil:
-    visible: Trade updated from the server response.
+    visible: Feedback saved
     timeout: 10000
-- assertNotVisible:
-    id: trade-action-satisfy-completed
-- scrollUntilVisible:
-    element:
-      id: trade-action-delete-completed-delete
-    direction: DOWN
-    speed: 70
-    visibilityPercentage: 100
-    centerElement: true
-    timeout: 30000
-- tapOn:
-    id: trade-action-delete-completed-delete
-- assertVisible: Remove this trade from history?
-- tapOn: Remove trade
-- extendedWaitUntil:
-    visible: Trade updated from the server response.
-    timeout: 10000
-- assertNotVisible: Shiny Lugia
 - scrollUntilVisible:
     element:
       id: trade-filter-Cancelled
@@ -225,23 +227,9 @@ tags:
 - assertVisible: Re-propose this trade?
 - tapOn: Re-propose
 - extendedWaitUntil:
-    visible: Trade updated from the server response.
+    notVisible: Shiny Dialga
     timeout: 10000
-- assertNotVisible: Shiny Dialga
-- scrollUntilVisible:
-    element:
-      id: trade-action-delete-closed-delete
-    direction: DOWN
-    speed: 70
-    visibilityPercentage: 100
-    centerElement: true
-    timeout: 30000
-- tapOn:
+- assertVisible: Shiny Lucario
+- assertNotVisible:
     id: trade-action-delete-closed-delete
-- assertVisible: Remove this trade from history?
-- tapOn: Remove trade
-- extendedWaitUntil:
-    visible: Trade updated from the server response.
-    timeout: 10000
-- assertNotVisible: Shiny Lucario
 - takeScreenshot: 05-complete-authoritative-lifecycle

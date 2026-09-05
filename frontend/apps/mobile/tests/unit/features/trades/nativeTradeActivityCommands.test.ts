@@ -11,7 +11,6 @@ const actions: NativeTradeActivityCommandAction[] = [
   'complete',
   'repropose',
   'satisfy',
-  'delete',
 ];
 
 describe('native trade activity commands', () => {

@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  useCallback,
   useDeferredValue,
   useEffect,
   useMemo,
@@ -36,6 +37,7 @@ import {
 } from '../features/trades/nativeTradePreferencesModel';
 import { useNativeModalAnimation } from '../features/settings/useNativeMotion';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
 
 export type NativeTradePreferenceDraft = {
   filters: TradePreferenceFilters;
@@ -222,6 +224,7 @@ const RuleGroup = ({
               selected && { borderColor: accent, backgroundColor: `${accent}22` },
               disabled && styles.disabled,
             ]}
+            testID={`trade-preference-rule-${key}`}
           >
             <Image fadeDuration={0}
               accessibilityElementsHidden
@@ -255,7 +258,6 @@ export const NativeTradePreferencesScreen = ({
   const { width } = useWindowDimensions();
   const light = useNativeColorScheme() === 'light';
   const insets = useSafeAreaInsets();
-  const slideAnimation = useNativeModalAnimation('slide');
   const fadeAnimation = useNativeModalAnimation('fade');
   const desktop = width >= 760;
   const initialEntry = entries[initialMode].find(
@@ -285,16 +287,24 @@ export const NativeTradePreferencesScreen = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   const pendingNavigation = useRef<null | (() => void)>(null);
+  const performanceStartsRef = useRef(new Map<string, number>());
+  const beginPerformance = useCallback((event: string) => {
+    performanceStartsRef.current.set(event, Date.now());
+  }, []);
+  const finishPerformance = useCallback((event: string) => {
+    const startedAt = performanceStartsRef.current.get(event);
+    if (startedAt == null) return;
+    performanceStartsRef.current.delete(event);
+    markNativeUiPerformanceAfterPaint(event, startedAt);
+  }, []);
   const currentEntries = entries[mode];
   const selectedEntry = currentEntries.find(
     (entry) => entry.collectionKey === selectedKeys[mode],
   ) ?? currentEntries[0] ?? null;
   const deferredFilters = useDeferredValue(filters);
-  const deferredManualExclusions = useDeferredValue(manualExclusions);
   const deferredMirror = useDeferredValue(mirror);
   const deferredQuery = useDeferredValue(query);
   const deferredSelectedEntry = useDeferredValue(selectedEntry);
-  const deferredShowAllowedOnly = useDeferredValue(showAllowedOnly);
   const colors = tone(mode, light);
 
   const resetDraft = (entry: NativeTradePreferenceEntry | null) => {
@@ -344,6 +354,7 @@ export const NativeTradePreferencesScreen = ({
 
   const requestChange = (change: () => void) => {
     if (editing && dirty) {
+      beginPerformance('trade_preferences_discard_dialog_painted');
       pendingNavigation.current = change;
       setDiscardOpen(true);
       return;
@@ -355,19 +366,19 @@ export const NativeTradePreferencesScreen = ({
     ? resolveNativeTradePreferenceDraftCandidates({
         entry: deferredSelectedEntry,
         filters: deferredFilters,
-        manuallyExcludedIds: deferredManualExclusions,
+        manuallyExcludedIds: manualExclusions,
         mirror: deferredMirror,
       })
-    : [], [deferredFilters, deferredManualExclusions, deferredMirror, deferredSelectedEntry]);
+    : [], [deferredFilters, deferredMirror, deferredSelectedEntry, manualExclusions]);
   const normalizedQuery = deferredQuery.trim().toLocaleLowerCase();
   const visibleCandidates = useMemo(() => draftCandidates.filter((candidate) => {
     if (!editing && !candidate.allowed) return false;
-    if (editing && deferredShowAllowedOnly && !candidate.allowed) return false;
+    if (editing && showAllowedOnly && !candidate.allowed) return false;
     if (!normalizedQuery) return true;
     return (candidate.displayName ?? candidate.row.name).toLocaleLowerCase().includes(normalizedQuery)
       || candidate.row.name.toLocaleLowerCase().includes(normalizedQuery)
       || String(candidate.row.pokedexNumber).includes(normalizedQuery);
-  }), [deferredShowAllowedOnly, draftCandidates, editing, normalizedQuery]);
+  }), [draftCandidates, editing, normalizedQuery, showAllowedOnly]);
   const allowedCount = useMemo(
     () => draftCandidates.filter((candidate) => candidate.allowed).length,
     [draftCandidates],
@@ -388,24 +399,44 @@ export const NativeTradePreferencesScreen = ({
   const gap = 8;
   const cardWidth = Math.max(92, (gridWidth - gap * (columns - 1)) / columns);
 
-  const chooseMode = (nextMode: NativeTradePreferenceMode) => requestChange(() => {
-    const nextEntry = entries[nextMode].find(
-      (entry) => entry.collectionKey === selectedKeys[nextMode],
-    ) ?? entries[nextMode][0] ?? null;
-    resetDraft(nextEntry);
-    setMode(nextMode);
-    setEditing(false);
-  });
-  const chooseEntry = (collectionKey: string) => requestChange(() => {
-    const nextEntry = currentEntries.find((entry) => entry.collectionKey === collectionKey) ?? null;
-    resetDraft(nextEntry);
-    setSelectedKeys((current) => ({ ...current, [mode]: collectionKey }));
-    setPickerOpen(false);
-    setEditing(false);
-  });
+  useEffect(() => finishPerformance('trade_preferences_mode_result_painted'), [finishPerformance, mode]);
+  useEffect(() => finishPerformance('trade_preferences_selection_result_painted'), [finishPerformance, selectedEntry]);
+  useEffect(() => finishPerformance('trade_preferences_edit_result_painted'), [editing, finishPerformance]);
+  useEffect(() => finishPerformance('trade_preferences_rules_result_painted'), [advancedOpen, finishPerformance]);
+  useEffect(() => finishPerformance('trade_preferences_rule_result_painted'), [filters, finishPerformance, mirror]);
+  useEffect(() => finishPerformance('trade_preferences_candidate_result_painted'), [finishPerformance, manualExclusions, showAllowedOnly, visibleCandidates]);
+  useEffect(() => {
+    if (query === deferredQuery) finishPerformance('trade_preferences_query_result_painted');
+  }, [deferredQuery, finishPerformance, query, visibleCandidates]);
+  useEffect(() => {
+    if (discardOpen) finishPerformance('trade_preferences_discard_dialog_painted');
+  }, [discardOpen, finishPerformance]);
+
+  const chooseMode = (nextMode: NativeTradePreferenceMode) => {
+    beginPerformance('trade_preferences_mode_result_painted');
+    requestChange(() => {
+      const nextEntry = entries[nextMode].find(
+        (entry) => entry.collectionKey === selectedKeys[nextMode],
+      ) ?? entries[nextMode][0] ?? null;
+      resetDraft(nextEntry);
+      setMode(nextMode);
+      setEditing(false);
+    });
+  };
+  const chooseEntry = (collectionKey: string) => {
+    beginPerformance('trade_preferences_selection_result_painted');
+    requestChange(() => {
+      const nextEntry = currentEntries.find((entry) => entry.collectionKey === collectionKey) ?? null;
+      resetDraft(nextEntry);
+      setSelectedKeys((current) => ({ ...current, [mode]: collectionKey }));
+      setPickerOpen(false);
+      setEditing(false);
+    });
+  };
 
   const saveDraft = async () => {
     if (!selectedEntry || saving) return;
+    beginPerformance('trade_preferences_save_result_painted');
     setSaving(true);
     setSaveError(null);
     setSaveSuccess(false);
@@ -421,6 +452,7 @@ export const NativeTradePreferencesScreen = ({
       setSaveError(caught instanceof Error ? caught.message : 'Could not save trade preferences.');
     } finally {
       setSaving(false);
+      finishPerformance('trade_preferences_save_result_painted');
     }
   };
 
@@ -467,7 +499,11 @@ export const NativeTradePreferencesScreen = ({
           entry={selectedEntry}
           light={light}
           mode={mode}
-          onPress={() => setPickerOpen(true)}
+          onPress={() => {
+            const startedAt = Date.now();
+            setPickerOpen(true);
+            markNativeUiPerformanceAfterPaint('trade_preferences_picker_painted', startedAt);
+          }}
           selected
         />
       ) : null}
@@ -494,6 +530,7 @@ export const NativeTradePreferencesScreen = ({
             <Pressable
               accessibilityRole="button"
               onPress={() => {
+                beginPerformance('trade_preferences_edit_result_painted');
                 setSaveSuccess(false);
                 setEditing(true);
               }}
@@ -519,12 +556,18 @@ export const NativeTradePreferencesScreen = ({
         </View>
       ) : null}
 
-      <View style={!desktop && !editing ? styles.mobileAdvancedRow : undefined}>
+      <View style={!desktop && !editing ? [
+        styles.mobileAdvancedRow,
+        advancedOpen && styles.mobileAdvancedRowExpanded,
+      ] : undefined}>
         <View style={[styles.advanced, !desktop && !editing && styles.mobileAdvanced, light && styles.surfaceLight]}>
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ expanded: advancedOpen }}
-            onPress={() => setAdvancedOpen((open) => !open)}
+            onPress={() => {
+              beginPerformance('trade_preferences_rules_result_painted');
+              setAdvancedOpen((open) => !open);
+            }}
             style={styles.advancedToggle}
           >
             <View>
@@ -543,7 +586,10 @@ export const NativeTradePreferencesScreen = ({
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: mirror, disabled: !editing }}
                 disabled={!editing}
-                onPress={() => setMirror((value) => !value)}
+                onPress={() => {
+                  beginPerformance('trade_preferences_rule_result_painted');
+                  setMirror((value) => !value);
+                }}
                 style={[
                   styles.mirrorRule,
                   light && styles.ruleOptionLight,
@@ -577,7 +623,10 @@ export const NativeTradePreferencesScreen = ({
                   filters={filters}
                   keys={requireKeys}
                   light={light}
-                  onToggle={(key) => setFilters((current) => ({ ...current, [key]: !current[key] }))}
+                  onToggle={(key) => {
+                    beginPerformance('trade_preferences_rule_result_painted');
+                    setFilters((current) => ({ ...current, [key]: !current[key] }));
+                  }}
                   title="Must match"
                 />
                 <RuleGroup
@@ -590,7 +639,10 @@ export const NativeTradePreferencesScreen = ({
                   filters={filters}
                   keys={excludeKeys}
                   light={light}
-                  onToggle={(key) => setFilters((current) => ({ ...current, [key]: !current[key] }))}
+                  onToggle={(key) => {
+                    beginPerformance('trade_preferences_rule_result_painted');
+                    setFilters((current) => ({ ...current, [key]: !current[key] }));
+                  }}
                   title="Leave out"
                 />
               </>
@@ -602,10 +654,16 @@ export const NativeTradePreferencesScreen = ({
           <Pressable
             accessibilityRole="button"
             onPress={() => {
+              beginPerformance('trade_preferences_edit_result_painted');
               setSaveSuccess(false);
               setEditing(true);
             }}
-            style={[styles.editButton, styles.mobileEditButton, { borderColor: colors.accent, backgroundColor: colors.soft }]}
+            style={[
+              styles.editButton,
+              styles.mobileEditButton,
+              advancedOpen && styles.mobileEditButtonExpanded,
+              { borderColor: colors.accent, backgroundColor: colors.soft },
+            ]}
             testID="trade-preferences-edit"
           >
             <Image fadeDuration={0}
@@ -648,7 +706,10 @@ export const NativeTradePreferencesScreen = ({
       <View style={styles.editTools}>
         <TextInput
           accessibilityLabel="Search preference Pokémon"
-          onChangeText={setQuery}
+          onChangeText={(value) => {
+            beginPerformance('trade_preferences_query_result_painted');
+            setQuery(value);
+          }}
           placeholder="Search Pokémon"
           placeholderTextColor={light ? '#718087' : '#809398'}
           style={[styles.search, light && styles.searchLight]}
@@ -657,23 +718,32 @@ export const NativeTradePreferencesScreen = ({
         {editing ? (
           <View style={styles.toolButtons}>
             <Pressable accessibilityRole="button"
-              onPress={() => setShowAllowedOnly((value) => !value)}
+              onPress={() => {
+                beginPerformance('trade_preferences_candidate_result_painted');
+                setShowAllowedOnly((value) => !value);
+              }}
               style={[styles.toolButton, showAllowedOnly && { borderColor: colors.accent }]}
             >
               <Text style={[styles.toolButtonText, light && styles.textLight]}>Allowed only</Text>
             </Pressable>
             <Pressable accessibilityRole="button"
-              onPress={() => setManualExclusions(new Set())}
+              onPress={() => {
+                beginPerformance('trade_preferences_candidate_result_painted');
+                setManualExclusions(new Set());
+              }}
               style={styles.toolButton}
             >
               <Text style={[styles.toolButtonText, light && styles.textLight]}>Allow all</Text>
             </Pressable>
             <Pressable accessibilityRole="button"
-              onPress={() => setManualExclusions(new Set(
-                draftCandidates.filter((candidate) => !candidate.excludedByRule).map(
-                  (candidate) => candidate.collectionKey,
-                ),
-              ))}
+              onPress={() => {
+                beginPerformance('trade_preferences_candidate_result_painted');
+                setManualExclusions(new Set(
+                  draftCandidates.filter((candidate) => !candidate.excludedByRule).map(
+                    (candidate) => candidate.collectionKey,
+                  ),
+                ));
+              }}
               style={styles.toolButton}
             >
               <Text style={[styles.toolButtonText, light && styles.textLight]}>Clear all</Text>
@@ -792,12 +862,15 @@ export const NativeTradePreferencesScreen = ({
           candidate={item}
           editing={editing}
           light={light}
-          onPress={() => setManualExclusions((current) => {
-            const next = new Set(current);
-            if (next.has(item.collectionKey)) next.delete(item.collectionKey);
-            else next.add(item.collectionKey);
-            return next;
-          })}
+          onPress={() => {
+            beginPerformance('trade_preferences_candidate_result_painted');
+            setManualExclusions((current) => {
+              const next = new Set(current);
+              if (next.has(item.collectionKey)) next.delete(item.collectionKey);
+              else next.add(item.collectionKey);
+              return next;
+            });
+          }}
           tone={mode}
           width={cardWidth}
         />
@@ -834,14 +907,14 @@ export const NativeTradePreferencesScreen = ({
       {desktop ? saveFeedback : null}
       {desktop ? editActions : null}
 
-      <Modal animationType={slideAnimation} onRequestClose={() => setPickerOpen(false)} visible={pickerOpen}>
+      <Modal animationType="none" onRequestClose={() => setPickerOpen(false)} visible={pickerOpen}>
         <SafeAreaView style={[styles.picker, light && styles.safeLight]}>
           <View style={[styles.pickerHeader, light && styles.pickerHeaderLight]}>
             <View>
               <Text style={[styles.eyebrow, { color: colors.accent }]}>SELECT A LISTING</Text>
               <Text style={[styles.pickerTitle, light && styles.textLight]}>{colors.label} Pokémon</Text>
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close listing picker" onPress={() => setPickerOpen(false)} style={styles.close}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close listing picker" onPress={() => setPickerOpen(false)} style={styles.close} testID="trade-preference-picker-close">
               <Text style={[styles.closeText, light && styles.textLight]}>×</Text>
             </Pressable>
           </View>
@@ -981,8 +1054,10 @@ const styles = StyleSheet.create({
   errorText: { color: '#f8dfe4', marginTop: 3, fontSize: 13 },
   advanced: { borderWidth: 1, borderColor: '#29494d', borderRadius: 12, backgroundColor: '#0e191b', overflow: 'hidden' },
   mobileAdvancedRow: { flexDirection: 'row', alignItems: 'stretch', gap: 8 },
+  mobileAdvancedRowExpanded: { flexDirection: 'column' },
   mobileAdvanced: { flex: 1, minWidth: 0 },
   mobileEditButton: { flexBasis: 148, maxWidth: 148 },
+  mobileEditButtonExpanded: { flexBasis: 'auto', maxWidth: '100%', width: '100%' },
   advancedToggle: { minHeight: 62, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   advancedLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   advancedValue: { color: '#f2f7f8', fontSize: 14, fontWeight: '800', marginTop: 2 },

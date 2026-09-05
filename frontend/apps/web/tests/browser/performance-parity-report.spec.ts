@@ -139,18 +139,92 @@ const performanceInstances = Object.fromEntries(
         '',
       ),
     };
-    if (index === 0) return [instanceId, { ...normalized, favorite: true }];
+    if (index === 0) return [instanceId, {
+      ...normalized,
+      favorite: true,
+      is_caught: true,
+      is_for_trade: true,
+      is_wanted: false,
+      mirror: false,
+      not_wanted_list: {},
+      wanted_filters: {},
+    }];
     if (index === 1) {
       return [instanceId, {
         ...normalized,
-        is_caught: false,
-        is_for_trade: false,
-        is_wanted: true,
+      is_caught: false,
+      is_for_trade: false,
+      is_wanted: true,
+      not_trade_list: {},
+      trade_filters: {},
+      }];
+    }
+    if (index === 2) {
+      return [instanceId, {
+        ...normalized,
+      is_caught: true,
+      is_for_trade: true,
+      is_wanted: false,
+      mirror: false,
+      not_wanted_list: {},
+      wanted_filters: {},
+      }];
+    }
+    if (index === 3) {
+      return [instanceId, {
+        ...normalized,
+      is_caught: false,
+      is_for_trade: false,
+      is_wanted: true,
+      not_trade_list: {},
+      trade_filters: {},
       }];
     }
     return [instanceId, normalized];
   }),
 );
+const performanceTradeInstanceIds = Object.keys(performanceInstances).slice(0, 4);
+const [
+  performanceIncomingMineId,
+  performanceIncomingPartnerId,
+  performanceActiveMineId,
+  performanceActivePartnerId,
+] = performanceTradeInstanceIds;
+const performanceTradeRelatedInstances = Object.fromEntries(
+  performanceTradeInstanceIds.map((instanceId) => [instanceId, {
+    ...performanceInstances[instanceId],
+    instance_id: instanceId,
+  }]),
+);
+const performanceTrades = {
+  'performance-incoming': {
+    trade_id: 'performance-incoming',
+    trade_status: 'proposed',
+    username_proposed: 'OtherTrainer',
+    username_accepting: signedInUser.username,
+    pokemon_instance_id_user_proposed: performanceIncomingPartnerId,
+    pokemon_instance_id_user_accepting: performanceIncomingMineId,
+    trade_friendship_level: 'Best',
+    trade_dust_cost: 800,
+    is_lucky_trade: false,
+    trade_proposal_date: '2026-08-24T10:00:00.000Z',
+    last_update: 1,
+  },
+  'performance-active': {
+    trade_id: 'performance-active',
+    trade_status: 'pending',
+    username_proposed: signedInUser.username,
+    username_accepting: 'OtherTrainer',
+    pokemon_instance_id_user_proposed: performanceActiveMineId,
+    pokemon_instance_id_user_accepting: performanceActivePartnerId,
+    trade_friendship_level: 'Forever',
+    trade_dust_cost: 40_000,
+    is_lucky_trade: true,
+    trade_proposal_date: '2026-08-23T10:00:00.000Z',
+    trade_accepted_date: '2026-08-23T11:00:00.000Z',
+    last_update: 1,
+  },
+};
 const performancePvpBaseEntries = pvpDataFixture.leagues.great.entries;
 const performancePvpGreatEntries = [
   ...performancePvpBaseEntries,
@@ -223,6 +297,10 @@ const performanceRouteOptions = {
     team: 'Mystic',
     trainer_level: 50,
   }],
+  trades: performanceTrades,
+  userOverview: {
+    related_instances: performanceTradeRelatedInstances,
+  },
   userInstances: {
     instances: performanceInstances,
     username: signedInUser.username,
@@ -305,7 +383,12 @@ const setAuthAndTheme = async (
 };
 
 const seedPerformanceInstances = async (context: BrowserContext) => {
-  const page = await context.newPage();
+  const reusablePhysicalPage = performanceProfile === 'physical-android'
+    && physicalAutomationPage
+    && !physicalAutomationPage.isClosed()
+    ? physicalAutomationPage
+    : null;
+  const page = reusablePhysicalPage ?? await context.newPage();
   await page.route('**/__performance-seed', (route) => route.fulfill({
     body: '<!doctype html><title>performance seed</title>',
     contentType: 'text/html',
@@ -313,33 +396,45 @@ const seedPerformanceInstances = async (context: BrowserContext) => {
   }));
   try {
     await page.goto(`${webBaseUrl}/__performance-seed`, { waitUntil: 'domcontentloaded' });
-    await page.evaluate((instances) => new Promise<void>((resolveSeed, rejectSeed) => {
-      const request = indexedDB.open('instancesDB', 5);
-      request.onerror = () => rejectSeed(request.error);
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains('instances')) {
-          db.createObjectStore('instances', { keyPath: 'instance_id' });
-        }
-      };
-      request.onsuccess = () => {
-        const db = request.result;
-        const transaction = db.transaction('instances', 'readwrite');
-        const store = transaction.objectStore('instances');
-        store.clear();
-        for (const instance of Object.values(instances)) store.put(instance);
-        transaction.oncomplete = () => {
-          db.close();
-          resolveSeed();
+    await page.evaluate(async (instances) => {
+      // Preference saves are durably queued in updatesDB. A physical Chrome
+      // profile survives between runs, so seeding only instancesDB can replay
+      // stale filters and silently change the measured workload.
+      await Promise.all(['instancesDB', 'updatesDB'].map((databaseName) => (
+        new Promise<void>((resolveDelete, rejectDelete) => {
+          const deletion = indexedDB.deleteDatabase(databaseName);
+          deletion.onsuccess = () => resolveDelete();
+          deletion.onerror = () => rejectDelete(deletion.error);
+          deletion.onblocked = () => rejectDelete(new Error(`Could not reset ${databaseName}`));
+        })
+      )));
+      await new Promise<void>((resolveSeed, rejectSeed) => {
+        const request = indexedDB.open('instancesDB', 5);
+        request.onerror = () => rejectSeed(request.error);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains('instances')) {
+            db.createObjectStore('instances', { keyPath: 'instance_id' });
+          }
         };
-        transaction.onerror = () => {
-          db.close();
-          rejectSeed(transaction.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction('instances', 'readwrite');
+          const store = transaction.objectStore('instances');
+          for (const instance of Object.values(instances)) store.put(instance);
+          transaction.oncomplete = () => {
+            db.close();
+            resolveSeed();
+          };
+          transaction.onerror = () => {
+            db.close();
+            rejectSeed(transaction.error);
+          };
         };
-      };
-    }), performanceInstances);
+      });
+    }, performanceInstances);
   } finally {
-    await page.close();
+    if (!reusablePhysicalPage) await page.close();
   }
 };
 
@@ -542,6 +637,10 @@ const collectSharedInteractions = async (
     await collectSearchInteractions(context, sampleIndex);
     return;
   }
+  if (workflowFilter === 'trades') {
+    await collectTradeInteractions(context, sampleIndex);
+    return;
+  }
   const home = await createMeasuredPage(context, 'signed-in', 'dark');
   try {
     await home.goto(`${webBaseUrl}/`, { waitUntil: 'domcontentloaded' });
@@ -666,6 +765,171 @@ const collectSharedInteractions = async (
   await collectRaidInteractions(context, sampleIndex);
   await collectPvpInteractions(context, sampleIndex);
   await collectSearchInteractions(context, sampleIndex);
+  await collectTradeInteractions(context, sampleIndex);
+};
+
+const collectTradeInteractions = async (
+  context: BrowserContext,
+  sampleIndex: number,
+) => {
+  const preferences = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    await preferences.goto(`${webBaseUrl}/trades`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(preferences);
+    await preferences.getByRole('heading', { name: 'Trade Preferences', exact: true })
+      .waitFor({ state: 'visible' });
+
+    const wantedMode = preferences.getByRole('button', { name: /^Wanted \(/ });
+    await activateMeasuredControl(wantedMode);
+    await expect(wantedMode).toHaveClass(/active/);
+    await recordInteraction(preferences, 'interaction.trades.preference-mode-result', sampleIndex * 2);
+    const tradeMode = preferences.getByRole('button', { name: /^For Trade \(/ });
+    await activateMeasuredControl(tradeMode);
+    await expect(tradeMode).toHaveClass(/active/);
+    await recordInteraction(preferences, 'interaction.trades.preference-mode-result', sampleIndex * 2 + 1);
+
+    const pickerButton = preferences.locator('.trade-target-mobile-picker');
+    await activateMeasuredControl(pickerButton);
+    const picker = preferences.locator('.trade-target-entry-list.is-open');
+    await picker.waitFor({ state: 'visible' });
+    await recordInteraction(preferences, 'interaction.trades.preference-picker', sampleIndex);
+    const nextEntry = picker.locator(':scope > button:not(.active)').first();
+    await activateMeasuredControl(nextEntry);
+    await picker.waitFor({ state: 'detached' });
+    await recordInteraction(preferences, 'interaction.trades.preference-selection-result', sampleIndex);
+
+    const edit = preferences.getByRole('button', { name: 'Edit preferences', exact: true });
+    await activateMeasuredControl(edit);
+    const save = preferences.getByRole('button', { name: /^Save changes/ });
+    await save.waitFor({ state: 'visible' });
+    await recordInteraction(preferences, 'interaction.trades.preference-edit-result', sampleIndex);
+
+    const candidateToggle = preferences.locator('.toggle-not-wanted').first();
+    const candidate = candidateToggle.locator('xpath=../..');
+    const candidateWasExcluded = await candidate.evaluate((element) => element.classList.contains('is-not-wanted'));
+    await activateMeasuredControl(candidateToggle);
+    await expect(candidate).toHaveClass(candidateWasExcluded ? /wanted-item(?!.*is-not-wanted)/ : /is-not-wanted/);
+    await recordInteraction(preferences, 'interaction.trades.preference-candidate-result', sampleIndex);
+
+    const candidateSearch = preferences.getByRole('searchbox', { name: 'Search Wanted Pokémon' });
+    await candidateSearch.fill('Bulba');
+    await preferences.locator('.wanted-item, .preference-candidate-empty').first().waitFor({ state: 'visible' });
+    await recordInteraction(preferences, 'interaction.trades.preference-query-result', sampleIndex);
+
+    const advanced = preferences.locator('.trade-preference-rules__toggle');
+    await activateMeasuredControl(advanced);
+    await preferences.getByRole('heading', { name: 'Must match', exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(preferences, 'interaction.trades.preference-rules-result', sampleIndex);
+    const firstRule = preferences.locator('.preference-rule-group--require button').first();
+    const ruleWasSelected = await firstRule.getAttribute('aria-pressed');
+    await activateMeasuredControl(firstRule);
+    await expect(firstRule).toHaveAttribute('aria-pressed', ruleWasSelected === 'true' ? 'false' : 'true');
+    await recordInteraction(preferences, 'interaction.trades.preference-rule-result', sampleIndex);
+    await captureWorkflowScreenshot(preferences, sampleIndex, 'trade-preferences-edit');
+
+    await activateMeasuredControl(save);
+    await preferences.getByRole('button', { name: /^(Saved|Edit preferences)$/ }).waitFor({ state: 'visible' });
+    await recordInteraction(preferences, 'interaction.trades.preference-save-result', sampleIndex);
+  } finally {
+    await closeMeasuredPage(preferences);
+  }
+
+  const discard = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    await discard.goto(`${webBaseUrl}/trades`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(discard);
+    await activateMeasuredControl(discard.getByRole('button', { name: 'Edit preferences', exact: true }));
+    const toggle = discard.locator('.toggle-not-wanted').first();
+    await activateMeasuredControl(toggle);
+    await activateMeasuredControl(discard.getByRole('button', { name: /^Wanted \(/ }));
+    await discard.getByRole('dialog', { name: 'Confirm action' }).waitFor({ state: 'visible' });
+    await recordInteraction(discard, 'interaction.trades.preference-discard-dialog', sampleIndex);
+  } finally {
+    await closeMeasuredPage(discard);
+  }
+
+  const activity = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    for (const pattern of [
+      '**/api/users/trades/performance-active/partner',
+      '**/__e2e/users/trades/performance-active/partner',
+    ]) {
+      await activity.route(pattern, (route) => route.fulfill({
+        body: JSON.stringify({
+          sharingEnabled: true,
+          trainerCode: '1234 5678 9012',
+          pokemonGoName: 'OtherPogoName',
+          coordinationMethod: 'campfire',
+          coordinationHandle: 'OtherTrainer',
+          location: 'Burnaby, British Columbia, Canada',
+        }),
+        contentType: 'application/json',
+        status: 200,
+      }));
+    }
+    for (const pattern of [
+      '**/api/users/trades/performance-incoming/accept',
+      '**/__e2e/users/trades/performance-incoming/accept',
+    ]) {
+      await activity.route(pattern, (route) => route.fulfill({
+        body: JSON.stringify({
+          trade: { ...performanceTrades['performance-incoming'], trade_status: 'pending', last_update: 2 },
+          affected_instances: {},
+        }),
+        contentType: 'application/json',
+        status: 200,
+      }));
+    }
+    await activity.goto(`${webBaseUrl}/trades?section=activity`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(activity);
+    await activity.getByRole('heading', { name: 'Your trades', exact: true }).waitFor({ state: 'visible' });
+
+    const activeStatus = activity.getByRole('button', { name: /^Active, / });
+    await activateMeasuredControl(activeStatus);
+    const activeCard = activity.locator('.trade-activity-card-shell.status-pending');
+    await activeCard.waitFor({ state: 'visible' });
+    await recordInteraction(activity, 'interaction.trades.activity-status-result', sampleIndex);
+
+    const details = activeCard.locator('.toggle-details-button').first();
+    await activateMeasuredControl(details);
+    await expect(details).toHaveText('Hide Details');
+    await recordInteraction(activity, 'interaction.trades.activity-details-result', sampleIndex);
+
+    await activateMeasuredControl(activeCard.getByRole('button', { name: 'Coordinate trade', exact: true }));
+    const partner = activity.getByRole('dialog', { name: 'Coordinate the exchange' });
+    await partner.waitFor({ state: 'visible' });
+    await recordInteraction(activity, 'interaction.trades.activity-partner-result', sampleIndex);
+    await captureWorkflowScreenshot(activity, sampleIndex, 'trade-activity-partner', partner);
+    await activateMeasuredControl(partner.getByRole('button', { name: 'Close trade coordination' }));
+
+    await activateMeasuredControl(activity.getByRole('button', { name: /^Needs response, / }));
+    const incomingCard = activity.locator('.trade-activity-card-shell.status-accepting');
+    await incomingCard.waitFor({ state: 'visible' });
+    await activateMeasuredControl(incomingCard.getByRole('button', { name: 'Accept offer', exact: true }));
+    const confirmation = activity.getByRole('dialog', { name: 'Confirm action' });
+    await confirmation.waitFor({ state: 'visible' });
+    await recordInteraction(activity, 'interaction.trades.activity-confirmation', sampleIndex);
+    await activateMeasuredControl(confirmation.getByRole('button', { name: 'OK', exact: true }));
+    await incomingCard.waitFor({ state: 'detached' });
+    await recordInteraction(activity, 'interaction.trades.activity-action-result', sampleIndex);
+    await captureWorkflowScreenshot(activity, sampleIndex, 'trade-activity-action');
+  } finally {
+    await closeMeasuredPage(activity);
+  }
+
+  const section = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    await section.goto(`${webBaseUrl}/trades`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(section);
+    await activateMeasuredControl(section.getByRole('tab', { name: 'Trade Activity', exact: true }));
+    const activePanel = section.locator(
+      '.horizontal-page-slider__panel:has(#trade-section-activity)',
+    );
+    await expect(activePanel).toHaveAttribute('data-active', 'true');
+    await recordInteraction(section, 'interaction.trades.section-result', sampleIndex);
+  } finally {
+    await closeMeasuredPage(section);
+  }
 };
 
 const collectSearchInteractions = async (

@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type {
   NativeTradePreferenceCandidate,
@@ -275,6 +276,21 @@ describe('NativeTradePreferencesScreen', () => {
       expect.objectContaining({ manuallyExcludedIds: [], mirror: false }),
     ));
     expect(getByText('Preferences saved.')).toBeTruthy();
+  });
+
+  it('keeps the mobile edit action on-screen after saving with advanced rules expanded', async () => {
+    const onSave = jest.fn().mockResolvedValue(undefined);
+    const { getByTestId, getByText } = renderScreen(onSave);
+
+    fireEvent.press(getByText('No additional rules'));
+    fireEvent.press(getByText('Edit preferences'));
+    fireEvent.press(getByTestId('preference-candidate-wanted-charizard'));
+    fireEvent.press(getByText('Save changes'));
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+    const editStyle = StyleSheet.flatten(getByTestId('trade-preferences-edit').props.style);
+    expect(editStyle.width).toBe('100%');
+    expect(editStyle.maxWidth).toBe('100%');
   });
 
   it('keeps advanced rules read-only until edit mode and includes the mirror rule', () => {

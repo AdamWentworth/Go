@@ -9,7 +9,6 @@ export type NativeTradeActivityCommandPorts = {
   accept: (tradeId: string) => Promise<unknown>;
   cancel: (tradeId: string) => Promise<unknown>;
   complete: (tradeId: string) => Promise<unknown>;
-  delete: (tradeId: string) => Promise<unknown>;
   deny: (tradeId: string) => Promise<unknown>;
   repropose: (tradeId: string) => Promise<unknown>;
   satisfy: (tradeId: string) => Promise<unknown>;

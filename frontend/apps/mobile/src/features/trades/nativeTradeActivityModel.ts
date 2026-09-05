@@ -10,21 +10,26 @@ export type NativeTradeActivityAction =
   | 'coordinate'
   | 'complete'
   | 'repropose'
-  | 'satisfy'
-  | 'delete';
+  | 'satisfy';
 
 export type NativeTradeActivityActionModel = {
   action: NativeTradeActivityAction;
+  disabled?: boolean;
   label: string;
+  selected?: boolean;
   tone: 'primary' | 'secondary' | 'destructive';
 };
 
 export type NativeTradeActivityModel = {
   actions: NativeTradeActivityActionModel[];
   activityFilter: TradeActivityFilter;
+  cancelledBy: string | null;
+  cancellationTimestamp: string | null;
+  completionTimestamp: string | null;
   currentUserConfirmed: boolean;
   currentUserInstanceId: string;
   currentUserSatisfaction: boolean | null;
+  currentUsername: string;
   description: string;
   displayTimestamp: string | null;
   friendshipLevel: 0 | 1 | 2 | 3 | 4 | 5;
@@ -80,20 +85,6 @@ const normalizeCost = (value: unknown): number | null => {
   return Number.isFinite(cost) && cost >= 0 ? cost : null;
 };
 
-const relevantTimestamp = (
-  trade: TradeRecord,
-  status: NativeTradeActivityModel['status'],
-): string | null => {
-  const candidates = status === 'completed'
-    ? [trade.trade_completed_date, trade.trade_accepted_date, trade.trade_proposal_date]
-    : status === 'cancelled' || status === 'denied'
-      ? [trade.trade_cancelled_date, trade.trade_proposal_date]
-      : status === 'pending'
-        ? [trade.trade_accepted_date, trade.trade_proposal_date]
-        : [trade.trade_proposal_date];
-  return candidates.map(normalizeString).find(Boolean) ?? null;
-};
-
 const activityActions = ({
   activityFilter,
   currentUserConfirmed,
@@ -113,23 +104,25 @@ const activityActions = ({
     case 'Pending':
       return [
         { action: 'coordinate', label: 'Coordinate trade', tone: 'secondary' },
-        ...(!currentUserConfirmed
-          ? [{ action: 'complete', label: 'Confirm complete', tone: 'primary' } as const]
-          : []),
-        { action: 'cancel', label: 'Cancel trade', tone: 'destructive' },
+        {
+          action: 'complete',
+          disabled: currentUserConfirmed,
+          label: currentUserConfirmed ? 'Awaiting Partner...' : 'Confirm Complete',
+          tone: 'primary',
+        },
+        { action: 'cancel', label: 'Cancel', tone: 'destructive' },
       ];
     case 'Completed':
       return [
-        ...(currentUserSatisfaction === true
-          ? []
-          : [{ action: 'satisfy', label: 'Mark as satisfying', tone: 'primary' } as const]),
-        { action: 'delete', label: 'Remove from history', tone: 'secondary' },
+        {
+          action: 'satisfy',
+          label: currentUserSatisfaction === true ? 'Feedback saved' : 'Mark as satisfying',
+          selected: currentUserSatisfaction === true,
+          tone: 'primary',
+        },
       ];
     case 'Cancelled':
-      return [
-        { action: 'repropose', label: 'Re-propose trade', tone: 'primary' },
-        { action: 'delete', label: 'Remove from history', tone: 'secondary' },
-      ];
+      return [{ action: 'repropose', label: 'Re-Propose Trade', tone: 'primary' }];
   }
 };
 
@@ -227,11 +220,18 @@ export const buildNativeTradeActivityModel = (
   const model: NativeTradeActivityModel = {
     actions: [],
     activityFilter,
+    cancelledBy: normalizeString(trade.trade_cancelled_by) || null,
+    cancellationTimestamp: normalizeString(trade.trade_cancelled_date) || null,
+    completionTimestamp: normalizeString(trade.trade_completed_date) || null,
     currentUserConfirmed,
     currentUserInstanceId,
     currentUserSatisfaction,
+    currentUsername: username,
     description: copy.description,
-    displayTimestamp: relevantTimestamp(trade, status),
+    // Vite's activity-card header consistently shows the proposal date. Status-
+    // specific timestamps remain part of the underlying trade record rather
+    // than silently replacing the header's meaning.
+    displayTimestamp: normalizeString(trade.trade_proposal_date) || null,
     friendshipLevel,
     isLuckyTrade: normalizeBoolean(trade.is_lucky_trade),
     isRemoteTrade: friendshipLevel === 5,

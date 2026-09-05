@@ -1,10 +1,35 @@
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import * as Clipboard from 'expo-clipboard';
+import { LayoutAnimation, StyleSheet } from 'react-native';
 import type { TradeRecord } from '@pokemongonexus/shared-contracts/trades';
 import type { NativeInstanceDetail } from '../../../src/features/collection/collectionModel';
 import { buildNativeTradeActivityModel } from '../../../src/features/trades/nativeTradeActivityModel';
 import type { NativeTradeActivityRow } from '../../../src/features/trades/nativeTradeActivityRows';
 import { NativeTradeActivityScreen } from '../../../src/screens/NativeTradeActivityScreen';
+
+jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(async () => true) }));
+jest.mock('../../../src/observability/nativeUiInteractionTiming', () => ({
+  markNativeUiPerformanceAfterPaint: jest.fn(),
+}));
+
+beforeAll(() => {
+  jest.spyOn(LayoutAnimation, 'configureNext').mockImplementation(() => undefined);
+});
+
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  act(() => {
+    jest.runOnlyPendingTimers();
+  });
+  jest.useRealTimers();
+});
+
+afterAll(() => {
+  jest.restoreAllMocks();
+});
 
 const detail = (id: string, name: string): NativeInstanceDetail => ({
   row: {
@@ -73,6 +98,7 @@ const renderScreen = ({
     coordinationMethod: 'campfire',
     coordinationHandle: 'OtherTrainer',
   }),
+  screenRows = rows,
 } = {}) => render(
   <NativeTradeActivityScreen
     assetBaseUrl="https://pokegonexus.com"
@@ -82,7 +108,7 @@ const renderScreen = ({
     onOpenPreferences={jest.fn()}
     onRetry={jest.fn()}
     onRevealPartner={onRevealPartner}
-    rows={rows}
+    rows={screenRows}
   />,
 );
 
@@ -102,14 +128,95 @@ describe('NativeTradeActivityScreen', () => {
     expect(listStyle.paddingBottom).toBeGreaterThanOrEqual(90);
   });
 
-  it('switches stages immediately and preserves mine-left/theirs-right labels', () => {
+  it('switches stages immediately and preserves Vite participant headings', () => {
     const { getByTestId, getByText, queryByTestId } = renderScreen();
 
     fireEvent.press(getByTestId('trade-filter-Proposed'));
     expect(queryByTestId('trade-card-incoming')).toBeNull();
     expect(queryByTestId('trade-card-sent')).toBeTruthy();
-    expect(getByText('YOU OFFER')).toBeTruthy();
-    expect(getByText('OTHERTRAINER OFFERS')).toBeTruthy();
+    expect(getByText('AdamZilla')).toBeTruthy();
+    expect(getByText('OtherTrainer')).toBeTruthy();
+    expect(getByText('OFFERED')).toBeTruthy();
+    expect(getByText('FOR TRADE')).toBeTruthy();
+  });
+
+  it('matches Vite by putting the received Pokémon left on completed trades', () => {
+    const { getByTestId, getByText } = renderScreen();
+
+    fireEvent.press(getByTestId('trade-filter-Completed'));
+    const received = getByTestId('trade-pokemon-card-done-accepting');
+    const traded = getByTestId('trade-pokemon-card-done-proposed');
+    expect(received).toBeTruthy();
+    expect(traded).toBeTruthy();
+    expect(getByText('RECEIVED POKÉMON')).toBeTruthy();
+    expect(getByText('Their done')).toBeTruthy();
+    expect(getByText('TRADED POKÉMON')).toBeTruthy();
+    expect(getByText('My done')).toBeTruthy();
+  });
+
+  it('preserves Vite disabled completion feedback after this trainer confirms', () => {
+    const confirmed = buildRow('confirmed', 'pending', {
+      user_proposed_completion_confirmed: true,
+    });
+    const { getByTestId, getByText } = renderScreen({ screenRows: [confirmed] });
+
+    fireEvent.press(getByTestId('trade-filter-Pending'));
+    expect(getByText('Awaiting Partner...')).toBeTruthy();
+    expect(getByTestId('trade-action-complete-confirmed').props.accessibilityState).toMatchObject({
+      disabled: true,
+    });
+  });
+
+  it('matches Vite by showing type and gender identity before expanding complete Pokémon details', () => {
+    const detailed = detail('incoming-accepting', 'My incoming');
+    detailed.row.typeIconUris = ['https://pokegonexus.com/grass.png', 'https://pokegonexus.com/poison.png'];
+    detailed.stats = [
+      { label: 'Gender', value: 'Female' },
+      { label: 'Weight', value: '6.9 kg' },
+      { label: 'Height', value: '0.7 m' },
+    ];
+    detailed.moves = [{
+      label: 'Fast move',
+      value: 'Vine Whip',
+      legacy: false,
+      typeName: 'Grass',
+      typeIconUri: 'https://pokegonexus.com/grass.png',
+    }];
+    detailed.ivs = [
+      { label: 'Attack', value: 15 },
+      { label: 'Defense', value: 14 },
+      { label: 'HP', value: 13 },
+    ];
+    detailed.provenance = [
+      { label: 'Caught near', value: 'Vancouver, BC' },
+      { label: 'Caught on', value: '6/15/2026' },
+    ];
+    const detailedRow = {
+      ...rows[0],
+      currentUserPokemon: detailed,
+    };
+    const { getByLabelText, getByTestId, getByText, queryByText } = renderScreen({
+      screenRows: [detailedRow],
+    });
+
+    expect(getByLabelText('Female')).toBeTruthy();
+    expect(getByLabelText('Pokémon types')).toBeTruthy();
+    expect(queryByText('Vine Whip')).toBeNull();
+
+    fireEvent.press(getByTestId('trade-pokemon-details-incoming-accepting'));
+    expect(getByText('Hide Details')).toBeTruthy();
+    expect(getByText('Vine Whip')).toBeTruthy();
+    expect(getByText('6.9 kg')).toBeTruthy();
+    expect(getByText('STAMINA')).toBeTruthy();
+    expect(getByText(/Vancouver, BC/)).toBeTruthy();
+    expect(getByText(/6\/15\/2026/)).toBeTruthy();
+  });
+
+  it('matches Vite with an explicit empty detail result', () => {
+    const { getByTestId, getByText } = renderScreen();
+
+    fireEvent.press(getByTestId('trade-pokemon-details-incoming-accepting'));
+    expect(getByText('No additional details available.')).toBeTruthy();
   });
 
   it('requires confirmation and reports a server-confirmed action visibly', async () => {
@@ -135,6 +242,24 @@ describe('NativeTradeActivityScreen', () => {
     await waitFor(() => expect(getByText('Trade state has changed.')).toBeTruthy());
   });
 
+  it('matches Vite by saving satisfaction directly and retaining its selected feedback action', async () => {
+    const onAction = jest.fn().mockResolvedValue(undefined);
+    const satisfiedRow = buildRow('satisfied', 'completed', { user_1_trade_satisfaction: true });
+    const { getByTestId, getByText, queryByTestId } = renderScreen({
+      onAction,
+      screenRows: [...rows, satisfiedRow],
+    });
+
+    fireEvent.press(getByTestId('trade-filter-Completed'));
+    fireEvent.press(getByTestId('trade-action-satisfy-done'));
+
+    await waitFor(() => expect(onAction).toHaveBeenCalledWith(rows[3].model, 'satisfy'));
+    expect(queryByTestId('trade-action-confirmation')).toBeNull();
+    expect(getByText('Thanks for the feedback!')).toBeTruthy();
+    expect(getByText('Feedback saved')).toBeTruthy();
+    expect(getByTestId('trade-action-satisfy-satisfied').props.accessibilityState.selected).toBe(true);
+  });
+
   it('reveals privacy-bounded external coordination details only for active trades', async () => {
     const onRevealPartner = jest.fn().mockResolvedValue({
       sharingEnabled: true,
@@ -149,7 +274,16 @@ describe('NativeTradeActivityScreen', () => {
     fireEvent.press(getByTestId('trade-action-coordinate-active'));
     await waitFor(() => expect(onRevealPartner).toHaveBeenCalledWith('active'));
     expect(getByTestId('trade-partner-information')).toBeTruthy();
-    expect(getByText('Trainer code: 1234 5678 9012')).toBeTruthy();
-    expect(getByText(/does not include chat/i)).toBeTruthy();
+    expect(getByText('Coordinate the exchange')).toBeTruthy();
+    expect(getByText('Add trainer')).toBeTruthy();
+    expect(getByText('Message externally')).toBeTruthy();
+    expect(getByText('Trade in Pokémon GO')).toBeTruthy();
+    expect(getByText('1234 5678 9012')).toBeTruthy();
+    expect(getByText('Campfire')).toBeTruthy();
+    expect(getByText(/never send money or account credentials/i)).toBeTruthy();
+
+    fireEvent.press(getByTestId('trade-copy-trainer-code'));
+    await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalledWith('1234 5678 9012'));
+    expect(getByText('Copied')).toBeTruthy();
   });
 });

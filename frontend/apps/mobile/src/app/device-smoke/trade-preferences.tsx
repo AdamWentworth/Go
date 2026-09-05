@@ -15,10 +15,14 @@ import {
 } from '../../features/trades/NativeTradeHubHeader';
 import {
   buildNativeTradePreferenceEntries,
+  resolveNativeTradePreferenceDraftCandidates,
 } from '../../features/trades/nativeTradePreferencesModel';
+import { persistNativeTradePreferenceMutation } from '../../features/trades/nativeTradePreferencesMutation';
+import { nativeCollectionOutbox } from '../../storage/nativeCollectionOutbox';
 import { NativeTradeActivityScreen } from '../../screens/NativeTradeActivityScreen';
 import { NativeTradePreferencesScreen } from '../../screens/NativeTradePreferencesScreen';
 import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
+import { markNativeUiPerformanceAfterPaint } from '../../observability/nativeUiInteractionTiming';
 
 const ASSET_BASE_URL = 'https://pokegonexus.com';
 
@@ -231,8 +235,10 @@ export default function DeviceSmokeTradePreferencesRoute() {
   const [pageScrollX] = useState(() => new Animated.Value(0));
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const changeView = useCallback((view: NativeTradeHubView) => {
+    const startedAt = Date.now();
     setActiveView(view);
     sliderRef.current?.setPage(view === 'preferences' ? 0 : 1);
+    markNativeUiPerformanceAfterPaint('trade_section_result_painted', startedAt);
   }, []);
   const entries = useMemo(() => ({
     trade: buildNativeTradePreferenceEntries({
@@ -263,7 +269,32 @@ export default function DeviceSmokeTradePreferencesRoute() {
           assetBaseUrl={ASSET_BASE_URL}
           entries={entries}
           onOpenActivity={() => changeView('activity')}
-          onSave={async () => new Promise((resolve) => setTimeout(resolve, 250))}
+          onSave={async (entry, draft) => {
+            const candidates = resolveNativeTradePreferenceDraftCandidates({
+              entry,
+              filters: draft.filters,
+              manuallyExcludedIds: new Set(draft.manuallyExcludedIds),
+              mirror: draft.mirror,
+            });
+            await persistNativeTradePreferenceMutation({
+              userId: 'device-smoke-trades',
+              snapshot: { catalog, instances },
+              request: {
+                filteredOutIds: candidates
+                  .filter((candidate) => candidate.excludedByRule)
+                  .map((candidate) => candidate.collectionKey),
+                filters: draft.filters,
+                manuallyExcludedIds: draft.manuallyExcludedIds,
+                mirror: draft.mirror,
+                mode: entry.mode,
+                selectedInstanceId: entry.collectionKey,
+              },
+              outbox: nativeCollectionOutbox,
+              receiverClient: {
+                post: async <T,>() => ({ accepted: true } as T),
+              },
+            });
+          }}
           pageHeader={(
             <NativeTradeHubHeader
               activeView={activeView}

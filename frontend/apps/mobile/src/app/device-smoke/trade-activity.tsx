@@ -78,7 +78,9 @@ const detail = (id: string): NativeInstanceDetail => ({
     maxKind: id === 'mine-incoming' ? 'gigantamax' : null,
     purified: false,
     lucky: false,
-    typeIconUris: [],
+    typeIconUris: id === 'mine-incoming'
+      ? [`${ASSET_BASE_URL}/images/types/fire.png`, `${ASSET_BASE_URL}/images/types/flying.png`]
+      : [],
     status: 'trade',
     source: 'instance',
     cp: null,
@@ -86,10 +88,32 @@ const detail = (id: string): NativeInstanceDetail => ({
     mostWanted: false,
   },
   traits: [],
-  stats: [],
-  ivs: [],
-  moves: [],
-  provenance: [],
+  stats: id === 'mine-incoming'
+    ? [
+        { label: 'Gender', value: 'Male' },
+        { label: 'Weight', value: '114.8 kg' },
+        { label: 'Height', value: '1.9 m' },
+      ]
+    : [],
+  ivs: id === 'mine-incoming'
+    ? [
+        { label: 'Attack', value: 15 },
+        { label: 'Defense', value: 14 },
+        { label: 'HP', value: 15 },
+      ]
+    : [],
+  moves: id === 'mine-incoming'
+    ? [
+        { label: 'Fast move', value: 'Fire Spin', typeName: 'Fire', typeIconUri: `${ASSET_BASE_URL}/images/types/fire.png` },
+        { label: 'Charged move', value: 'Blast Burn', legacy: true, typeName: 'Fire', typeIconUri: `${ASSET_BASE_URL}/images/types/fire.png` },
+      ]
+    : [],
+  provenance: id === 'mine-incoming'
+    ? [
+        { label: 'Caught near', value: 'Vancouver, BC' },
+        { label: 'Caught on', value: '8/20/2026' },
+      ]
+    : [],
   preferences: [],
 });
 
@@ -258,7 +282,6 @@ export default function DeviceSmokeTradeActivityRoute() {
         onAction={async (model, action) => {
           setTrades((current) => current.flatMap((trade) => {
             if (trade.trade_id !== model.tradeId) return [trade];
-            if (action === 'delete') return [];
             if (action === 'cancel') return [{ ...trade, trade_status: 'cancelled' }];
             if (action === 'accept') return [{ ...trade, trade_status: 'pending' }];
             if (action === 'deny') return [{ ...trade, trade_status: 'denied' }];

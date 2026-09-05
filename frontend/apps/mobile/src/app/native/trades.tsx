@@ -25,7 +25,6 @@ import {
   type NativeTradePreferenceMode,
 } from '../../features/trades/nativeTradePreferencesModel';
 import {
-  useNativeDeleteTradeMutation,
   useNativeTradeCommand,
   useNativeTradesQuery,
   useNativeTradeSatisfactionMutation,
@@ -42,6 +41,7 @@ import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor'
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
 import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 import { NativeProtectedSessionGate } from '../../components/NativeProtectedSessionGate';
+import { markNativeUiPerformanceAfterPaint } from '../../observability/nativeUiInteractionTiming';
 
 const TRADE_VIEWS: NativeTradeHubView[] = ['preferences', 'activity'];
 
@@ -80,7 +80,6 @@ export default function NativeTradesRoute() {
   const complete = useNativeTradeCommand(userId, 'complete');
   const repropose = useNativeTradeCommand(userId, 'repropose');
   const satisfaction = useNativeTradeSatisfactionMutation(userId);
-  const remove = useNativeDeleteTradeMutation(userId);
   const [activeView, setActiveView] = useState<NativeTradeHubView>(() => (
     initialTradeView(firstParam(params.section))
   ));
@@ -92,8 +91,12 @@ export default function NativeTradesRoute() {
   const preferenceEntryId = firstParam(params.instance) || null;
 
   const changeView = useCallback((view: NativeTradeHubView) => {
+    const startedAt = Date.now();
     setActiveView(view);
     sliderRef.current?.setPage(TRADE_VIEWS.indexOf(view));
+    // Vite's contract records the first painted active panel, not the end of
+    // the decorative slide. Keep the native readiness boundary identical.
+    markNativeUiPerformanceAfterPaint('trade_section_result_painted', startedAt);
   }, []);
   const activityRows = useMemo(() => {
     if (!tradesQuery.data || !collectionQuery.data) return [];
@@ -217,7 +220,6 @@ export default function NativeTradesRoute() {
               accept: accept.mutateAsync,
               cancel: cancel.mutateAsync,
               complete: complete.mutateAsync,
-              delete: remove.mutateAsync,
               deny: deny.mutateAsync,
               repropose: repropose.mutateAsync,
               satisfy: (tradeId) => satisfaction.mutateAsync({ tradeId, satisfied: true }),

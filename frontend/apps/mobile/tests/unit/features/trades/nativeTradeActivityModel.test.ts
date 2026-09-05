@@ -72,7 +72,7 @@ describe('native trade activity model', () => {
       currentUserConfirmed: false,
       partnerConfirmed: true,
       label: 'Ready to confirm',
-      displayTimestamp: '2026-08-24T11:00:00.000Z',
+      displayTimestamp: '2026-08-24T10:00:00.000Z',
       actions: [
         { action: 'coordinate' },
         { action: 'complete' },
@@ -81,17 +81,21 @@ describe('native trade activity model', () => {
     });
   });
 
-  it('does not offer a duplicate completion after the user confirms', () => {
+  it('preserves Vite completion feedback after the user confirms without allowing a duplicate command', () => {
     const model = buildNativeTradeActivityModel(trade({
       trade_status: 'pending',
       user_proposed_completion_confirmed: true,
     }), 'AdamZilla');
 
     expect(model?.label).toBe('Waiting for final confirmation');
-    expect(model?.actions.map(({ action }) => action)).toEqual(['coordinate', 'cancel']);
+    expect(model?.actions.map(({ action }) => action)).toEqual(['coordinate', 'complete', 'cancel']);
+    expect(model?.actions.find(({ action }) => action === 'complete')).toMatchObject({
+      disabled: true,
+      label: 'Awaiting Partner...',
+    });
   });
 
-  it('maps completed satisfaction to the current participant and keeps cleanup available', () => {
+  it('maps completed satisfaction to the current participant with the persistent Vite feedback action', () => {
     const proposedModel = buildNativeTradeActivityModel(trade({
       trade_status: 'completed',
       user_1_trade_satisfaction: true,
@@ -106,18 +110,22 @@ describe('native trade activity model', () => {
 
     expect(proposedModel).toMatchObject({
       currentUserSatisfaction: true,
-      actions: [{ action: 'delete' }],
+      actions: [{ action: 'satisfy', label: 'Feedback saved', selected: true }],
     });
-    expect(acceptingModel?.actions.map(({ action }) => action)).toEqual(['satisfy', 'delete']);
+    expect(acceptingModel?.actions).toEqual([{
+      action: 'satisfy',
+      label: 'Mark as satisfying',
+      selected: false,
+      tone: 'primary',
+    }]);
   });
 
-  it.each(['cancelled', 'denied'] as const)('groups %s as closed with re-propose and cleanup', (status) => {
+  it.each(['cancelled', 'denied'] as const)('groups %s as closed with the Vite re-propose action', (status) => {
     expect(buildNativeTradeActivityModel(trade({ trade_status: status }), 'AdamZilla')).toMatchObject({
       activityFilter: 'Cancelled',
       label: 'Closed',
       actions: [
         { action: 'repropose' },
-        { action: 'delete' },
       ],
     });
   });
