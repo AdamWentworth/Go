@@ -67,7 +67,7 @@ Passing evidence for this checkpoint:
 - native Jest: 161 suites, 903 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
-- focused Vite mobile-Chromium browser coverage: 9 tests;
+- focused Vite mobile-Chromium browser coverage: 10 tests;
 - all signed-in native real-route workflows, including Home summary links to
   Caught, Favorites, For Trade, and Wanted collection states, plus enforcement
   that repeated action-menu navigation cannot accumulate duplicate Home or
@@ -585,10 +585,31 @@ desktop and phone-sized Chromium. The shared proxy fixture now supplies the
 same 62-entry PvP workload to both implementations; the earlier five-entry
 Native fixture made cross-implementation environment claims invalid.
 
+The matching 2026-09-05 physical pass ran five repetitions of those three Home
+interactions on the same 120 Hz Pixel 8 Pro, using the current minified native
+bundle in the project development client and Vite in physical Chrome. Native
+beat Vite at both the median and worst observed sample: hint dismissal was
+46/58 ms versus 92/139 ms, the guest feature-directory interaction was
+291/293 ms versus 1,017/1,019 ms, and onboarding dismissal was 78/127 ms versus
+131/273 ms (median/maximum). The initial native onboarding implementation
+failed the median gate because it mounted and laid out the complete dashboard
+after the tap. The dashboard now remains fully laid out and inaccessible behind
+an independent onboarding overlay, so dismissal reveals the prepared surface
+without a route transition, spinner, or dashboard relayout. All five physical
+flows passed their visibility and accessibility assertions, and their captured
+guest and signed-in screens preserved edge-to-edge camera and gesture-bar
+painting. Native runtime diagnostics recorded a 9 ms median touch-to-next-frame
+delay, 12.19 ms median frame-time p95, and 3.33% median janky frames across the
+workflow. The complete native checkpoint remains green at 161 suites and 903
+tests, with mobile typecheck and lint clean.
+
 ## Remaining approval gate
 
-The latest bundle still needs a short physical-phone pass for perceived frame
-rate and touch latency, especially the action menu, loading spinner, theme
-switch, collection page swipe, Home-to-filtered-collection links, and the three
-new Home interaction measurements. Automated browser timings cannot prove
-Android rendering smoothness.
+Home now has both browser-proxy and physical-phone approval. The physical Home
+numbers are diagnostic rather than standalone-release authority because the
+current JavaScript ran through the installed development client. A fresh
+standalone performance APK is still required to validate compiled-native
+changes and final release cadence when the Android cloud-build quota becomes
+available. The action menu, loading spinner, theme switch, collection page
+swipe, and Home-to-filtered-collection links retain their prior physical
+evidence, but should be included in that final release-binary sweep.

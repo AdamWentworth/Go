@@ -239,16 +239,12 @@ export const NativeHomeScreen = ({
           </Pressable>
         </View>
 
-        {onboardingProgress ? (
-          <NativeHomeOnboarding
-            displayName={firstName}
-            light={light}
-            onDismiss={onDismissOnboarding}
-            onNavigate={onNavigate}
-            progress={onboardingProgress}
-          />
-        ) : (
-          <>
+        <View
+          accessibilityElementsHidden={Boolean(onboardingProgress)}
+          importantForAccessibility={onboardingProgress ? 'no-hide-descendants' : 'auto'}
+          pointerEvents={onboardingProgress ? 'none' : 'auto'}
+          style={[styles.dashboard, onboardingProgress && styles.dashboardPrepared]}
+        >
         <View style={styles.welcome}>
           <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>TRAINER DASHBOARD</Text>
           <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Welcome back, {firstName}</Text>
@@ -399,9 +395,43 @@ export const NativeHomeScreen = ({
             <ToolLink assetBaseUrl={assetBaseUrl} detail="Plan your team" icon="/images/btn_max.png" label="Max Battles" light={light} onPress={() => onNavigate('/max')} />
           </View>
         </View>
-          </>
-        )}
+        </View>
       </ScrollView>
+
+      {onboardingProgress ? (
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: 12 + insets.top, paddingBottom: 108 + insets.bottom },
+          ]}
+          style={[styles.onboardingOverlay, light && styles.onboardingOverlayLight]}
+        >
+          <View style={styles.brandHeader}>
+            <Pressable accessibilityRole="link" onPress={() => onNavigate('/')} style={styles.brand}>
+              <Image fadeDuration={0} source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.brandLogo} />
+              <Text style={[styles.brandName, light && styles.textLight]}>Pokémon Go Nexus</Text>
+            </Pressable>
+            <Pressable
+              accessibilityLabel={`Open @${username} profile`}
+              accessibilityRole="link"
+              onPress={() => onNavigate('/profile')}
+              style={[styles.profileLink, light && styles.profileLinkLight]}
+            >
+              <View style={styles.profileInitial}>
+                <Text maxFontSizeMultiplier={1} style={styles.profileInitialText}>{username.slice(0, 1).toLocaleUpperCase()}</Text>
+              </View>
+              <Text numberOfLines={1} style={[styles.profileUsername, light && styles.textLight]}>@{username}</Text>
+            </Pressable>
+          </View>
+          <NativeHomeOnboarding
+            displayName={firstName}
+            light={light}
+            onDismiss={onDismissOnboarding}
+            onNavigate={onNavigate}
+            progress={onboardingProgress}
+          />
+        </ScrollView>
+      ) : null}
 
       {showActionMenuHint ? (
         <NativeActionMenuHint
@@ -418,6 +448,19 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#071012' },
   rootLight: { backgroundColor: '#f8fff9' },
   content: { width: '100%', maxWidth: 960, alignSelf: 'center', gap: 16, paddingHorizontal: 10 },
+  dashboard: { gap: 16 },
+  dashboardPrepared: {
+    opacity: 0,
+  },
+  onboardingOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: '#071012',
+  },
+  onboardingOverlayLight: { backgroundColor: '#f8fff9' },
   brandHeader: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   brand: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   brandLogo: { width: 38, height: 38, resizeMode: 'contain' },
