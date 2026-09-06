@@ -21,6 +21,7 @@
     "parity:routes:web:performance": "cross-env POKEGONEXUS_REAL_ROUTE_PERFORMANCE=true node scripts/run-native-real-route-smoke.mjs",
     "parity:audit:sheets": "node scripts/build-native-parity-contact-sheets.mjs",
     "device:smoke:android": "bash scripts/run-android-device-smoke.sh",
+    "build:android:manual": "bash scripts/build-android-manual-standalone.sh",
     "performance:android:report": "node scripts/build-android-performance-report.mjs",
     "performance:parity:android:release": "cross-env POKEGONEXUS_ANDROID_REQUIRE_PHYSICAL=true POKEGONEXUS_SMOKE_RUNTIME=standalone POKEGONEXUS_SMOKE_PERFORMANCE=true POKEGONEXUS_SMOKE_COLOR_SCHEME=dark POKEGONEXUS_SMOKE_FLOW=.maestro-performance POKEGONEXUS_SMOKE_ARTIFACT_DIR=.artifacts/performance-parity/native-android bash scripts/run-android-device-smoke.sh",
     "device:smoke:android:release-lifecycle": "cross-env POKEGONEXUS_SMOKE_RUNTIME=standalone POKEGONEXUS_SMOKE_NETWORK=offline POKEGONEXUS_SMOKE_FLOW=.maestro-release/native-persistence-lifecycle.yaml bash scripts/run-android-device-smoke.sh"

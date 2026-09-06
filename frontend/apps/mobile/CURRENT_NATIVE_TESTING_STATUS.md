@@ -53,7 +53,19 @@ artifact is `PokeGoNexus-information-5c7f025b-arm64.apk`, with SHA-256
 `2dc4b68743319113f30ad3615a72b544394035f3c4975e12c78ea337ea317882`. It uses
 its bundled JavaScript and does not require Metro. Its manifest is
 non-debuggable, but it is locally debug-signed, so it is a performance-test
-candidate rather than a production-distribution artifact.
+candidate rather than a production-distribution artifact. It was compiled with
+device-smoke mode enabled and must **not** be used for ordinary manual testing.
+
+An ordinary signed-in check of this smoke candidate found an exact 8,000 ms
+test-only loader hold leaking into `/native/raid` and `/native/search`. The
+destinations committed in under 90 ms, but the overlay remained for another
+8.16-8.17 seconds. This invalidates the earlier statement that the installed
+candidate was ready for real manual route testing. The source now scopes the
+screenshot hold to `/device-smoke/*`, and
+`scripts/build-android-manual-standalone.sh` creates the replacement with
+`EXPO_PUBLIC_DEVICE_SMOKE_MODE=false`. Until that replacement is built and
+installed, do not use the currently installed APK to judge ordinary route
+performance.
 
 The standalone APK evidence dated 2026-08-29 in
 `DEVICE_VALIDATION_CHECKLIST.md` remains historical evidence for that earlier

@@ -10,7 +10,8 @@ The strong-machine build was completed for commit
 is `2dc4b68743319113f30ad3615a72b544394035f3c4975e12c78ea337ea317882`.
 The APK is ARM64-only, contains the bundled JavaScript for this commit, has a
 non-debuggable manifest, and is locally debug-signed. It is therefore valid as
-a standalone performance candidate, not as a production-distribution binary.
+a standalone performance candidate, not as a production-distribution or
+ordinary manual-testing binary. It was compiled with device-smoke mode enabled.
 
 The APK installed on the physical 120 Hz Pixel 8 Pro and completed both the
 required five-run workflow and a ten-run repeatability workflow without a
@@ -29,6 +30,14 @@ project's acceptance rule requires both median and p95. The next implementation
 pass should focus only on FAQ topic selection and expand-all median latency,
 then produce a new standalone APK and repeat this gate. Do not rebuild or
 retest this exact candidate expecting it to qualify unchanged.
+
+The first ordinary logged-in check exposed why a smoke APK must not be handed
+to a person as the manual candidate: the test-only 8,000 ms screenshot hold was
+also applied to `/native/raid` and `/native/search`. Phone logs showed each
+destination commit in under 90 ms followed by the overlay remaining visible for
+another 8.16-8.17 seconds. Source after `5c7f025b` scopes that hold to
+`/device-smoke/*`, but a normal manual APK must still be built with smoke mode
+disabled using the command in “Build the manual candidate” below.
 
 ## Objective
 
@@ -119,6 +128,26 @@ commit, for example
 `PokeGoNexus-information-<commit>-arm64.apk`, under the ignored
 `.artifacts/performance-parity/candidates/` directory. Never commit APKs or put
 several obsolete downloads behind one QR.
+
+## Build the manual candidate
+
+The performance APK above deliberately enables deterministic fixture routes and
+instrumentation. Do not install it as the user-facing manual-test build. After
+performance evidence is collected, build one normal Native preview APK from
+`frontend/`:
+
+```bash
+npm --workspace apps/mobile run build:android:manual
+```
+
+The checked-in builder explicitly sets `EXPO_PUBLIC_DEVICE_SMOKE_MODE=false`,
+uses a production/minified bundled JavaScript runtime, builds only ARM64 by
+default, limits Gradle to two workers and a non-persistent daemon, and writes
+one ignored artifact named
+`frontend/apps/mobile/.artifacts/manual-standalone/PokeGoNexus-manual-<commit>-arm64-v8a.apk`.
+Put only that APK in the handback location for manual testing. The receiving
+workstation should verify its checksum, replace the smoke APK on the phone, and
+confirm from logs that ordinary navigation has no 8,000 ms hold.
 
 ## Collect the matching Vite phone reference
 

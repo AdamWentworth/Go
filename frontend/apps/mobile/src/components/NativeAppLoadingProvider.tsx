@@ -31,8 +31,18 @@ type NativeAppLoadingContextValue = {
 const HIDE_DELAY_MS = loadingExperienceParityContract.hideDelayMs;
 // Deterministic device screenshots may hold the loader, but real navigation
 // must follow Vite and release as soon as the destination has painted.
-const POST_NAVIGATION_PAINT_HOLD_MS = runtimeConfig.mobile.deviceSmokeMode ? 8000 : 0;
+const DEVICE_SMOKE_POST_NAVIGATION_PAINT_HOLD_MS = 8000;
 const PATH_CHANGE_FALLBACK_MS = 3000;
+
+export const resolvePostNavigationPaintHoldMs = (
+  deviceSmokeMode: boolean,
+  destinationPath: string | null,
+): number => deviceSmokeMode && (
+  destinationPath === '/device-smoke'
+  || destinationPath?.startsWith('/device-smoke/')
+)
+  ? DEVICE_SMOKE_POST_NAVIGATION_PAINT_HOLD_MS
+  : 0;
 
 const NativeAppLoadingContext = createContext<NativeAppLoadingContextValue>({
   handleOverlayLayout: () => undefined,
@@ -102,10 +112,13 @@ export const NativeAppLoadingProvider = ({
       markNativeUiPerformance('loading_source_released', { source });
       setTimeout(
         () => setLoadingSource(source, false),
-        POST_NAVIGATION_PAINT_HOLD_MS,
+        resolvePostNavigationPaintHoldMs(
+          runtimeConfig.mobile.deviceSmokeMode,
+          navigationPath,
+        ),
       );
     });
-  }, [setLoadingSource]);
+  }, [navigationPath, setLoadingSource]);
 
   useEffect(() => {
     for (const [source, startPath] of navigationReleasesRef.current) {

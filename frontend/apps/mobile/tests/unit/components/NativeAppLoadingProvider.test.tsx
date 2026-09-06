@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 import {
   NativeAppLoadingOverlay,
   NativeAppLoadingProvider,
+  resolvePostNavigationPaintHoldMs,
   useNativeAppLoading,
 } from '../../../src/components/NativeAppLoadingProvider';
 
@@ -30,6 +31,13 @@ describe('NativeAppLoadingProvider', () => {
   afterEach(() => {
     act(() => jest.runOnlyPendingTimers());
     jest.useRealTimers();
+  });
+
+  it('never applies the screenshot hold to an ordinary app route', () => {
+    expect(resolvePostNavigationPaintHoldMs(true, '/native/raid')).toBe(0);
+    expect(resolvePostNavigationPaintHoldMs(true, '/native/search')).toBe(0);
+    expect(resolvePostNavigationPaintHoldMs(false, '/device-smoke/tools')).toBe(0);
+    expect(resolvePostNavigationPaintHoldMs(true, '/device-smoke/tools')).toBe(8000);
   });
 
   it('covers navigation with the canonical spinner through the hide grace period', () => {
