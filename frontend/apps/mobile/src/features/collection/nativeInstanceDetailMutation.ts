@@ -179,7 +179,6 @@ export const normalizeNativeInstanceDetailPatch = (
         lucky: false,
         is_traded: false,
         is_mega: false,
-        mega: false,
         mega_form: null,
         crown: false,
         is_fused: false,
@@ -192,7 +191,7 @@ export const normalizeNativeInstanceDetailPatch = (
   const megaInvariant = patch.is_mega === true
     ? { is_mega: true, mega: true }
     : patch.is_mega === false
-      ? { is_mega: false, mega: false, mega_form: null }
+      ? { is_mega: false, mega_form: null }
       : {};
   const fusionInvariant = patch.is_fused === true
     ? {
@@ -200,7 +199,6 @@ export const normalizeNativeInstanceDetailPatch = (
         shadow: false,
         purified: false,
         is_mega: false,
-        mega: false,
         mega_form: null,
         crown: false,
       }
@@ -245,6 +243,7 @@ export const persistNativeInstanceDetailMutation = async ({
   onQueued,
   syncBatchId = Crypto.randomUUID(),
   now = Date.now(),
+  sendImmediately = true,
 }: {
   userId: string;
   snapshot: NativeCollectionSnapshot;
@@ -255,6 +254,8 @@ export const persistNativeInstanceDetailMutation = async ({
   onQueued?: (mutation: NativeCollectionMutation) => Promise<void> | void;
   syncBatchId?: string;
   now?: number;
+  /** Tests and non-UI callers may await Receiver; the native editor queues first and syncs in background. */
+  sendImmediately?: boolean;
 }) => {
   const normalizedPatch = normalizeNativeInstanceDetailPatch(patch);
   const mutation = createNativeCollectionMutation({
@@ -354,6 +355,14 @@ export const persistNativeInstanceDetailMutation = async ({
   await outbox.queue(userId, batch, now);
   for (const queuedMutation of [mutation, ...companionMutations]) {
     await onQueued?.(queuedMutation);
+  }
+  if (!sendImmediately) {
+    return {
+      mutation,
+      companionMutations,
+      syncState: 'pending' as const,
+      message: 'Pokémon details saved.',
+    };
   }
   const sent = await sendPendingNativeCollectionBatches({ userId, outbox, receiverClient });
   return {

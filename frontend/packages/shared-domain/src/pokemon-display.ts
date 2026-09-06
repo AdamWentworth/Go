@@ -190,7 +190,9 @@ export const resolvePokemonInstanceImagePath = (
   }
 
   const mega = resolvePokemonActiveMegaEvolution({
-    isMega: Boolean(instance.is_mega || instance.mega),
+    // `mega` records that this specimen has registered a Mega evolution;
+    // only `is_mega` means that form is active right now.
+    isMega: Boolean(instance.is_mega),
     megaForm: instance.mega_form,
     megaEvolutions: pokemon.megaEvolutions,
   });

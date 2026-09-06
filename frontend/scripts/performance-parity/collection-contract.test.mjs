@@ -21,6 +21,7 @@ const nativeCollectionSources = [
   'apps/mobile/src/features/collection/parity/useNativeOverlaySwipeNavigation.ts',
   'apps/mobile/src/screens/NativeCollectionHubScreen.tsx',
   'apps/mobile/src/screens/NativeCollectionParityScreen.tsx',
+  'apps/mobile/src/screens/NativeInstanceDetailScreen.tsx',
 ].map((file) => readFileSync(path.resolve(frontendDirectory, file), 'utf8')).join('\n');
 
 const requiredCollectionInteractions = [
@@ -37,6 +38,8 @@ const requiredCollectionInteractions = [
   ['interaction.collection.selection', 'collection_selection_painted'],
   ['interaction.collection.organizer', 'collection_organizer_painted'],
   ['interaction.instance.navigate', 'instance_overlay_target_committed'],
+  ['interaction.instance.edit-result', 'instance_edit_result_painted'],
+  ['interaction.instance.save-result', 'instance_save_result_painted'],
 ];
 
 test('every bounded Pokémon interaction has Vite and physical-native performance evidence', () => {

@@ -209,6 +209,48 @@ describe('native collection model', () => {
     ]);
   });
 
+  it('renders a registered inactive Mega as its ordinary current form', () => {
+    const transformedPokemon = {
+      ...pokemon,
+      type_1_icon: '/images/types/fire.png',
+      type_2_icon: '/images/types/flying.png',
+      megaEvolutions: [{
+        id: 61,
+        form: 'x',
+        primal: false,
+        image_url: '/images/mega-charizard-x.png',
+        type1_name: 'Fire',
+        type2_name: 'Dragon',
+      }],
+    } as unknown as BasePokemon;
+
+    const [row] = buildNativeCollectionRows({
+      registered: instance({
+        instance_id: 'registered',
+        mega: true,
+        is_mega: false,
+        mega_form: null,
+      }),
+    }, [transformedPokemon], 'https://pokegonexus.com');
+
+    expect(row).toEqual(expect.objectContaining({
+      name: 'Charizard',
+      imageUri: 'https://pokegonexus.com/images/charizard.png',
+      typeIconUris: [
+        'https://pokegonexus.com/images/types/fire.png',
+        'https://pokegonexus.com/images/types/flying.png',
+      ],
+    }));
+    const detail = buildNativeInstanceDetail(
+      { registered: instance({ instance_id: 'registered', mega: true, is_mega: false }) },
+      [transformedPokemon],
+      [],
+      'registered',
+      'https://pokegonexus.com',
+    );
+    expect(detail?.traits).not.toContain('Mega Evolved');
+  });
+
   it('builds stable rows, excludes disabled data, and resolves relative artwork', () => {
     const instances = {
       caught: instance({ instance_id: 'caught', favorite: true }),
@@ -295,6 +337,70 @@ describe('native collection model', () => {
     ]);
     expect(sortNativeCollectionRows(rows, 'favorite', 'descending')[0].id).toBe('favorite');
     expect(rows.map((row) => row.id)).toEqual(originalOrder);
+  });
+
+  it('uses the same CP, Recent, Favorite, Name, and form-HP keys as Vite', () => {
+    const bulbasaur = {
+      ...pokemon,
+      pokemon_id: 1,
+      pokedex_number: 1,
+      name: 'Bulbasaur',
+      stamina: 128,
+      cp50: 1260,
+      date_available: '2016-07-06',
+      image_url: '/images/bulbasaur.png',
+      max: [],
+    } as unknown as BasePokemon;
+    const sortableCharizard = {
+      ...pokemon,
+      cp50: 3266,
+      date_available: '2016-07-06',
+      megaEvolutions: [{
+        id: 61,
+        form: 'x',
+        date_available: '2020-08-27',
+        image_url: '/images/mega-charizard-x.png',
+        attack: 273,
+        defense: 213,
+        stamina: 186,
+        cp50: 4353,
+        type1_name: 'Fire',
+        type2_name: 'Dragon',
+      }],
+    } as unknown as BasePokemon;
+    const catalogRows = buildNativeCatalogRows(
+      [sortableCharizard, bulbasaur],
+      'https://pokegonexus.com',
+    );
+    const defaultCharizard = catalogRows.find((row) => row.id === '0006-default');
+    const megaCharizard = catalogRows.find((row) => row.id === '0006-mega_x');
+    const baseBulbasaur = catalogRows.find((row) => row.id === '0001-default');
+    expect(defaultCharizard?.cp).toBeNull();
+    expect(defaultCharizard?.sortProjection?.cp).toBe(3266);
+    expect(megaCharizard).toEqual(expect.objectContaining({ cp: null, hp: 186 }));
+    expect(megaCharizard?.sortProjection?.cp).toBe(4353);
+    expect(sortNativeCollectionRows(
+      [defaultCharizard, megaCharizard, baseBulbasaur].filter(Boolean) as NativeCollectionRow[],
+      'combatPower',
+      'descending',
+    ).map((row) => row.id)).toEqual([
+      '0006-mega_x', '0006-default', '0001-default',
+    ]);
+
+    const instanceRows = buildNativeCollectionRows({
+      favoriteLow: instance({
+        instance_id: 'favoriteLow', pokemon_id: 1, variant_id: '0001-default', cp: 100,
+        favorite: true, date_added: '2099-01-01',
+      }),
+      favoriteHigh: instance({
+        instance_id: 'favoriteHigh', cp: 200, favorite: true, date_added: '2000-01-01',
+      }),
+      ordinary: instance({ instance_id: 'ordinary', cp: 500, favorite: false }),
+    }, [sortableCharizard, bulbasaur], 'https://pokegonexus.com');
+    expect(sortNativeCollectionRows(instanceRows, 'favorite', 'descending').map((row) => row.id))
+      .toEqual(['favoriteHigh', 'favoriteLow', 'ordinary']);
+    expect(sortNativeCollectionRows(instanceRows, 'releaseDate', 'ascending').map((row) => row.id))
+      .toEqual(['favoriteLow', 'favoriteHigh', 'ordinary']);
   });
 
   it('matches the canonical union, intersection, exclusion, and family search syntax', () => {

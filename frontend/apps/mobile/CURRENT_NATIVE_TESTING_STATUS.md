@@ -1,6 +1,6 @@
 # Current Native Testing Status
 
-Last revalidated: 2026-09-05
+Last revalidated: 2026-09-06
 
 This is the short source of truth for continuing the Vite-to-native migration.
 The canonical Vite application defines user-visible behavior. Native may use
@@ -86,6 +86,36 @@ for iteration that does not need standalone-binary authority.
 
 ## Current automated checkpoint
 
+The 2026-09-06 Pokémon collection correction moves all six ordering modes onto
+one renderer-independent implementation consumed by both Vite and Native.
+Native now uses Vite's exact release-date, Favorite grouping, null/recorded CP,
+catalog CP50, species-name, form-stamina, dex tie-break, and within-species form
+rules. Sort press-in no longer changes the collection behind the menu; the
+cached result is committed only by selection, as in Vite. A production-like
+5 MB catalog fixture verifies every generated catalog ID and sort projection
+against its Vite variant.
+
+Mega registration and current Mega form are separate again throughout shared
+artwork, Native collection cards/details, editor drafts, normalization, and
+persistence. `mega: true, is_mega: false` displays and sorts as the current base
+form while retaining registration. Cycling out of a Mega form preserves that
+registration and clears only `is_mega` and `mega_form`.
+
+Instance Edit acknowledges the tap before mounting the expensive caught editor
+tree on the following frame. Save exits edit mode immediately after validation,
+durably queues and optimistically projects the complete snapshot, then lets the
+serialized collection-sync provider contact Receiver in the background. A
+failed local queue operation restores the draft and error. Vite and physical
+Android now record like-for-like edit-visible and save-visible timings, with a
+150 ms Native hard ceiling for each interaction. The full Native
+suite passes 162 suites / 931 tests; the affected Vite Pokémon, overlay,
+variant, and sort surface passes 81 files / 414 tests; TypeScript, ESLint,
+stylelint, Vite production build, and Metro Android production export pass.
+
+The currently installed `0dad5332` APK predates these corrections. Build and
+install one new normal manual candidate from the current branch before judging
+the sort, Mega, or edit/save changes on the phone.
+
 The current branch has shared Vite/native behavior contracts for Home
 collection links, collection tabs and slide motion, tag clearing, action-menu
 destinations and timing, theme-switch timing and geometry, and loader release
@@ -95,7 +125,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 162 suites, 926 tests;
+- native Jest: 162 suites, 931 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 10 tests;

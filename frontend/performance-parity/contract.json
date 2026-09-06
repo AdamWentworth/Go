@@ -132,6 +132,8 @@
     { "id": "interaction.collection.selection", "vite": "selection state visible", "nativeEvent": "collection_selection_painted" },
     { "id": "interaction.collection.organizer", "vite": "organizer visible", "nativeEvent": "collection_organizer_painted" },
     { "id": "interaction.instance.navigate", "vite": "adjacent instance content committed", "nativeEvent": "instance_overlay_target_committed" },
+    { "id": "interaction.instance.edit-result", "vite": "instance edit controls visible", "nativeEvent": "instance_edit_result_painted" },
+    { "id": "interaction.instance.save-result", "vite": "saved instance read-only state visible", "nativeEvent": "instance_save_result_painted" },
     { "id": "interaction.trades.section-result", "vite": "selected Trades workspace visible after the coordinated page slide", "nativeEvent": "trade_section_result_painted" },
     { "id": "interaction.trades.preference-mode-result", "vite": "selected For Trade or Wanted preference workspace visible", "nativeEvent": "trade_preferences_mode_result_painted" },
     { "id": "interaction.trades.preference-picker", "vite": "Trade Preferences listing picker visible", "nativeEvent": "trade_preferences_picker_painted" },

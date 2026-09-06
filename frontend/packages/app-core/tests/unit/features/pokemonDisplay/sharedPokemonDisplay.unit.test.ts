@@ -102,6 +102,13 @@ describe('shared Pokémon presentation decisions', () => {
     )).toBe('/mega-x-shiny.png');
   });
 
+  it('does not display a registered but currently inactive Mega form', () => {
+    expect(resolvePokemonInstanceImagePath(
+      instance({ is_mega: false, mega: true, mega_form: null }),
+      pokemon,
+    )).toBe('/base.png');
+  });
+
   it('resolves crown labels and crown artwork', () => {
     expect(resolvePokemonActiveCrownForm(
       pokemon.crownForms,

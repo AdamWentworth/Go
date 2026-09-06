@@ -68,6 +68,16 @@ const detail = {
   }],
 };
 
+const openCaughtEditor = async () => {
+  fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+  // The Save affordance acknowledges the tap before the expensive controls
+  // mount on the following frame.
+  expect(screen.getByRole('button', { name: 'Save Pokémon' })).toBeTruthy();
+  await waitFor(() => {
+    expect(screen.getByLabelText('Pokémon inline identity editor')).toBeTruthy();
+  });
+};
+
 describe('NativeInstanceDetailScreen', () => {
   beforeEach(() => {
     mockGetNativeLocationSuggestions.mockReset();
@@ -413,7 +423,7 @@ describe('NativeInstanceDetailScreen', () => {
     expect(screen.queryByText('0kg')).toBeNull();
     expect(screen.queryByText('0m')).toBeNull();
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
     await waitFor(() => {
       expect(screen.getByLabelText('Pokémon weight').props.value).toBe('');
       expect(screen.getByLabelText('Pokémon height').props.value).toBe('');
@@ -565,7 +575,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
     expect(screen.getByLabelText('Pokémon inline identity editor')).toBeTruthy();
     expect(screen.getByLabelText('Caught on 2026-08-23')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Mark as Favorite' })).toBeTruthy();
@@ -607,7 +617,7 @@ describe('NativeInstanceDetailScreen', () => {
     expect(screen.queryByLabelText('Pokémon detail editor')).toBeNull();
   });
 
-  it('keeps compact For Trade editing free of invented level-arc and type metadata', () => {
+  it('keeps compact For Trade editing free of invented level-arc and type metadata', async () => {
     render(
       <NativeInstanceDetailScreen
         detail={{
@@ -638,7 +648,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
     expect(screen.getByLabelText('Pokémon level').props.value).toBe('');
     expect(screen.getByLabelText('Pokémon level').props.placeholder).toBe('1-51 (0.5 steps)');
     expect(screen.queryByLabelText('Pokémon types: electric')).toBeNull();
@@ -679,7 +689,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
     fireEvent.changeText(screen.getByLabelText('Pokémon level'), '40.5');
     expect(screen.getByLabelText('Combat Power').props.value).toBe('2885');
     await act(async () => {
@@ -726,7 +736,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
     fireEvent.changeText(screen.getByLabelText('Pokémon level'), '40.25');
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
@@ -777,7 +787,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
     fireEvent.press(screen.getByRole('button', { name: 'Choose fast move' }));
     fireEvent.press(screen.getByRole('button', { name: 'Fire Spin' }));
     fireEvent.press(screen.getByRole('button', { name: 'Choose charged move' }));
@@ -828,7 +838,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
 
     expect(screen.queryByRole('button', { name: 'LUCKY: YES' })).toBeNull();
     expect(screen.getByRole('button', { name: 'TRADED: YES' })
@@ -875,7 +885,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
     fireEvent.press(screen.getByRole('button', { name: 'Shadow state: Purified' }));
     expect(screen.getByLabelText('Purified')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'LUCKY: YES' })).toBeTruthy();
@@ -926,7 +936,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
     fireEvent.press(screen.getByRole('button', { name: 'Open Max Move upgrades' }));
     fireEvent.press(screen.getByRole('button', { name: 'Max Attack: 3' }));
     fireEvent.press(screen.getByRole('button', { name: 'Max Guard: 2' }));
@@ -942,7 +952,7 @@ describe('NativeInstanceDetailScreen', () => {
     }));
   });
 
-  it('selects and clears native Mega forms with live canonical state', async () => {
+  it('selects and clears native Mega forms while preserving Mega registration', async () => {
     const onSaveDetails = jest.fn().mockResolvedValue(undefined);
     render(
       <NativeInstanceDetailScreen
@@ -974,7 +984,7 @@ describe('NativeInstanceDetailScreen', () => {
             shadow: false,
             purified: false,
             costume_id: null,
-            mega: false,
+            mega: true,
             is_mega: false,
             mega_form: null,
           } as NonNullable<NativeInstanceDetail['instance']>,
@@ -999,9 +1009,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
-    });
+    await openCaughtEditor();
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Mega Evolve' }));
     });
@@ -1014,14 +1022,60 @@ describe('NativeInstanceDetailScreen', () => {
     ).props.source.uri).toContain(
       '/images/backgrounds/bg_dragon.png',
     );
+    fireEvent.press(screen.getByRole('button', { name: 'Change Mega form' }));
+    expect(screen.getByRole('button', { name: 'Mega Evolve' })).toBeTruthy();
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
     });
     expect(onSaveDetails).toHaveBeenCalledWith(expect.objectContaining({
       mega: true,
-      is_mega: true,
-      mega_form: 'y',
+      is_mega: false,
+      mega_form: null,
     }));
+  });
+
+  it('acknowledges Save immediately while persistence finishes', async () => {
+    let finishSave: () => void = () => undefined;
+    const pendingSave = new Promise<void>((resolve) => {
+      finishSave = resolve;
+    });
+    const onSaveDetails = jest.fn(() => pendingSave);
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          instance: {
+            nickname: 'Charizard',
+            shadow: false,
+            purified: false,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught' },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={onSaveDetails}
+        onToggleFavorite={jest.fn()}
+      />,
+    );
+
+    await openCaughtEditor();
+    fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
+
+    expect(onSaveDetails).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Edit Pokémon' })).toBeTruthy();
+    expect(screen.queryByLabelText('Pokémon inline identity editor')).toBeNull();
+
+    await act(async () => {
+      finishSave();
+      await pendingSave;
+    });
   });
 
   it('suggests caught locations and saves the selected canonical display name', async () => {
@@ -1061,7 +1115,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
     fireEvent.changeText(screen.getByLabelText('Caught location'), 'Burnaby');
     await waitFor(() => {
       expect(mockGetNativeLocationSuggestions).toHaveBeenCalledWith('Burnaby');
@@ -1110,7 +1164,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
     fireEvent.changeText(screen.getByLabelText('Caught location'), 'Burnaby');
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Location suggestions are unavailable. You can still enter a location manually.',
@@ -1157,7 +1211,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
     fireEvent.changeText(screen.getByLabelText('Caught location'), 'Burnab');
     await waitFor(() => expect(mockGetNativeLocationSuggestions).toHaveBeenCalledTimes(1));
     fireEvent.changeText(screen.getByLabelText('Caught location'), 'Burnaby');
@@ -1227,7 +1281,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
     expect(screen.queryByText('Max Move Levels')).toBeNull();
     fireEvent.press(screen.getByRole('button', { name: 'Power form: Crowned Sword' }));
     fireEvent.press(screen.getByRole('button', { name: 'Open Max Move upgrades' }));
@@ -1331,7 +1385,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await openCaughtEditor();
     fireEvent.press(screen.getByRole('button', { name: 'Power form: Dawn Wings Necrozma' }));
     fireEvent.press(screen.getByRole('button', { name: 'Choose location background' }));
     expect(screen.getByRole('button', { name: 'Use Fusion sky background' })).toBeTruthy();

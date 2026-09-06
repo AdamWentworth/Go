@@ -306,7 +306,7 @@ describe('NativeCollectionParityScreen', () => {
     expect(sortMenuHost.dismiss).toHaveBeenCalledTimes(1);
   });
 
-  it('stages a sort destination before release adopts the sort control', () => {
+  it('changes sorting on selection without reordering the grid during press-in', () => {
     const sortRows = [
       row({ id: 'zubat', name: 'Zubat', pokedexNumber: 1 }),
       row({ id: 'abra', name: 'Abra', pokedexNumber: 2 }),
@@ -331,18 +331,12 @@ describe('NativeCollectionParityScreen', () => {
     const nameSort = view.getByRole('radio', { name: /name/i });
 
     fireEvent(nameSort, 'pressIn');
-
-    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual([
-      sortRows[1],
-      sortRows[0],
-    ]);
+    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual(sortRows);
 
     fireEvent(nameSort, 'pressOut');
     act(() => jest.advanceTimersByTime(0));
     expect(view.UNSAFE_getByType(FlatList).props.data).toEqual(sortRows);
 
-    fireEvent(nameSort, 'pressIn');
-    fireEvent(nameSort, 'pressOut');
     fireEvent.press(nameSort);
 
     expect(view.getByLabelText('Sort by NAME ascending')).toBeTruthy();

@@ -174,10 +174,6 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   const [sortVisible, setSortVisible] = useState(false);
   const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(initialShowEvolutionaryLine);
   const [stagedQuery, setStagedQuery] = useState<string | null>(null);
-  const [stagedSort, setStagedSort] = useState<{
-    sort: NativeCollectionSort;
-    direction: NativeCollectionSortDirection;
-  } | null>(null);
   const [stagedShowEvolutionaryLine, setStagedShowEvolutionaryLine] = useState<boolean | null>(null);
   const [collectionImageRevealController] = useState(
     () => createNativeCollectionImageRevealController(0),
@@ -193,11 +189,6 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   const adoptedStagedQueryRef = useRef<string | null>(null);
   const stagedQueryCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterReleaseFrameRef = useRef<number | null>(null);
-  const stagedSortRef = useRef<{
-    sort: NativeCollectionSort;
-    direction: NativeCollectionSortDirection;
-  } | null>(null);
-  const stagedSortCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stagedEvolutionRef = useRef<boolean | null>(null);
   const stagedEvolutionCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sortMenuRequestStartedAtRef = useRef<number | null>(null);
@@ -213,8 +204,6 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     startedAt: number;
   } | null>(null);
   const effectiveQuery = stagedQuery ?? query;
-  const effectiveSort = stagedSort?.sort ?? sort;
-  const effectiveDirection = stagedSort?.direction ?? direction;
   const effectiveShowEvolutionaryLine = stagedShowEvolutionaryLine ?? showEvolutionaryLine;
   // Match Vite's architecture: one virtualized grid receives a new immutable
   // projection when the tag changes. Sorting and card projection are cached,
@@ -227,9 +216,35 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     }),
     [effectiveQuery, effectiveShowEvolutionaryLine, rows, searchUniverseRows],
   );
+  useEffect(() => {
+    if (stagedQuery !== null || collectionImageRevealInteraction !== null) {
+      return undefined;
+    }
+    // Warm every Vite sort projection one small slice at a time after the
+    // filtered row set changes. A later menu selection is then a reference-
+    // stable cache lookup without changing the visible list on press-in.
+    const combinations = NATIVE_SORT_OPTIONS.flatMap(({ key }) => ([
+      [key, 'ascending'],
+      [key, 'descending'],
+    ] as const));
+    let index = 0;
+    let frame: number | null = requestAnimationFrame(function warmNext() {
+      if (index >= combinations.length) {
+        frame = null;
+        return;
+      }
+      const [nextSort, nextDirection] = combinations[index];
+      index += 1;
+      sortNativeCollectionRows(filteredRows, nextSort, nextDirection);
+      frame = requestAnimationFrame(warmNext);
+    });
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
+  }, [collectionImageRevealInteraction, filteredRows, stagedQuery]);
   const visibleRows = useMemo(
-    () => sortNativeCollectionRows(filteredRows, effectiveSort, effectiveDirection),
-    [effectiveDirection, effectiveSort, filteredRows],
+    () => sortNativeCollectionRows(filteredRows, sort, direction),
+    [direction, filteredRows, sort],
   );
   const visibleRowsRef = useRef(visibleRows);
   useLayoutEffect(() => {
@@ -268,7 +283,6 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     sort,
     stagedQuery,
     stagedShowEvolutionaryLine,
-    stagedSort,
     visibleRows,
   ]);
   useEffect(() => {
@@ -503,7 +517,6 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   useEffect(() => () => {
     if (filterReleaseFrameRef.current !== null) cancelAnimationFrame(filterReleaseFrameRef.current);
     if (stagedQueryCancelTimerRef.current) clearTimeout(stagedQueryCancelTimerRef.current);
-    if (stagedSortCancelTimerRef.current) clearTimeout(stagedSortCancelTimerRef.current);
     if (stagedEvolutionCancelTimerRef.current) clearTimeout(stagedEvolutionCancelTimerRef.current);
     if (sortMenuCloseTimerRef.current) clearTimeout(sortMenuCloseTimerRef.current);
     sortMenuInteractionReleaseRef.current?.();
@@ -520,43 +533,13 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       sortMenuInteractionReleaseRef.current = null;
     }, collectionExperienceParityContract.sortMenuTransitionMs);
   }, [sortMenuHost]);
-  const previewSort = useCallback((nextSort: NativeCollectionSort) => {
-    if (stagedSortCancelTimerRef.current) {
-      clearTimeout(stagedSortCancelTimerRef.current);
-      stagedSortCancelTimerRef.current = null;
-    }
-    const next = resolveSortSelection(sort, direction, nextSort);
-    stagedSortRef.current = next;
-    setStagedSort(next);
-    setCollectionImageRevealCount(0);
-    setCollectionImageRevealInteraction(null);
-  }, [direction, setCollectionImageRevealCount, sort]);
-  const cancelSortPreview = useCallback((nextSort: NativeCollectionSort) => {
-    if (stagedSortCancelTimerRef.current) clearTimeout(stagedSortCancelTimerRef.current);
-    stagedSortCancelTimerRef.current = setTimeout(() => {
-      stagedSortCancelTimerRef.current = null;
-      if (stagedSortRef.current?.sort !== nextSort) return;
-      stagedSortRef.current = null;
-      setStagedSort(null);
-      setCollectionImageRevealCount(null);
-      setCollectionImageRevealInteraction(null);
-    }, 0);
-  }, [setCollectionImageRevealCount]);
   const selectSort = useCallback((nextSort: NativeCollectionSort) => {
-    if (stagedSortCancelTimerRef.current) {
-      clearTimeout(stagedSortCancelTimerRef.current);
-      stagedSortCancelTimerRef.current = null;
-    }
-    const next = stagedSortRef.current?.sort === nextSort
-      ? stagedSortRef.current
-      : resolveSortSelection(sort, direction, nextSort);
+    const next = resolveSortSelection(sort, direction, nextSort);
     projectionInteractionTraceRef.current = {
       event: 'collection_sort_result_painted',
       startedAt: Date.now(),
     };
     markNativeUiPerformance('collection_sort_changed', next);
-    stagedSortRef.current = null;
-    setStagedSort(null);
     closeSortMenu();
     setSort(next.sort);
     setDirection(next.direction);
@@ -582,9 +565,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       sortMenuHost.present({
         assetBaseUrl,
         direction,
-        onCancelPreview: cancelSortPreview,
         onClose: closeSortMenu,
-        onPreview: previewSort,
         onSelect: selectSort,
         sort,
       });
@@ -594,10 +575,8 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     setSortOpen(true);
   }, [
     assetBaseUrl,
-    cancelSortPreview,
     closeSortMenu,
     direction,
-    previewSort,
     selectSort,
     sort,
     sortMenuHost,
@@ -672,8 +651,6 @@ export const NativeCollectionParityScreen = memo(forwardRef<
           assetBaseUrl={assetBaseUrl}
           direction={direction}
           onClose={closeSortMenu}
-          onCancelPreview={cancelSortPreview}
-          onPreview={previewSort}
           onSelect={selectSort}
           open={sortOpen}
           sort={sort}

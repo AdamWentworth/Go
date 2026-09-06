@@ -49,6 +49,8 @@ const budgets = {
   instance_overlay_target_committed: 280,
   instance_overlay_entrance_started: 280,
   instance_overlay_navigation_finished: 600,
+  instance_edit_result_painted: 150,
+  instance_save_result_painted: 150,
   collection_clear_tag_dialog_painted: 150,
   collection_selection_painted: 150,
   collection_organizer_painted: 200,

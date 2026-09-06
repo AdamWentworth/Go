@@ -77,6 +77,14 @@ tags:
     visible:
       id: native-instance-overlay
     timeout: 10000
+- tapOn: Edit Pokémon
+- extendedWaitUntil:
+    visible: Save Pokémon
+    timeout: 10000
+- tapOn: Save Pokémon
+- extendedWaitUntil:
+    visible: Edit Pokémon
+    timeout: 10000
 - tapOn:
     id: native-instance-next
 - extendedWaitUntil:

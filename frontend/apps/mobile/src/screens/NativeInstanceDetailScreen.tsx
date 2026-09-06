@@ -63,6 +63,10 @@ import {
   useNativeReducedMotion,
 } from '../features/settings/useNativeMotion';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import {
+  captureNativeUiInteractionStart,
+  markNativeUiPerformanceAfterPaint,
+} from '../observability/nativeUiInteractionTiming';
 
 type Props = {
   assetBaseUrl?: string;
@@ -119,6 +123,7 @@ type NativeInstanceEditDraft = {
   maxAttack: number | null;
   maxGuard: number | null;
   maxSpirit: number | null;
+  megaRegistered: boolean;
   megaEnabled: boolean;
   megaForm: string | null;
   crowned: boolean;
@@ -202,6 +207,7 @@ const createEditDraft = (detail: NativeInstanceDetail): NativeInstanceEditDraft 
   maxSpirit: hasPotentialMaxMoveAccess(detail)
     ? Number(detail.instance?.max_spirit ?? 0)
     : null,
+  megaRegistered: Boolean(detail.instance?.mega || detail.instance?.is_mega),
   megaEnabled: Boolean(detail.instance?.is_mega),
   megaForm: detail.instance?.mega_form ?? detail.megaOptions?.[0]?.form ?? null,
   crowned: Boolean(detail.instance?.crown),
@@ -1528,6 +1534,7 @@ const NativePowerControls = ({
             accessibilityLabel={draft.megaEnabled ? 'Change Mega form' : 'Mega Evolve'}
             accessibilityRole="button"
             onPress={() => onChange({
+              megaRegistered: draft.megaRegistered || nextMega.enabled,
               megaEnabled: nextMega.enabled,
               megaForm: nextMega.form,
               fused: false,
@@ -2328,6 +2335,8 @@ export const NativeInstanceDetailScreen = ({
   const shellWidth = Math.min(width * 0.95, 500);
   const palette = light ? LIGHT : DARK;
   const [editingInstanceId, setEditingInstanceId] = useState<string | null>(null);
+  const [editorReadyInstanceId, setEditorReadyInstanceId] = useState<string | null>(null);
+  const editInteractionStartedAtRef = useRef<number | null>(null);
   const [draftState, setDraftState] = useState<{
     instanceId: string;
     value: NativeInstanceEditDraft;
@@ -2373,6 +2382,21 @@ export const NativeInstanceDetailScreen = ({
       cancelAnimationFrame(lowerDetailReleaseFrameRef.current);
     }
   }, []);
+  useEffect(() => {
+    if (!editingInstanceId) return undefined;
+    // Paint the Save affordance first, then mount the expensive editor tree on
+    // the next frame. The tap therefore receives immediate visual feedback
+    // even on Android devices with a busy JavaScript thread.
+    const frame = requestAnimationFrame(() => {
+      setEditorReadyInstanceId(editingInstanceId);
+      if (editInteractionStartedAtRef.current != null) {
+        const startedAt = editInteractionStartedAtRef.current;
+        editInteractionStartedAtRef.current = null;
+        markNativeUiPerformanceAfterPaint('instance_edit_result_painted', startedAt);
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [editingInstanceId]);
   const requestKeyboardFieldVisibility = useCallback((target: number) => {
     requestAnimationFrame(() => {
       scrollRef.current?.scrollResponderScrollNativeHandleToKeyboard(
@@ -2435,13 +2459,16 @@ export const NativeInstanceDetailScreen = ({
     : null;
   const statusLabel = status.label;
   const editing = editingInstanceId === detail.row.id;
+  const editorVisible = editing && (
+    isWanted || editorReadyInstanceId === detail.row.id
+  );
   const activeDraft = draftState?.instanceId === detail.row.id
     ? draftState.value
     : createEditDraft(detail);
   const editError = editErrorState?.instanceId === detail.row.id
     ? editErrorState.message
     : null;
-  const displayLevel = editing
+  const displayLevel = editorVisible
     ? activeDraft.level.trim() ? Number(activeDraft.level) : Number.NaN
     : level;
   const showArc = Number.isFinite(displayLevel);
@@ -2456,7 +2483,7 @@ export const NativeInstanceDetailScreen = ({
   const selectedCrownOption = activeDraft.crowned
     ? detail.crownOptions?.find((option) => option.form === activeDraft.crownForm) ?? null
     : null;
-  const displayTypeIconUris = editing
+  const displayTypeIconUris = editorVisible
     ? selectedFusionOption?.typeIconUris?.length
       ? selectedFusionOption.typeIconUris
       : selectedMegaOption?.typeIconUris?.length
@@ -2471,12 +2498,12 @@ export const NativeInstanceDetailScreen = ({
   const activeBackgroundOptions = selectedFusionOption?.backgroundOptions
     ?? detail.backgroundOptions
     ?? [];
-  const displayLucky = editing
+  const displayLucky = editorVisible
     ? isWanted ? activeDraft.prefLucky : activeDraft.lucky
     : Boolean(detail.row.lucky || instance?.lucky || (isWanted && instance?.pref_lucky));
-  const displayShadow = editing ? activeDraft.shadow : Boolean(instance?.shadow && !instance?.purified);
-  const displayPurified = editing ? activeDraft.purified : Boolean(instance?.purified);
-  const displayImageUri = editing
+  const displayShadow = editorVisible ? activeDraft.shadow : Boolean(instance?.shadow && !instance?.purified);
+  const displayPurified = editorVisible ? activeDraft.purified : Boolean(instance?.purified);
+  const displayImageUri = editorVisible
     ? activeDraft.fused
       ? detail.fusionOptions?.find((option) => option.id === activeDraft.fusionId)?.imageUri
         ?? detail.row.imageUri
@@ -2494,7 +2521,7 @@ export const NativeInstanceDetailScreen = ({
         ? detail.appearanceImageUris?.purified ?? detail.row.imageUri
         : detail.appearanceImageUris?.base ?? detail.row.imageUri
     : detail.row.imageUri;
-  const selectedLocationBackgroundUri = editing
+  const selectedLocationBackgroundUri = editorVisible
     ? (() => {
         const selected = activeBackgroundOptions.find(
           (option) => String(option.id) === activeDraft.locationCard,
@@ -2530,11 +2557,14 @@ export const NativeInstanceDetailScreen = ({
       return;
     }
     if (!editing) {
+      editInteractionStartedAtRef.current = captureNativeUiInteractionStart();
       setDraftState({ instanceId: detail.row.id, value: createEditDraft(detail) });
       setEditErrorState(null);
+      setEditorReadyInstanceId(null);
       setEditingInstanceId(detail.row.id);
       return;
     }
+    const saveInteractionStartedAt = captureNativeUiInteractionStart();
     try {
       const combatValidation = !isWanted && detail.baseStats
         ? validateNativeCombatDraft(detail, activeDraft)
@@ -2608,7 +2638,7 @@ export const NativeInstanceDetailScreen = ({
             max_spirit: detail.row.maxKind || detail.specialMaxBaseEligible || activeDraft.crowned
               ? activeDraft.maxSpirit
               : instance?.max_spirit,
-            mega: activeDraft.megaEnabled,
+            mega: activeDraft.megaRegistered || activeDraft.megaEnabled,
             is_mega: activeDraft.megaEnabled,
             mega_form: activeDraft.megaEnabled ? activeDraft.megaForm : null,
             crown: activeDraft.fused ? false : activeDraft.crowned,
@@ -2623,10 +2653,20 @@ export const NativeInstanceDetailScreen = ({
                 ? activeDraft.crownForm
                 : null,
           };
-      await onSaveDetails(patch);
+      // Match the web interaction: the Save tap exits edit mode immediately.
+      // Persistence is still durable because onSaveDetails queues the complete
+      // snapshot locally before resolving. Restore the draft if that local
+      // operation fails.
       setEditingInstanceId(null);
+      setEditorReadyInstanceId(null);
       setEditErrorState(null);
+      markNativeUiPerformanceAfterPaint(
+        'instance_save_result_painted',
+        saveInteractionStartedAt,
+      );
+      await onSaveDetails(patch);
     } catch (saveFailure) {
+      setEditingInstanceId(detail.row.id);
       setEditErrorState({
         instanceId: detail.row.id,
         message: saveFailure instanceof Error
@@ -2703,7 +2743,7 @@ export const NativeInstanceDetailScreen = ({
               assetBaseUrl={assetBaseUrl}
               detail={detail}
               draft={activeDraft}
-              editing={editing}
+              editing={editorVisible}
               canPickBackground={activeBackgroundOptions.length > 0}
               onDraftChange={updateDraft}
               onEdit={() => void toggleEdit()}
@@ -2734,8 +2774,8 @@ export const NativeInstanceDetailScreen = ({
                   />
                 </Pressable>
               ) : <View style={styles.iconButton} />}
-              {!isWanted && (cp != null || editing) ? (
-                editing ? (
+              {!isWanted && (cp != null || editorVisible) ? (
+                editorVisible ? (
                   <View style={styles.inlineCpEditor}>
                     <Text style={[styles.cpLabel, desktopLayout && styles.cpLabelDesktop]}>CP</Text>
                     <TextInput
@@ -2769,7 +2809,7 @@ export const NativeInstanceDetailScreen = ({
                     {detail.row.favorite ? '★' : '☆'}
                   </Text>
                 </Pressable>
-              ) : editing && activeBackgroundOptions.length > 0 ? (
+              ) : editorVisible && activeBackgroundOptions.length > 0 ? (
                   <Pressable
                     accessibilityLabel="Choose location background"
                     accessibilityRole="button"
@@ -2787,7 +2827,7 @@ export const NativeInstanceDetailScreen = ({
             </View>
           )}
 
-          {editing && isCaught && activeBackgroundOptions.length > 0 ? (
+          {editorVisible && isCaught && activeBackgroundOptions.length > 0 ? (
             <View style={styles.inlineBackgroundRow}>
               <Pressable
                 accessibilityLabel="Choose location background"
@@ -2892,7 +2932,7 @@ export const NativeInstanceDetailScreen = ({
             {statusLabel ? (
               <Text style={[styles.statusEyebrow, { color: status.accent }]}>{statusLabel}</Text>
             ) : null}
-            {editing ? (
+            {editorVisible ? (
               <NativeInlineInstanceEditor
                 assetBaseUrl={assetBaseUrl}
                 detail={detail}
@@ -2913,7 +2953,7 @@ export const NativeInstanceDetailScreen = ({
               </Text>
             )}
 
-            {!editing && ((!isWanted && showArc) || Boolean(gender)) ? (
+            {!editorVisible && ((!isWanted && showArc) || Boolean(gender)) ? (
               <View style={styles.levelGenderRow}>
                 <View style={styles.sideSlot} />
                 {!isWanted && showArc ? (
@@ -2925,7 +2965,7 @@ export const NativeInstanceDetailScreen = ({
               </View>
             ) : null}
 
-            {!editing && !isWanted && showPhysicalRow ? (
+            {!editorVisible && !isWanted && showPhysicalRow ? (
               <View style={styles.physicalRow}>
                 <View style={styles.physicalValue}>
                   {weight != null ? (
@@ -2967,7 +3007,7 @@ export const NativeInstanceDetailScreen = ({
               </View>
             ) : null}
 
-            {editing ? (
+            {editorVisible ? (
               <NativeInstanceEditFields
                 assetBaseUrl={assetBaseUrl}
                 detail={detail}
@@ -2980,7 +3020,7 @@ export const NativeInstanceDetailScreen = ({
               />
             ) : null}
 
-            {editing && !isCaught ? (
+            {editorVisible && !isCaught ? (
               <TargetSummary
                 assetBaseUrl={assetBaseUrl}
                 canEdit={canEdit}
@@ -2991,7 +3031,7 @@ export const NativeInstanceDetailScreen = ({
               />
             ) : null}
 
-            {!editing
+            {!editorVisible
               && isCaught
               && !instance?.mega
               && !instance?.is_mega
@@ -3006,7 +3046,7 @@ export const NativeInstanceDetailScreen = ({
                 </View>
               ) : null}
 
-            {!editing ? (
+            {!editorVisible ? (
               <NativeInstanceReadOnlyDetailSections
                 assetBaseUrl={assetBaseUrl}
                 canEdit={canEdit}

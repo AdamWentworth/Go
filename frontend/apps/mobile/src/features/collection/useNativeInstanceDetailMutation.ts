@@ -40,9 +40,11 @@ export const useNativeInstanceDetailMutation = (
             };
           });
         },
+        sendImmediately: false,
       });
-      await queryClient.invalidateQueries({ queryKey });
-      await sync.refreshStatus();
+      // The complete snapshot is already in the durable outbox and projected
+      // into React Query. Network acknowledgement must not hold the Save UI.
+      void sync.retry();
       return result;
     },
   });

@@ -187,7 +187,7 @@ describe('persistNativeInstanceDetailMutation', () => {
     }));
   });
 
-  it('normalizes active and inactive Mega form state before persistence', async () => {
+  it('keeps Mega registration separate from the currently active Mega form', async () => {
     const active = await persistNativeInstanceDetailMutation({
       userId: 'user-1',
       snapshot,
@@ -222,9 +222,28 @@ describe('persistNativeInstanceDetailMutation', () => {
     });
     expect(inactive.mutation.updated).toEqual(expect.objectContaining({
       is_mega: false,
-      mega: false,
+      mega: true,
       mega_form: null,
     }));
+  });
+
+  it('returns after the durable queue write when Receiver sync is deferred', async () => {
+    const receiverClient = { post: jest.fn() };
+    const result = await persistNativeInstanceDetailMutation({
+      userId: 'user-1',
+      snapshot,
+      requestedInstanceId: 'instance-1',
+      patch: { nickname: 'Immediate' },
+      outbox: makeOutbox(),
+      receiverClient,
+      syncBatchId: 'batch-deferred-sync',
+      now: 204,
+      sendImmediately: false,
+    });
+
+    expect(result.syncState).toBe('pending');
+    expect(result.mutation.updated.nickname).toBe('Immediate');
+    expect(receiverClient.post).not.toHaveBeenCalled();
   });
 
   it('queues the visible Pokémon and consumed fusion partner in one atomic batch', async () => {

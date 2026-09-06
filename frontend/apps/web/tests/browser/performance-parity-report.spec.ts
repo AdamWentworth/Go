@@ -1403,6 +1403,14 @@ const collectSharedInteractions = async (
     await previousButton.click();
     await expect(previousButton).toBeHidden();
     await recordInteraction(instance, 'interaction.instance.navigate', sampleIndex * 2 + 1);
+    const editButton = overlay.getByRole('button', { name: 'Edit', exact: true });
+    await editButton.click();
+    const saveButton = overlay.getByRole('button', { name: 'Save', exact: true });
+    await saveButton.waitFor({ state: 'visible' });
+    await recordInteraction(instance, 'interaction.instance.edit-result', sampleIndex);
+    await saveButton.click();
+    await editButton.waitFor({ state: 'visible' });
+    await recordInteraction(instance, 'interaction.instance.save-result', sampleIndex);
   } finally {
     await closeMeasuredPage(instance);
   }

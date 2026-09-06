@@ -10,6 +10,11 @@ import type {
   PokemonTagOrderKey,
 } from '@pokemongonexus/shared-contracts/users';
 import { buildPokemonCatalogEntries } from '@pokemongonexus/shared-domain/catalog';
+import {
+  projectPokemonCollectionSortSource,
+  sortPokemonCollectionItems,
+  type PokemonCollectionSortProjection,
+} from '@pokemongonexus/shared-domain/collection-sort';
 import { resolveInstanceCollectionKey } from '@pokemongonexus/shared-domain/instances';
 import {
   buildPokemonTypeIconPath,
@@ -60,6 +65,8 @@ export type NativeCollectionRow = {
   variantOrder?: number;
   evolutionFamilyIds?: number[];
   searchTerms?: string[];
+  /** Exact canonical web sort keys for this catalog variant or instance. */
+  sortProjection?: PokemonCollectionSortProjection;
 };
 
 export type NativeTagSummary = {
@@ -208,7 +215,7 @@ function activeFusion(instance: PokemonInstance, pokemon: BasePokemon) {
 
 function activeMega(instance: PokemonInstance, pokemon: BasePokemon) {
   return resolvePokemonActiveMegaEvolution({
-    isMega: instance.is_mega || instance.mega,
+    isMega: instance.is_mega,
     megaForm: instance.mega_form,
     megaEvolutions: pokemon.megaEvolutions,
   });
@@ -391,6 +398,7 @@ const buildEvolutionFamilyMap = (catalog: BasePokemon[]): Map<number, number[]> 
 
 type NativeCollectionCatalogProjection = {
   catalogEntries: ReturnType<typeof buildPokemonCatalogEntries>;
+  catalogEntryById: Map<string, ReturnType<typeof buildPokemonCatalogEntries>[number]>;
   catalogOrder: Map<string, number>;
   evolutionFamilies: Map<number, number[]>;
   pokemonById: Map<number, BasePokemon>;
@@ -429,12 +437,34 @@ const getNativeCollectionCatalogProjection = (
   const catalogEntries = buildPokemonCatalogEntries(catalog);
   const projection = {
     catalogEntries,
+    catalogEntryById: new Map(catalogEntries.map((entry) => [entry.id, entry])),
     catalogOrder: new Map(catalogEntries.map((entry, index) => [entry.id, index])),
     evolutionFamilies: buildEvolutionFamilyMap(catalog),
     pokemonById: new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon])),
   };
   nativeCollectionCatalogProjectionCache.set(catalog, projection);
   return projection;
+};
+
+const nativeCollectionSortProjection = (
+  pokemon: BasePokemon,
+  entry: ReturnType<typeof buildPokemonCatalogEntries>[number] | undefined,
+  instance?: PokemonInstance,
+): PokemonCollectionSortProjection => {
+  const variantType = entry?.variantType ?? 'default';
+
+  return projectPokemonCollectionSortSource({
+    ...pokemon,
+    name: entry?.name ?? pokemon.name,
+    species_name: entry?.speciesName ?? pokemon.name,
+    variantType,
+    form: entry?.form === undefined ? pokemon.form : entry.form,
+    stamina: entry?.stamina ?? pokemon.stamina,
+    cp50: entry?.cp50 ?? pokemon.cp50,
+    instanceData: instance
+      ? { cp: instance.cp, favorite: instance.favorite }
+      : undefined,
+  });
 };
 
 const instanceSearchTerms = (instance: PokemonInstance, pokemon: BasePokemon): string[] => {
@@ -447,7 +477,7 @@ const instanceSearchTerms = (instance: PokemonInstance, pokemon: BasePokemon): s
     instance.shiny ? 'shiny' : null,
     instance.shadow ? 'shadow' : null,
     instance.costume_id != null ? 'costume' : null,
-    instance.is_mega || instance.mega ? 'mega' : null,
+    (pokemon.megaEvolutions?.length ?? 0) > 0 && !instance.shadow ? 'mega' : null,
     instance.dynamax ? 'dynamax' : null,
     instance.gigantamax ? 'gigantamax' : null,
     instance.lucky ? 'lucky' : null,
@@ -512,7 +542,7 @@ export const buildNativeCollectionRows = (
   const cached = byOrigin.get(assetOrigin);
   if (cached) return cached;
 
-  const { catalogOrder, evolutionFamilies, pokemonById } =
+  const { catalogEntryById, catalogOrder, evolutionFamilies, pokemonById } =
     getNativeCollectionCatalogProjection(catalog);
 
   const rows = Object.entries(instances)
@@ -521,6 +551,9 @@ export const buildNativeCollectionRows = (
       const status = statusForInstance(instance);
       const pokemon = pokemonById.get(instance.pokemon_id);
       if (!status || !pokemon) return [];
+      const catalogEntry = catalogEntryById.get(instance.variant_id)
+        ?? catalogEntryById.get(`${String(instance.pokemon_id).padStart(4, '0')}-default`);
+      const sortProjection = nativeCollectionSortProjection(pokemon, catalogEntry, instance);
       const typeIconUris = resolveTypeIcons(instance, pokemon)
         .map((icon) => absoluteImageUri(icon, assetOrigin))
         .filter((icon): icon is string => Boolean(icon));
@@ -547,14 +580,15 @@ export const buildNativeCollectionRows = (
         status,
         source: 'instance',
         cp: instance.cp,
-        hp: Number.isFinite(Number(pokemon.stamina)) ? Number(pokemon.stamina) : null,
-        releaseTimestamp: toTimestamp(instance.date_added),
+        hp: sortProjection.stamina,
+        releaseTimestamp: sortProjection.releaseTimestamp,
         favorite: instance.favorite,
         mostWanted: instance.most_wanted,
         variantOrder: catalogOrder.get(instance.variant_id)
           ?? catalogOrder.get(`${String(instance.pokemon_id).padStart(4, '0')}-default`),
         evolutionFamilyIds: evolutionFamilies.get(instance.pokemon_id) ?? [instance.pokemon_id],
         searchTerms: instanceSearchTerms(instance, pokemon),
+        sortProjection,
       } satisfies NativeCollectionRow];
     })
     .sort((left, right) =>
@@ -579,6 +613,9 @@ export const buildNativeCatalogRows = (
   const rows = catalogEntries.map((entry, variantOrder) => {
     const pokemon = pokemonById.get(entry.pokemonId);
     const costume = pokemon?.costumes?.some((candidate) => entry.id.includes(candidate.name));
+    const sortProjection = pokemon
+      ? nativeCollectionSortProjection(pokemon, entry)
+      : undefined;
     return {
       id: entry.id,
       pokemonId: entry.pokemonId,
@@ -594,9 +631,11 @@ export const buildNativeCatalogRows = (
         .filter((icon): icon is string => Boolean(icon)),
       status: 'caught',
       source: 'catalog',
+      // Catalog CP50 is a sort key, not recorded instance CP shown on a card.
       cp: null,
-      hp: Number.isFinite(Number(pokemon?.stamina)) ? Number(pokemon?.stamina) : null,
-      releaseTimestamp: pokemon ? releaseTimestampForEntry(entry.id, pokemon) : null,
+      hp: sortProjection?.stamina ?? null,
+      releaseTimestamp: sortProjection?.releaseTimestamp
+        ?? (pokemon ? releaseTimestampForEntry(entry.id, pokemon) : null),
       favorite: false,
       mostWanted: false,
       variantOrder,
@@ -609,8 +648,11 @@ export const buildNativeCatalogRows = (
         pokemon?.rarity,
         pokemon ? GENERATION_LABELS[pokemon.generation] : null,
         costume ? 'costume' : null,
+        (pokemon?.megaEvolutions?.length ?? 0) > 0
+          && !entry.variantType?.includes('shadow') ? 'mega' : null,
         entry.maxKind,
       ].filter((term): term is string => Boolean(term?.trim())),
+      sortProjection,
     } satisfies NativeCollectionRow;
   });
   rowsByOrigin.set(assetOrigin, rows);
@@ -934,16 +976,6 @@ export const filterNativeCollectionRows = (
   return result;
 };
 
-const compareNullableNumber = (
-  left: number | null,
-  right: number | null,
-): number => {
-  if (left == null && right == null) return 0;
-  if (left == null) return 1;
-  if (right == null) return -1;
-  return left - right;
-};
-
 const nativeCollectionSortCache = new WeakMap<
   NativeCollectionRow[],
   Map<string, NativeCollectionRow[]>
@@ -958,33 +990,21 @@ export const sortNativeCollectionRows = (
   const cachedBySort = nativeCollectionSortCache.get(rows);
   const cached = cachedBySort?.get(cacheKey);
   if (cached) return cached;
-  const multiplier = direction === 'ascending' ? 1 : -1;
-  const sorted = [...rows].sort((left, right) => {
-    let comparison = 0;
-    if (sort === 'releaseDate') {
-      comparison = compareNullableNumber(left.releaseTimestamp ?? null, right.releaseTimestamp ?? null);
+  const sorted = sortPokemonCollectionItems(rows, sort, direction, (row) => (
+    row.sortProjection ?? {
+      pokedexNumber: row.pokedexNumber,
+      sortName: row.name.trim().split(/\s+/).at(-1) ?? row.name,
+      variantType: 'default',
+      form: null,
+      dateAvailable: null,
+      costumeId: Number.NaN,
+      costumeDateAvailable: null,
+      releaseTimestamp: row.releaseTimestamp ?? 0,
+      stamina: row.hp ?? 0,
+      cp: Number(row.cp),
+      favorite: row.favorite,
     }
-    if (sort === 'name') comparison = left.name.localeCompare(right.name);
-    if (sort === 'hp') comparison = compareNullableNumber(left.hp ?? null, right.hp ?? null);
-    if (sort === 'combatPower') {
-      const nullableComparison = compareNullableNumber(left.cp, right.cp);
-      if (left.cp == null || right.cp == null) return nullableComparison;
-      comparison = nullableComparison;
-    }
-    if (sort === 'favorite') comparison = Number(left.favorite) - Number(right.favorite);
-    if (sort === 'number') {
-      const dexComparison = left.pokedexNumber - right.pokedexNumber;
-      if (dexComparison !== 0) return dexComparison * multiplier;
-      const variantComparison = compareNullableNumber(
-        left.variantOrder ?? null,
-        right.variantOrder ?? null,
-      );
-      if (variantComparison !== 0) return variantComparison;
-    }
-
-    if (comparison !== 0) return comparison * multiplier;
-    return left.pokedexNumber - right.pokedexNumber || left.name.localeCompare(right.name);
-  });
+  ));
   const nextCache = cachedBySort ?? new Map<string, NativeCollectionRow[]>();
   nextCache.set(cacheKey, sorted);
   if (!cachedBySort) nativeCollectionSortCache.set(rows, nextCache);
@@ -1063,7 +1083,7 @@ export const buildNativeInstanceDetail = (
     instance.lucky ? 'Lucky' : null,
     instance.dynamax ? 'Dynamax' : null,
     instance.gigantamax ? 'Gigantamax' : null,
-    instance.is_mega || instance.mega ? 'Mega Evolved' : null,
+    instance.is_mega ? 'Mega Evolved' : null,
     instance.is_fused ? 'Fused' : null,
     instance.crown ? 'Crowned' : null,
     instance.is_traded ? 'Previously traded' : null,

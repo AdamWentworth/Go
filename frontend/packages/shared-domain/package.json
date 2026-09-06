@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./instances": "./src/instances.ts",
     "./catalog": "./src/catalog.ts",
+    "./collection-sort": "./src/collection-sort.ts",
     "./pokemon-display": "./src/pokemon-display.ts",
     "./fusion-backgrounds": "./src/fusion-backgrounds.ts",
     "./combat-power": "./src/combat-power.ts",

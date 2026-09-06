@@ -89,6 +89,8 @@ const eventScenarios = {
   collection_selection_painted: 'interaction.collection.selection',
   collection_organizer_painted: 'interaction.collection.organizer',
   instance_overlay_target_committed: 'interaction.instance.navigate',
+  instance_edit_result_painted: 'interaction.instance.edit-result',
+  instance_save_result_painted: 'interaction.instance.save-result',
   trade_section_result_painted: 'interaction.trades.section-result',
   trade_preferences_mode_result_painted: 'interaction.trades.preference-mode-result',
   trade_preferences_picker_painted: 'interaction.trades.preference-picker',

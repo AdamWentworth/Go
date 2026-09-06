@@ -1,6 +1,28 @@
 # Strong-machine Android performance handoff
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
+
+## Next manual candidate requested
+
+The installed `PokeGoNexus-manual-0dad5332-arm64-v8a.apk` is now only the prior
+baseline. It does not include the 2026-09-06 shared collection-sort engine,
+Mega registration/current-form correction, or immediate Native edit/save
+workflow.
+
+On the stronger machine, pull the latest clean `mobile/native-migration` HEAD
+and run the existing normal manual command:
+
+```bash
+npm --workspace apps/mobile run build:android:manual
+```
+
+Upload exactly its one generated
+`PokeGoNexus-manual-<commit>-arm64-v8a.apk` plus checksum to the `public` share.
+Do not substitute a device-smoke build and do not put multiple APKs into a new
+download/QR bundle. The receiving workstation should verify the embedded
+`deviceSmokeMode: false` setting and checksum, then install it in place over
+the one existing `com.pokegonexus.app` package so the signed-in session and
+single-app identity remain intact.
 
 ## Result on the original workstation
 

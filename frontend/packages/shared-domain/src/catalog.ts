@@ -11,6 +11,10 @@ export type PokemonCatalogEntry = {
   imageUri: string | null;
   typeIconUris: string[];
   maxKind: 'dynamax' | 'gigantamax' | null;
+  /** Present on canonical catalog projections; optional for legacy fixture callers. */
+  stamina?: number;
+  /** Present on canonical catalog projections; optional for legacy fixture callers. */
+  cp50?: number;
   evolvesFrom?: number[];
   evolvesTo?: number[];
 };
@@ -65,6 +69,9 @@ export const buildPokemonCatalogEntries = (
       icons?: string[];
       variantType?: string;
       form?: string | null;
+      speciesName?: string;
+      stamina?: number;
+      cp50?: number;
     } = {},
   ) => {
     if (!imageUri) return;
@@ -73,12 +80,14 @@ export const buildPokemonCatalogEntries = (
       pokemonId: pokemon.pokemon_id,
       pokedexNumber: pokemon.pokedex_number,
       name,
-      speciesName: pokemon.name,
+      speciesName: options.speciesName ?? pokemon.name,
       variantType: options.variantType,
       form: options.form === undefined ? pokemon.form : options.form,
       imageUri,
       typeIconUris: options.icons ?? baseTypeIcons(pokemon),
       maxKind: options.maxKind ?? null,
+      stamina: options.stamina ?? pokemon.stamina,
+      cp50: options.cp50 ?? pokemon.cp50,
       evolvesFrom: pokemon.evolves_from ?? pokemon.evolutionData?.evolves_from ?? [],
       evolvesTo: pokemon.evolves_to ?? pokemon.evolutionData?.evolves_to ?? [],
     });
@@ -174,6 +183,8 @@ export const buildPokemonCatalogEntries = (
     add(`${dexId}-${idSuffix}`, `${kind} ${pokemon.name}${suffix}`, mega.image_url, {
       icons,
       form: form ?? null,
+      stamina: mega.stamina,
+      cp50: mega.cp50,
       variantType: mega.primal ? 'primal' : `mega${form ? `_${form.toLowerCase()}` : ''}`,
     });
     if (pokemon.shiny_available) {
@@ -184,6 +195,8 @@ export const buildPokemonCatalogEntries = (
         {
           icons,
           form: form ?? null,
+          stamina: mega.stamina,
+          cp50: mega.cp50,
           variantType: mega.primal ? 'shiny_primal' : `shiny_mega${form ? `_${form.toLowerCase()}` : ''}`,
         },
       );
@@ -195,13 +208,20 @@ export const buildPokemonCatalogEntries = (
     const icons = typeIcons(fusion.type1_name, fusion.type2_name);
     add(`${dexId}-fusion_${fusion.fusion_id}`, fusion.name, fusion.image_url, {
       icons,
+      speciesName: fusion.name,
+      stamina: fusion.stamina,
       variantType: `fusion_${fusion.fusion_id}`,
     });
     add(
       `${dexId}-shiny_fusion_${fusion.fusion_id}`,
       `Shiny ${fusion.name}`,
       fusion.image_url_shiny,
-      { icons, variantType: `shiny_fusion_${fusion.fusion_id}` },
+      {
+        icons,
+        speciesName: fusion.name,
+        stamina: fusion.stamina,
+        variantType: `shiny_fusion_${fusion.fusion_id}`,
+      },
     );
   });
 
