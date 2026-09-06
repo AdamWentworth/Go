@@ -7,8 +7,9 @@ The canonical Vite application defines user-visible behavior. Native may use
 different implementation details, but it must preserve the same content,
 navigation outcomes, interaction order, terminology, and perceived motion.
 
-The current strong-machine standalone Android build and public-information
-performance handoff is documented in `STRONG_MACHINE_ANDROID_HANDOFF.md`.
+The current strong-machine standalone Android build, artifact identity, and
+public-information performance result are documented in
+`STRONG_MACHINE_ANDROID_HANDOFF.md`.
 
 ## Which Android workflow to use
 
@@ -46,15 +47,22 @@ unchanged-native-code runs.
 
 ## Current artifact truth
 
-The standalone APK evidence dated 2026-08-29 in
-`DEVICE_VALIDATION_CHECKLIST.md` is historical evidence for that exact source
-snapshot. It does not contain the latest Metro-served parity changes.
+The current phone has the standalone ARM64 performance candidate for commit
+`5c7f025bec6b8f70e520e550d7b0c9d5eef256f9` installed. The retained ignored
+artifact is `PokeGoNexus-information-5c7f025b-arm64.apk`, with SHA-256
+`2dc4b68743319113f30ad3615a72b544394035f3c4975e12c78ea337ea317882`. It uses
+its bundled JavaScript and does not require Metro. Its manifest is
+non-debuggable, but it is locally debug-signed, so it is a performance-test
+candidate rather than a production-distribution artifact.
 
-No new local Gradle build is authorized for the current checkpoint because the
-previous local build exhausted the workstation and crashed VS Code. Use the
-already-installed development client and Metro for current phone review. If a
-new binary becomes necessary, prefer a cloud development-client or preview APK
-when build quota is available.
+The standalone APK evidence dated 2026-08-29 in
+`DEVICE_VALIDATION_CHECKLIST.md` remains historical evidence for that earlier
+source snapshot. Do not confuse it with the current candidate.
+
+Do not run an unrestricted Gradle build on this workstation: previous resource
+pressure crashed VS Code. Build the next candidate on the stronger machine, or
+use the cloud when quota is available. Use a development client and Metro only
+for iteration that does not need standalone-binary authority.
 
 ## Current automated checkpoint
 
@@ -753,20 +761,28 @@ direct-answer route now subscribes to the measurements needed for its automatic
 scroll. Static route-startup and frame-gap browser proxies remain mixed because
 they include Expo/RNW document mounting and are not physical-native authority.
 
-One complete minified development-client phone timing sample was captured, but
-repeated samples were interrupted by Maestro's Android text-input device server
-dying while injecting the search phrase. That single sample is diagnostic only
-and is not promoted into parity evidence. A repeated standalone-release phone
-run remains required before public-page physical performance can honestly be
-called complete.
+The strong-machine standalone APK for commit `5c7f025b` completed five required
+physical FAQ repetitions and a separate ten-run repeatability pass without a
+functional failure, retry, or app crash. In the ten-sample same-Pixel comparison,
+Native/Vite median and p95 were 114.0/124.0 versus 111.8/149.2 ms for topic
+selection, 60.5/76.0 versus 47.25/137.1 ms for expanding all seven Trading
+answers, 24.0/36.0 versus 125.1/160.9 ms for search, and 61.0/75.0 versus
+90.85/118.5 ms for clear. Native beat Vite at p95 for every action and passed
+both measures for search and clear, but it missed the strict median gate by
+2.2 ms for topic selection and 13.25 ms for expand-all. Public-page physical
+performance is therefore repeatable and functionally healthy, but not yet
+approved under the no-slower rule.
 
 ## Remaining approval gate
 
-Home now has both browser-proxy and physical-phone approval. The physical Home
-numbers are diagnostic rather than standalone-release authority because the
-current JavaScript ran through the installed development client. A fresh
-standalone performance APK is still required to validate compiled-native
-changes and final release cadence when the Android cloud-build quota becomes
-available. The action menu, loading spinner, theme switch, collection page
-swipe, and Home-to-filtered-collection links retain their prior physical
-evidence, but should be included in that final release-binary sweep.
+Home now has both browser-proxy and physical-phone approval. Its existing phone
+numbers still came through the development client, so Home and the action menu,
+loading spinner, theme switch, collection swipe, and Home-to-filtered-collection
+links remain in the final whole-app standalone sweep.
+
+For public information pages, optimize and remeasure only the FAQ topic-selection
+and expand-all median paths. The current `5c7f025b` standalone candidate already
+establishes functional stability, faster p95 behavior for all four FAQ actions,
+and full median/p95 wins for search and clear; it must not be described as a
+complete performance-parity pass until the two median misses are removed in a
+new build.

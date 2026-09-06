@@ -2,6 +2,34 @@
 
 Last updated: 2026-09-05
 
+## Result on the original workstation
+
+The strong-machine build was completed for commit
+`5c7f025bec6b8f70e520e550d7b0c9d5eef256f9` and retrieved from the mounted
+`public` SMB share as `PokeGoNexus-information-5c7f025b-arm64.apk`. Its SHA-256
+is `2dc4b68743319113f30ad3615a72b544394035f3c4975e12c78ea337ea317882`.
+The APK is ARM64-only, contains the bundled JavaScript for this commit, has a
+non-debuggable manifest, and is locally debug-signed. It is therefore valid as
+a standalone performance candidate, not as a production-distribution binary.
+
+The APK installed on the physical 120 Hz Pixel 8 Pro and completed both the
+required five-run workflow and a ten-run repeatability workflow without a
+functional failure, retry, or app crash. The strict ten-sample same-phone
+comparison did **not** fully pass:
+
+| FAQ action | Vite median / p95 | Native median / p95 | Result |
+| --- | ---: | ---: | --- |
+| Topic selection | 111.8 / 149.2 ms | 114.0 / 124.0 ms | Median miss by 2.2 ms |
+| Expand all answers | 47.25 / 137.1 ms | 60.5 / 76.0 ms | Median miss by 13.25 ms |
+| Search | 125.1 / 160.9 ms | 24.0 / 36.0 ms | Pass |
+| Clear | 90.85 / 118.5 ms | 61.0 / 75.0 ms | Pass |
+
+Native was more consistent and had a faster p95 for all four actions, but the
+project's acceptance rule requires both median and p95. The next implementation
+pass should focus only on FAQ topic selection and expand-all median latency,
+then produce a new standalone APK and repeat this gate. Do not rebuild or
+retest this exact candidate expecting it to qualify unchanged.
+
 ## Objective
 
 Build the current `mobile/native-migration` branch as a standalone,
