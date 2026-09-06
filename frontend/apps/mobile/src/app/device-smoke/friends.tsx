@@ -32,8 +32,26 @@ const INITIAL_OVERVIEW: NativeFriendsOverviewModel = {
     avatarLabel: 'B',
     team: 'valor',
     teamLabel: 'Team Valor',
+  }, {
+    ...baseFriend,
+    userId: 'user-erika',
+    friendshipId: 'friendship-erika',
+    username: 'Erika',
+    pokemonGoName: 'CeladonLeader',
+    avatarLabel: 'E',
+    team: 'mystic',
+    teamLabel: 'Team Mystic',
   }],
-  outgoing: [],
+  outgoing: [{
+    ...baseFriend,
+    userId: 'user-blue',
+    friendshipId: 'friendship-blue',
+    username: 'Blue',
+    pokemonGoName: 'Blue',
+    avatarLabel: 'B',
+    team: 'mystic',
+    teamLabel: 'Team Mystic',
+  }],
   blocked: [],
 };
 
@@ -51,6 +69,7 @@ export default function DeviceSmokeFriendsRoute() {
   const [overview, setOverview] = useState(INITIAL_OVERVIEW);
   const [query, setQuery] = useState('gary');
   const [feedback, setFeedback] = useState<{ tone: 'success'; text: string } | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const [scrollX] = useState(() => new Animated.Value(0));
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
@@ -120,13 +139,17 @@ export default function DeviceSmokeFriendsRoute() {
       <NativeFriendsScreen
         activeView={activeView}
         feedback={feedback}
+        isSearching={isSearching}
         onBack={() => undefined}
         onCommand={command}
         onDismissFeedback={() => setFeedback(null)}
         onOpenProfile={() => undefined}
         onOpenProfileHome={() => undefined}
         onQueryChange={setQuery}
-        onRunSearch={() => undefined}
+        onRunSearch={() => {
+          setIsSearching(true);
+          requestAnimationFrame(() => setIsSearching(false));
+        }}
         onViewChange={changeView}
         overview={overview}
         query={query}

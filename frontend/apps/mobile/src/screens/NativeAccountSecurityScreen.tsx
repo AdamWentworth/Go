@@ -1,5 +1,5 @@
 import type { AccountSecuritySummary, OAuthProvider } from '@pokemongonexus/shared-contracts/auth';
-import { useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -23,6 +23,10 @@ import {
   type NativeAccountSecurityDraft,
 } from '../features/settings/nativeAccountSecurityModel';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import {
+  captureNativeUiInteractionStart,
+  markNativeUiPerformanceAfterPaint,
+} from '../observability/nativeUiInteractionTiming';
 
 type Confirmation =
   | { kind: 'delete'; title: string; body: string; confirmLabel: string }
@@ -124,6 +128,7 @@ export const NativeAccountSecurityScreen = ({
   const insets = useSafeAreaInsets();
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const confirmationPasswordRef = useRef<TextInput>(null);
+  const feedbackPerformanceRef = useRef<{ event: string; startedAt: number } | null>(null);
   const working = Boolean(pendingAction);
   const update = <K extends keyof NativeAccountSecurityDraft>(
     key: K,
@@ -133,8 +138,10 @@ export const NativeAccountSecurityScreen = ({
     Keyboard.dismiss();
   };
   const beginConfirmation = (next: Confirmation) => {
+    const startedAt = captureNativeUiInteractionStart();
     clearTextInputFocus();
     setConfirmation(next);
+    markNativeUiPerformanceAfterPaint('account_confirmation_painted', startedAt);
   };
   const dismissConfirmation = () => {
     confirmationPasswordRef.current?.blur();
@@ -146,10 +153,20 @@ export const NativeAccountSecurityScreen = ({
     if (!confirmation) return;
     const action = confirmation;
     dismissConfirmation();
+    feedbackPerformanceRef.current = action.kind === 'unlink'
+      ? { event: 'account_provider_result_painted', startedAt: captureNativeUiInteractionStart() }
+      : null;
     if (action.kind === 'delete') onDeleteAccount();
     if (action.kind === 'revoke') onRevokeAllSessions();
     if (action.kind === 'unlink') onUnlinkProvider(action.provider);
   };
+
+  useEffect(() => {
+    if (!feedback || feedbackPerformanceRef.current === null) return;
+    const pending = feedbackPerformanceRef.current;
+    feedbackPerformanceRef.current = null;
+    markNativeUiPerformanceAfterPaint(pending.event, pending.startedAt);
+  }, [feedback]);
 
   return (
     <KeyboardAvoidingView
@@ -205,7 +222,14 @@ export const NativeAccountSecurityScreen = ({
           <AccountField icon="email" label="Email" light={light} onChangeText={(value) => update('email', value)} value={draft.email} />
           <AccountField label="New password" light={light} onChangeText={(value) => update('newPassword', value)} placeholder="Leave blank to keep current password" secureTextEntry value={draft.newPassword} />
           <AccountField label="Confirm new password" light={light} onChangeText={(value) => update('confirmNewPassword', value)} secureTextEntry value={draft.confirmNewPassword} />
-          <Pressable accessibilityRole="button" disabled={working} onPress={() => { clearTextInputFocus(); onUpdateAccount(); }} style={[styles.primary, working && styles.disabled]}>
+          <Pressable accessibilityRole="button" disabled={working} onPress={() => {
+            clearTextInputFocus();
+            feedbackPerformanceRef.current = {
+              event: 'account_update_result_painted',
+              startedAt: captureNativeUiInteractionStart(),
+            };
+            onUpdateAccount();
+          }} style={[styles.primary, working && styles.disabled]}>
             <View style={styles.buttonLabel}><NativeUiIcon color="#061617" name="key" size={15} /><Text style={styles.primaryText}>{pendingAction === 'account' ? 'Saving…' : 'Update account'}</Text></View>
           </Pressable>
         </View>
@@ -244,6 +268,10 @@ export const NativeAccountSecurityScreen = ({
                       return;
                     }
                     clearTextInputFocus();
+                    feedbackPerformanceRef.current = {
+                      event: 'account_provider_result_painted',
+                      startedAt: captureNativeUiInteractionStart(),
+                    };
                     onConnectProvider(provider);
                   }}
                   style={[styles.compactAction, light && styles.compactActionLight, working && styles.disabled]}

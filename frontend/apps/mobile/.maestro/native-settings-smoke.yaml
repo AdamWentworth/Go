@@ -44,12 +44,14 @@ tags:
       text: Trade coordination
     direction: DOWN
     timeout: 10000
-- scrollUntilVisible:
-    element:
-      text: Discord
-    direction: DOWN
-    timeout: 10000
-- assertVisible: Discord
+- assertVisible: Do not share coordination details
+- tapOn:
+    text: "Preferred coordination method, Do not share coordination details"
+    point: "20%,25%"
+    retryTapIfNoChange: true
+- assertVisible: Preferred coordination method
+- tapOn: Discord
+- assertVisible: "Preferred coordination method, Discord"
 - tapOn:
     text: "Preferred coordination method, Discord"
     point: "20%,25%"
@@ -78,28 +80,23 @@ tags:
     start: "20%,78%"
     end: "20%,42%"
     duration: 500
-- assertVisible: "Color theme, (Light|Dark)"
 - assertVisible: Color theme
 - runFlow:
     when:
-      visible: "Color theme, Dark"
+      visible: "Use light theme"
     commands:
-      - tapOn: "Color theme, Dark"
-      - tapOn: Light
-      - assertVisible: "Color theme, Light"
-      - tapOn: "Color theme, Light"
-      - tapOn: Dark
-      - assertVisible: "Color theme, Dark"
+      - tapOn: "Use light theme"
+      - assertVisible: "Use dark theme"
+      - tapOn: "Use dark theme"
+      - assertVisible: "Use light theme"
 - runFlow:
     when:
-      visible: "Color theme, Light"
+      visible: "Use dark theme"
     commands:
-      - tapOn: "Color theme, Light"
-      - tapOn: Dark
-      - assertVisible: "Color theme, Dark"
-      - tapOn: "Color theme, Dark"
-      - tapOn: Light
-      - assertVisible: "Color theme, Light"
+      - tapOn: "Use dark theme"
+      - assertVisible: "Use light theme"
+      - tapOn: "Use light theme"
+      - assertVisible: "Use dark theme"
 - assertVisible: Reduce motion
 - tapOn: Reduce motion
 - swipe:

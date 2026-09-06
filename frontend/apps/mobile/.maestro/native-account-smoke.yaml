@@ -65,10 +65,10 @@ tags:
     timeout: 10000
 - scrollUntilVisible:
     element:
-      text: trainer@gmail.com
+      text: demo@pokegonexus.local
     direction: DOWN
     timeout: 10000
-- assertVisible: trainer@gmail.com
+- assertVisible: demo@pokegonexus.local
 - tapOn: Disconnect Google
 - assertVisible: Disconnect Google?
 - assertVisible: Current password

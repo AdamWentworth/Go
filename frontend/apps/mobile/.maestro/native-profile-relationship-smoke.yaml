@@ -24,6 +24,11 @@ tags:
     timeout: 45000
 - assertVisible: Your pending request to Misty will be canceled.
 - tapOn: Cancel request
+- runFlow:
+    when:
+      visible: "^Continue$"
+    commands:
+      - tapOn: "^Continue$"
 - assertVisible: Friend request canceled.
 - assertVisible: TRAINER PROFILE
 - assertVisible: CeruleanLeader

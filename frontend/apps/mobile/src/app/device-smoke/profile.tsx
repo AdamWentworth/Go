@@ -9,6 +9,7 @@ import type { NativeTrainerProfileDraft } from '../../features/social/nativeTrai
 import { NativeTrainerProfileScreen } from '../../screens/NativeTrainerProfileScreen';
 
 const ASSET_BASE_URL = 'https://pokegonexus.com';
+const PERFORMANCE_HIGHLIGHT_CANDIDATE_COUNT = 180;
 
 const highlight = (
   id: string,
@@ -71,12 +72,27 @@ const HIGHLIGHTS = [
   highlight('0150-default_demo-mewtwo', 150, 'Mewtwo', '/images/default/pokemon_150.png', null, 4188),
 ];
 
-const HIGHLIGHT_CANDIDATES = [
+const CORE_HIGHLIGHT_CANDIDATES = [
   ...HIGHLIGHTS,
   highlight('0149-default_demo-dragonite', 149, 'Dragonite', '/images/default/pokemon_149.png', null, 3472),
   highlight('0003-default_demo-venusaur', 3, 'Garden lead', '/images/default/pokemon_3.png', null, 2411),
   highlight('suicune', 245, 'Shiny Suicune', '/images/shiny/shiny_pokemon_245.png'),
   highlight('metagross', 376, 'Shiny Metagross', '/images/shiny/shiny_pokemon_376.png'),
+];
+
+const HIGHLIGHT_CANDIDATES = [
+  ...CORE_HIGHLIGHT_CANDIDATES,
+  ...Array.from({ length: PERFORMANCE_HIGHLIGHT_CANDIDATE_COUNT - CORE_HIGHLIGHT_CANDIDATES.length }, (_, index) => {
+    const pokemonId = (index % 1025) + 1;
+    return highlight(
+      `performance-candidate-${index + 1}`,
+      pokemonId,
+      `Performance candidate ${index + 1}`,
+      `/images/default/pokemon_${pokemonId}.png`,
+      null,
+      1500 + index,
+    );
+  }),
 ];
 
 const EDITOR_DRAFT: NativeTrainerProfileDraft = {

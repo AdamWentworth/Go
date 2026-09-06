@@ -1574,6 +1574,7 @@ const assertSignedInSettingsAccountWorkflow = async (context) => {
     await page.getByRole('button', { name: 'Save privacy', exact: true }).click();
     await page.getByText('Privacy settings saved.', { exact: true })
       .waitFor({ state: 'visible', timeout: 15_000 });
+    await page.getByRole('switch', { name: /Use (?:light|dark) theme/ }).click();
 
     await page.getByRole('tab', { name: 'Account', exact: true }).click();
     await assertNativeDestination(page, '/native/account', 'native-account-security-screen');

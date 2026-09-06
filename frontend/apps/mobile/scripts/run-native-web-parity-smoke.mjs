@@ -789,8 +789,14 @@ const run = async () => {
           const goToFriendsPage = async (label, index) => {
             await page.getByRole('tab', { name: label }).click();
             await page.waitForFunction((expectedIndex) => {
-              const element = document.querySelector('[data-testid="native-horizontal-page-slider"]');
-              return element && Math.abs(element.scrollLeft - (element.clientWidth * expectedIndex)) <= 2;
+              const viewport = document.querySelector('[data-testid="native-horizontal-page-slider"]');
+              const track = document.querySelector('[data-testid="native-horizontal-page-track"]');
+              if (!viewport || !track) return false;
+              const viewportBounds = viewport.getBoundingClientRect();
+              const trackBounds = track.getBoundingClientRect();
+              return Math.abs(
+                trackBounds.left + (viewportBounds.width * expectedIndex) - viewportBounds.left,
+              ) <= 2;
             }, index);
           };
           await goToFriendsPage('Requests view', 1);
@@ -806,7 +812,12 @@ const run = async () => {
           await page.getByText('Trainer unblocked.').waitFor({ state: 'visible' });
           await page.getByRole('button', { name: 'Dismiss message' }).click();
           await goToFriendsPage('Friends view', 0);
-          const friendsOffset = await slider.evaluate((element) => element.scrollLeft);
+          const friendsOffset = await slider.evaluate((element) => {
+            const track = element.querySelector('[data-testid="native-horizontal-page-track"]');
+            return track
+              ? track.getBoundingClientRect().left - element.getBoundingClientRect().left
+              : Number.NaN;
+          });
           if (Math.abs(friendsOffset) > 2) throw new Error(`Friends view stopped at scroll offset ${friendsOffset}.`);
         }
 

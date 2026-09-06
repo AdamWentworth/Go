@@ -1,5 +1,14 @@
 import { type ReactNode, useEffect } from 'react';
-import { BackHandler, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  BackHandler,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type AccessibilityRole,
+} from 'react-native';
 import { useNativeModalAnimation } from '../features/settings/useNativeMotion';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
@@ -30,26 +39,28 @@ export const NativeConfirmationDialog = ({
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
   const animationType = useNativeModalAnimation('fade');
+  const inlinePresentation = presentation === 'inline' || Platform.OS === 'web';
   useEffect(() => {
-    if (presentation !== 'inline' || !visible) return undefined;
+    if (presentation !== 'inline' || Platform.OS === 'web' || !visible) return undefined;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       onCancel();
       return true;
     });
     return () => subscription.remove();
   }, [onCancel, presentation, visible]);
+  if (Platform.OS === 'web' && presentation !== 'inline' && !visible) return null;
   const dialog = (
     <View
       accessibilityElementsHidden={!visible}
       accessibilityLabel={title}
-      accessibilityViewIsModal
+      accessibilityRole={Platform.OS === 'web' ? 'dialog' as AccessibilityRole : undefined}
+      accessibilityViewIsModal={Platform.OS !== 'web'}
       importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
       pointerEvents={visible ? 'auto' : 'none'}
-      role="dialog"
       style={[
         styles.backdrop,
-        presentation === 'inline' && styles.inlineBackdrop,
-        presentation === 'inline' && !visible && styles.hiddenInline,
+        inlinePresentation && styles.inlineBackdrop,
+        inlinePresentation && !visible && styles.hiddenInline,
       ]}
     >
       <View style={[styles.card, light && styles.cardLight]} testID="native-confirmation-dialog">
@@ -68,7 +79,7 @@ export const NativeConfirmationDialog = ({
       </View>
     </View>
   );
-  if (presentation === 'inline') return dialog;
+  if (inlinePresentation) return dialog;
   return (
     <Modal
       animationType={animationType}
@@ -109,5 +120,5 @@ const styles = StyleSheet.create({
   confirmText: { color: '#041411', fontWeight: '900', textAlign: 'center' },
   disabled: { opacity: 0.55 },
   textLight: { color: '#172124' },
-  mutedLight: { color: '#5e6c6f' },
+  mutedLight: { color: '#4b5c5f' },
 });

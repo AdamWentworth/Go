@@ -5,8 +5,12 @@ import {
   TRAINER_TITLE_OPTIONS,
   TRAINER_TITLE_VISUALS,
 } from '@pokemongonexus/shared-contracts/users';
-import { NativeTrainerProfileScreen } from '../../../src/screens/NativeTrainerProfileScreen';
+import {
+  NativeTrainerProfileScreen,
+  resolveNativeProfileShowcaseDragTarget,
+} from '../../../src/screens/NativeTrainerProfileScreen';
 import type { NativeTrainerProfileModel } from '../../../src/features/social/nativeTrainerProfileModel';
+import type { NativeTrainerProfileDraft } from '../../../src/features/social/nativeTrainerProfileEditorModel';
 import type { NativeCollectionRow } from '../../../src/features/collection/collectionModel';
 
 const model: NativeTrainerProfileModel = {
@@ -70,6 +74,36 @@ const renderScreen = (props: Partial<React.ComponentProps<typeof NativeTrainerPr
 );
 
 describe('NativeTrainerProfileScreen', () => {
+  it('maps direct showcase drags to the same compact slot order as Vite', () => {
+    expect(resolveNativeProfileShowcaseDragTarget({
+      columns: 3,
+      fromIndex: 0,
+      selectedCount: 5,
+      slotHeight: 150,
+      slotWidth: 120,
+      translationX: 245,
+      translationY: 0,
+    })).toBe(2);
+    expect(resolveNativeProfileShowcaseDragTarget({
+      columns: 3,
+      fromIndex: 1,
+      selectedCount: 5,
+      slotHeight: 150,
+      slotWidth: 120,
+      translationX: 0,
+      translationY: 160,
+    })).toBe(4);
+    expect(resolveNativeProfileShowcaseDragTarget({
+      columns: 3,
+      fromIndex: 4,
+      selectedCount: 5,
+      slotHeight: 150,
+      slotWidth: 120,
+      translationX: 300,
+      translationY: 0,
+    })).toBe(4);
+  });
+
   it('renders the canonical trainer card hierarchy and showcase', () => {
     const view = renderScreen();
     expect(view.getByText('YOUR TRAINER CARD')).toBeTruthy();
@@ -145,6 +179,29 @@ describe('NativeTrainerProfileScreen', () => {
     expect(retry).toHaveBeenCalled();
   });
 
+  it('offers the same first-profile setup action as Vite', () => {
+    const onBeginEdit = jest.fn();
+    const view = renderScreen({
+      highlights: [],
+      model: {
+        ...model,
+        locationLabel: 'Not shared',
+        startedLabel: 'Not shared',
+        team: 'neutral',
+        teamLabel: 'Unaffiliated',
+        titles: [],
+        totalXpLabel: 'XP not shared',
+        trainerCodeLabel: 'Not shared',
+        trainerLevel: null,
+      },
+      onBeginEdit,
+    });
+
+    expect(view.getByText('Make this trainer profile yours')).toBeTruthy();
+    fireEvent.press(view.getByRole('button', { name: 'Customize profile' }));
+    expect(onBeginEdit).toHaveBeenCalledTimes(1);
+  });
+
   it('runs direct friend actions and confirms destructive relationship changes', () => {
     const onRelationshipAction = jest.fn();
     const view = renderScreen({
@@ -215,11 +272,47 @@ describe('NativeTrainerProfileScreen', () => {
       onChangeEditorDraft,
       onSaveProfile,
     });
-    expect(view.getByText('Your trainer details')).toBeTruthy();
-    fireEvent.changeText(view.getByLabelText('Pokémon GO name'), 'UpdatedAdam');
+    expect(view.getByLabelText('Pokemon GO name')).toBeTruthy();
+    fireEvent.changeText(view.getByLabelText('Pokemon GO name'), 'UpdatedAdam');
     expect(onChangeEditorDraft).toHaveBeenCalledWith({
       ...editorDraft,
       pokemonGoName: 'UpdatedAdam',
+    });
+    fireEvent.changeText(view.getByLabelText('Trainer level'), '49');
+    expect(onChangeEditorDraft).toHaveBeenCalledWith({
+      ...editorDraft,
+      trainerLevel: '49',
+    });
+    fireEvent.changeText(view.getByLabelText('Total XP'), '654321');
+    expect(onChangeEditorDraft).toHaveBeenCalledWith({
+      ...editorDraft,
+      totalXp: '654321',
+    });
+    fireEvent.changeText(view.getByLabelText('Started playing'), '2017-01-02');
+    expect(onChangeEditorDraft).toHaveBeenCalledWith({
+      ...editorDraft,
+      startedOn: '2017-01-02',
+    });
+    fireEvent.changeText(view.getByLabelText('Location'), 'Vancouver, BC');
+    expect(onChangeEditorDraft).toHaveBeenCalledWith({
+      ...editorDraft,
+      location: 'Vancouver, BC',
+    });
+    fireEvent.changeText(view.getByLabelText('Trainer code'), '987654321098');
+    expect(onChangeEditorDraft).toHaveBeenCalledWith({
+      ...editorDraft,
+      trainerCode: '987654321098',
+    });
+    fireEvent.press(view.getByRole('button', { name: 'Team, Mystic' }));
+    fireEvent.press(view.getByRole('radio', { name: 'Select Valor' }));
+    expect(onChangeEditorDraft).toHaveBeenCalledWith({
+      ...editorDraft,
+      team: 'Valor',
+    });
+    fireEvent.press(view.getByRole('button', { name: /Max Battler/ }));
+    expect(onChangeEditorDraft).toHaveBeenCalledWith({
+      ...editorDraft,
+      trainerTitles: ['shiny-hunter', 'max-battler'],
     });
     fireEvent.press(view.getByRole('button', { name: 'Save profile' }));
     expect(onSaveProfile).toHaveBeenCalledTimes(1);
@@ -230,8 +323,8 @@ describe('NativeTrainerProfileScreen', () => {
   it('edits and reorders the six-slot showcase from caught Pokémon only', () => {
     const dismissKeyboard = jest.spyOn(Keyboard, 'dismiss').mockImplementation(() => undefined);
     const onChangeEditorDraft = jest.fn();
-    const editorDraft = {
-      trainerTitles: [] as const,
+    const editorDraft: NativeTrainerProfileDraft = {
+      trainerTitles: [],
       pokemonGoName: 'AdamGo',
       trainerCode: '',
       team: 'Mystic',
@@ -284,5 +377,45 @@ describe('NativeTrainerProfileScreen', () => {
       highlightInstanceIds: ['highlight-2', 'highlight-1', '', '', '', ''],
     });
     dismissKeyboard.mockRestore();
+  });
+
+  it('compacts showcase slots immediately when the current slot is cleared', () => {
+    const onChangeEditorDraft = jest.fn();
+    const editorDraft: NativeTrainerProfileDraft = {
+      trainerTitles: [],
+      pokemonGoName: 'AdamGo',
+      trainerCode: '',
+      team: 'Mystic',
+      trainerLevel: '50',
+      totalXp: '',
+      startedOn: '',
+      location: '',
+      highlightInstanceIds: ['highlight-1', 'highlight-2'],
+    };
+    const secondHighlight = {
+      ...highlight,
+      id: 'highlight-2',
+      name: 'Shiny Suicune',
+      pokedexNumber: 245,
+      pokemonId: 245,
+    };
+    const view = renderScreen({
+      editorDraft,
+      highlightCandidates: [highlight, secondHighlight],
+      highlights: [highlight, secondHighlight],
+      onCancelEdit: jest.fn(),
+      onChangeEditorDraft,
+      onSaveProfile: jest.fn(),
+    });
+
+    fireEvent.press(view.getByRole('button', {
+      name: 'Shiny Gigantamax Charizard, edit showcase slot 1',
+    }));
+    fireEvent.press(view.getByRole('button', { name: 'Clear slot' }));
+
+    expect(onChangeEditorDraft).toHaveBeenCalledWith({
+      ...editorDraft,
+      highlightInstanceIds: ['highlight-2', '', '', '', '', ''],
+    });
   });
 });

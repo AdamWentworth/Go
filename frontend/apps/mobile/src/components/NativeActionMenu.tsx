@@ -189,7 +189,7 @@ const SupportGlyph = ({ color, name }: { color: string; name: SupportGlyphName }
   );
 };
 
-const NativeThemeSwitch = ({
+export const NativeThemeSwitch = ({
   active,
   dark,
   onPress,

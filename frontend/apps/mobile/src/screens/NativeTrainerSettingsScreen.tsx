@@ -4,7 +4,7 @@ import type {
   TradeCoordinationMethod,
   TrainerCodeVisibility,
 } from '@pokemongonexus/shared-contracts/users';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -20,6 +20,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { NativeBackIcon } from '../components/NativeBackIcon';
+import { NativeThemeSwitch } from '../components/NativeActionMenu';
 import { NativeOptionPicker, type NativeOptionPickerEntry } from '../components/NativeOptionPicker';
 import { NativeSettingsWorkspaceNav } from '../components/NativeSettingsWorkspaceNav';
 import {
@@ -29,14 +30,14 @@ import {
 import type { NativeColorTheme } from '../features/settings/nativeDevicePreferences';
 import type { NativeSyncSettingsSummary } from '../features/settings/nativeSyncSettingsModel';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
 
 type PickerKey =
   | 'profileVisibility'
   | 'collectionVisibility'
   | 'friendRequestPermission'
   | 'trainerCodeVisibility'
-  | 'coordinationMethod'
-  | 'colorTheme';
+  | 'coordinationMethod';
 
 type Props = {
   draft: NativeTrainerPreferencesDraft | null;
@@ -74,11 +75,6 @@ const COORDINATION_OPTIONS: NativeOptionPickerEntry[] = [
   { key: 'other', label: 'Another community or app' },
   { key: 'none', label: 'Do not share coordination details' },
 ];
-const COLOR_THEME_OPTIONS: NativeOptionPickerEntry[] = [
-  { key: 'dark', label: 'Dark' },
-  { key: 'light', label: 'Light' },
-];
-
 const labelFor = (options: NativeOptionPickerEntry[], value: string): string => (
   options.find((option) => option.key === value)?.label ?? value
 );
@@ -181,15 +177,25 @@ export const NativeTrainerSettingsScreen = ({
   const insets = useSafeAreaInsets();
   const [picker, setPicker] = useState<PickerKey | null>(null);
   const coordinationHandleRef = useRef<TextInput>(null);
+  const feedbackPerformanceRef = useRef<number | null>(null);
 
   const clearTextInputFocus = () => {
     coordinationHandleRef.current?.blur();
     Keyboard.dismiss();
   };
   const openPicker = (nextPicker: PickerKey) => {
+    const startedAt = Date.now();
     clearTextInputFocus();
     setPicker(nextPicker);
+    markNativeUiPerformanceAfterPaint('settings_picker_painted', startedAt);
   };
+
+  useEffect(() => {
+    if (!feedback || feedbackPerformanceRef.current === null) return;
+    const startedAt = feedbackPerformanceRef.current;
+    feedbackPerformanceRef.current = null;
+    markNativeUiPerformanceAfterPaint('settings_save_result_painted', startedAt);
+  }, [feedback]);
 
   const update = <K extends keyof NativeTrainerPreferencesDraft>(
     key: K,
@@ -219,10 +225,6 @@ export const NativeTrainerSettingsScreen = ({
     coordinationMethod: {
       title: 'Preferred coordination method', options: COORDINATION_OPTIONS, selected: draft?.coordinationMethod ?? 'none',
       select: (key: string) => { if (draft) onChange(changeNativeCoordinationMethod(draft, key as TradeCoordinationMethod)); },
-    },
-    colorTheme: {
-      title: 'Color theme', options: COLOR_THEME_OPTIONS, selected: colorTheme,
-      select: (key: string) => onChangeColorTheme(key as NativeColorTheme),
     },
   } as const)[picker] : null;
 
@@ -271,9 +273,21 @@ export const NativeTrainerSettingsScreen = ({
               <SelectionField label="Pokémon visibility" light={light} onPress={() => openPicker('collectionVisibility')} value={labelFor(VISIBILITY_OPTIONS, draft.collectionVisibility)} description="Controls access to your public Pokémon catalog." />
               <SelectionField label="Friend requests" light={light} onPress={() => openPicker('friendRequestPermission')} value={labelFor(FRIEND_OPTIONS, draft.friendRequestPermission)} />
               <SelectionField label="Trainer code visibility" light={light} onPress={() => openPicker('trainerCodeVisibility')} value={labelFor(VISIBILITY_OPTIONS, draft.trainerCodeVisibility)} description="Accepted-trade sharing is configured separately below." />
-              <ToggleField label="Show Pokémon GO name" light={light} onChange={(value) => update('showPokemonGoName', value)} value={draft.showPokemonGoName} />
-              <ToggleField label="Show profile location" light={light} onChange={(value) => update('showLocation', value)} value={draft.showLocation} />
-              <Pressable accessibilityRole="button" disabled={isSaving} onPress={() => { clearTextInputFocus(); onSavePrivacy(); }} style={[styles.save, isSaving && styles.disabled]}>
+              <ToggleField label="Show Pokémon GO name" light={light} onChange={(value) => {
+                const startedAt = Date.now();
+                update('showPokemonGoName', value);
+                markNativeUiPerformanceAfterPaint('settings_toggle_result_painted', startedAt);
+              }} value={draft.showPokemonGoName} />
+              <ToggleField label="Show profile location" light={light} onChange={(value) => {
+                const startedAt = Date.now();
+                update('showLocation', value);
+                markNativeUiPerformanceAfterPaint('settings_toggle_result_painted', startedAt);
+              }} value={draft.showLocation} />
+              <Pressable accessibilityRole="button" disabled={isSaving} onPress={() => {
+                clearTextInputFocus();
+                feedbackPerformanceRef.current = Date.now();
+                onSavePrivacy();
+              }} style={[styles.save, isSaving && styles.disabled]}>
                 <Text style={styles.saveText}>{isSaving ? 'Saving…' : 'Save privacy'}</Text>
               </Pressable>
             </View>
@@ -304,9 +318,17 @@ export const NativeTrainerSettingsScreen = ({
                   />
                 </View>
               ) : null}
-              <ToggleField disabled={draft.coordinationMethod === 'none'} label="Share with accepted trade partners" light={light} onChange={(value) => update('shareTradeContact', value)} value={draft.shareTradeContact} />
+              <ToggleField disabled={draft.coordinationMethod === 'none'} label="Share with accepted trade partners" light={light} onChange={(value) => {
+                const startedAt = Date.now();
+                update('shareTradeContact', value);
+                markNativeUiPerformanceAfterPaint('settings_toggle_result_painted', startedAt);
+              }} value={draft.shareTradeContact} />
               <View style={[styles.coordinationNote, light && styles.coordinationNoteLight]}><Text style={[styles.noteText, light && styles.textLight]}>These details are never added to search results. They become available only while a trade is accepted and active.</Text></View>
-              <Pressable accessibilityRole="button" disabled={isSaving} onPress={() => { clearTextInputFocus(); onSaveCoordination(); }} style={[styles.save, isSaving && styles.disabled]}>
+              <Pressable accessibilityRole="button" disabled={isSaving} onPress={() => {
+                clearTextInputFocus();
+                feedbackPerformanceRef.current = Date.now();
+                onSaveCoordination();
+              }} style={[styles.save, isSaving && styles.disabled]}>
                 <Text style={styles.saveText}>{isSaving ? 'Saving…' : 'Save coordination'}</Text>
               </Pressable>
             </View>
@@ -318,18 +340,33 @@ export const NativeTrainerSettingsScreen = ({
             <View><Text style={[styles.sectionEyebrow, light && styles.labelLight]}>THIS DEVICE</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Display</Text></View>
             <Text style={styles.sectionIcon}>{colorTheme === 'light' ? '☀' : '☾'}</Text>
           </View>
-          <SelectionField
-            description="Stored on this device and shared by every native screen."
-            label="Color theme"
-            light={light}
-            onPress={() => openPicker('colorTheme')}
-            value={labelFor(COLOR_THEME_OPTIONS, colorTheme)}
-          />
+          <View style={[styles.themeRow, light && styles.toggleRowLight]}>
+            <View style={styles.toggleCopy}>
+              <Text style={[styles.toggleLabel, light && styles.textLight]}>Color theme</Text>
+              <Text style={[styles.help, styles.themeHelp, light && styles.mutedLight]}>
+                Stored on this device and shared by every native screen.
+              </Text>
+            </View>
+            <NativeThemeSwitch
+              active
+              dark={colorTheme === 'dark'}
+              onPress={() => {
+                const startedAt = Date.now();
+                onChangeColorTheme(colorTheme === 'dark' ? 'light' : 'dark');
+                markNativeUiPerformanceAfterPaint('theme_visible_palette_committed', startedAt);
+              }}
+              reduceMotion={reduceMotion}
+            />
+          </View>
           <ToggleField
             description="Use simpler page and instance transitions. Android's accessibility preference is also honored."
             label="Reduce motion"
             light={light}
-            onChange={onChangeReduceMotion}
+            onChange={(value) => {
+              const startedAt = Date.now();
+              onChangeReduceMotion(value);
+              markNativeUiPerformanceAfterPaint('settings_toggle_result_painted', startedAt);
+            }}
             value={reduceMotion}
           />
         </View>
@@ -377,7 +414,12 @@ export const NativeTrainerSettingsScreen = ({
 
       <NativeOptionPicker
         onClose={() => { clearTextInputFocus(); setPicker(null); }}
-        onSelect={(entry) => { pickerConfig?.select(entry.key); setPicker(null); }}
+        onSelect={(entry) => {
+          const startedAt = Date.now();
+          pickerConfig?.select(entry.key);
+          setPicker(null);
+          markNativeUiPerformanceAfterPaint('settings_selection_result_painted', startedAt);
+        }}
         options={pickerConfig?.options ?? []}
         selectedKey={pickerConfig?.selected ?? null}
         title={pickerConfig?.title ?? 'Setting'}
@@ -423,6 +465,8 @@ const styles = StyleSheet.create({
   chevron: { color: '#9db5b4', fontSize: 21 },
   help: { color: '#9db5b4', fontSize: 12, lineHeight: 17, textAlign: 'right' },
   toggleRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 11, paddingVertical: 8, borderWidth: 1, borderColor: '#315052', borderRadius: 8, backgroundColor: '#202728' },
+  themeRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 11, paddingVertical: 8, borderWidth: 1, borderColor: '#315052', borderRadius: 8, backgroundColor: '#202728' },
+  themeHelp: { textAlign: 'left' },
   toggleRowLight: { borderColor: '#9bb8b1', backgroundColor: '#e3efe8' },
   toggleCopy: { flex: 1, gap: 2 },
   toggleLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

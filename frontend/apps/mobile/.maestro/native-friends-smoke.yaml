@@ -22,10 +22,10 @@ tags:
 - extendedWaitUntil:
     visible: Your friends
     timeout: 45000
-- assertVisible: CeruleanLeader
+- assertVisible: HarbourMew
 - takeScreenshot: native-friends-initial
-- tapOn: Remove Misty
-- assertVisible: Remove Misty?
+- tapOn: Remove HarbourMew
+- assertVisible: Remove HarbourMew?
 - tapOn: Remove friend
 - assertVisible: Friend removed.
 - assertVisible: Your friends will appear here. Find a trainer to get started.

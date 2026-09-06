@@ -64,7 +64,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 162 suites, 913 tests;
+- native Jest: 162 suites, 921 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 10 tests;
@@ -643,9 +643,40 @@ p95 and worst case. These Native measurements use a production-mode minified
 bundle in the installed development client and therefore remain diagnostic,
 not standalone-release authority.
 
-The final checkpoint passes 162 native suites / 913 tests, all 13 focused Vite
+The 2026-09-05 trainer-workspace pass covers Profile, Friends, Settings, and
+Account end to end. The Profile editor now uses the trainer card itself, like
+Vite, rather than mounting a separate editor below it. Identity, level, team,
+XP, dates, location, trainer code, six featured-Pokémon slots, drag reordering,
+picker search/clear/selection, all play-style choices, cancel, save, setup,
+collection links, and relationship confirmations are covered. The showcase
+picker is inline, reveals the same initial 48 candidates in small post-paint
+batches, and its physical fixture now supplies the canonical 180 instances
+rather than the invalid seven-candidate shortcut found during the audit.
+
+Friends covers all three workspace views, search, profile navigation, incoming
+and outgoing requests, removal, blocking, and server-result feedback. Settings
+covers every visibility/coordination choice, exact switches, theme behavior,
+device preferences, and save feedback. Account covers editable identity,
+password validation, every provider state, sensitive confirmations, OAuth-only
+accounts, session revocation, and destructive account actions. The focused
+physical workflows for all four areas passed, as did their native-web phone and
+desktop light/dark/accessibility matrix and their real API-route workflows.
+
+Five repetitions on the same 120 Hz Pixel 8 Pro put Native ahead of physical
+Vite Chrome at both median and p95 for all 18 bounded trainer interactions.
+The six realistic 180-instance Profile medians were 196 ms to edit, 38 ms to
+select a title, 229 ms to open the showcase picker, 95 ms to select a showcase
+Pokémon, 94 ms to reorder it, and 176 ms to save. Vite measured 249.9, 55.3,
+301.2, 121.3, 178.2, and 478.8 ms respectively. Friends medians were 329 ms or
+less, Settings 85 ms or less, Account 141 ms or less, and relationship actions
+97 ms or less; each corresponding Vite median and p95 was slower. The native
+numbers use a minified bundle in the installed development client, so they are
+strong same-device diagnostics but not standalone-release authority.
+
+The final checkpoint passes 162 native suites / 921 tests, all 13 focused Vite
 mobile-Chromium auth/lifecycle cases, the complete 1,720-test Vite unit and
-integration suite, TypeScript, ESLint, stylelint, and all 19 performance-report
+integration suite, 28 focused Vite trainer tests, six focused trainer browser
+lifecycle tests, TypeScript, ESLint, stylelint, and all 21 performance-report
 contract tests. The physical functional and performance workflows completed
 without an app crash; timing-only fixtures pre-seed valid text so repeated
 measurements do not depend on Maestro's intermittent Android keyboard injection.

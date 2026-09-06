@@ -10,7 +10,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Svg, { Path } from 'react-native-svg';
 import {
   NativeHorizontalPageSlider,
@@ -26,6 +26,10 @@ import type {
 } from '../features/social/nativeFriendsModel';
 import type { NativeTrainerSearchRow } from '../features/search/trainerSearchModel';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import {
+  captureNativeUiInteractionStart,
+  markNativeUiPerformanceAfterPaint,
+} from '../observability/nativeUiInteractionTiming';
 
 export type NativeFriendsView = 'friends' | 'requests' | 'find' | 'blocked';
 export type NativeFriendsScreenCommand =
@@ -230,6 +234,8 @@ export const NativeFriendsScreen = ({
   const { width } = useWindowDimensions();
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const [confirmation, setConfirmation] = useState<NativeFriendRow | null>(null);
+  const feedbackPerformanceRef = useRef<number | null>(null);
+  const searchPerformanceRef = useRef<number | null>(null);
   const activeIndex = VIEWS.indexOf(activeView);
   const tabWidth = Math.max(0, width - 30) / VIEWS.length;
   const translateX = scrollX?.interpolate({
@@ -245,9 +251,34 @@ export const NativeFriendsScreen = ({
     requests: requestCount,
   };
   const changeView = (view: NativeFriendsView) => {
+    const startedAt = captureNativeUiInteractionStart();
     onViewChange(view);
-    sliderRef.current?.setPage(VIEWS.indexOf(view));
+    sliderRef.current?.setPage(VIEWS.indexOf(view), true, () => {
+      markNativeUiPerformanceAfterPaint('friends_view_result_painted', startedAt);
+    });
   };
+  const runCommand = (command: NativeFriendsScreenCommand) => {
+    feedbackPerformanceRef.current = captureNativeUiInteractionStart();
+    onCommand(command);
+  };
+  const runSearch = () => {
+    searchPerformanceRef.current = captureNativeUiInteractionStart();
+    onRunSearch();
+  };
+
+  useEffect(() => {
+    if (!feedback || feedbackPerformanceRef.current === null) return;
+    const startedAt = feedbackPerformanceRef.current;
+    feedbackPerformanceRef.current = null;
+    markNativeUiPerformanceAfterPaint('friends_command_result_painted', startedAt);
+  }, [feedback]);
+
+  useEffect(() => {
+    if (isSearching || searchPerformanceRef.current === null) return;
+    const startedAt = searchPerformanceRef.current;
+    searchPerformanceRef.current = null;
+    markNativeUiPerformanceAfterPaint('friends_search_result_painted', startedAt);
+  }, [isSearching, searchError, searchResults]);
   const panelContentStyle = [
     styles.panelContent,
     { paddingBottom: 120 + insets.bottom },
@@ -357,7 +388,11 @@ export const NativeFriendsScreen = ({
               <View style={styles.peopleList}>
                 {overview.friends.map((row) => (
                   <TrainerRow
-                    action={<RowAction accessibilityLabel={`Remove ${row.username}`} disabled={isCommandPending} icon={<TrashGlyph />} label="Remove" onPress={() => setConfirmation(row)} tone="danger" />}
+                    action={<RowAction accessibilityLabel={`Remove ${row.username}`} disabled={isCommandPending} icon={<TrashGlyph />} label="Remove" onPress={() => {
+                      const startedAt = Date.now();
+                      setConfirmation(row);
+                      markNativeUiPerformanceAfterPaint('friends_confirmation_painted', startedAt);
+                    }} tone="danger" />}
                     key={row.userId}
                     light={light}
                     onOpen={() => onOpenProfile(row.username)}
@@ -380,8 +415,8 @@ export const NativeFriendsScreen = ({
                     <TrainerRow
                       action={(
                         <>
-                          <RowAction accessibilityLabel={`Accept ${row.username}`} disabled={isCommandPending} label="Accept" onPress={() => onCommand({ action: 'accept', friendshipId: row.friendshipId })} tone="primary" />
-                          <RowAction accessibilityLabel={`Decline ${row.username}`} disabled={isCommandPending} label="Decline" onPress={() => onCommand({ action: 'delete-request', friendshipId: row.friendshipId, message: 'Friend request declined.' })} tone="danger" />
+                          <RowAction accessibilityLabel={`Accept ${row.username}`} disabled={isCommandPending} label="Accept" onPress={() => runCommand({ action: 'accept', friendshipId: row.friendshipId })} tone="primary" />
+                          <RowAction accessibilityLabel={`Decline ${row.username}`} disabled={isCommandPending} label="Decline" onPress={() => runCommand({ action: 'delete-request', friendshipId: row.friendshipId, message: 'Friend request declined.' })} tone="danger" />
                         </>
                       )}
                       key={row.friendshipId}
@@ -398,7 +433,7 @@ export const NativeFriendsScreen = ({
                 <View style={styles.peopleList}>
                   {overview.outgoing.map((row) => (
                     <TrainerRow
-                      action={<RowAction accessibilityLabel={`Cancel request to ${row.username}`} disabled={isCommandPending} label="Cancel" onPress={() => onCommand({ action: 'delete-request', friendshipId: row.friendshipId, message: 'Friend request canceled.' })} />}
+                      action={<RowAction accessibilityLabel={`Cancel request to ${row.username}`} disabled={isCommandPending} label="Cancel" onPress={() => runCommand({ action: 'delete-request', friendshipId: row.friendshipId, message: 'Friend request canceled.' })} />}
                       key={row.friendshipId}
                       light={light}
                       onOpen={() => onOpenProfile(row.username)}
@@ -422,14 +457,14 @@ export const NativeFriendsScreen = ({
                 autoCapitalize="none"
                 autoCorrect={false}
                 onChangeText={onQueryChange}
-                onSubmitEditing={onRunSearch}
+                onSubmitEditing={runSearch}
                 placeholder="Username or Pokémon GO name"
                 placeholderTextColor={light ? '#6a777a' : '#809092'}
                 returnKeyType="search"
                 style={[styles.searchInput, light && styles.searchInputLight]}
                 value={query}
               />
-              <Pressable accessibilityRole="button" disabled={isSearching} onPress={onRunSearch} style={({ pressed }) => [styles.searchButton, (pressed || isSearching) && styles.pressed]}>
+              <Pressable accessibilityRole="button" disabled={isSearching} onPress={runSearch} style={({ pressed }) => [styles.searchButton, (pressed || isSearching) && styles.pressed]}>
                 <Text style={styles.searchButtonText}>{isSearching ? '…' : 'Search'}</Text>
               </Pressable>
             </View>
@@ -437,7 +472,7 @@ export const NativeFriendsScreen = ({
             <View style={styles.peopleList}>
               {searchResults.map((row) => (
                 <TrainerRow
-                  action={<RowAction accessibilityLabel={`Add ${row.username}`} disabled={isCommandPending} label="Add" onPress={() => onCommand({ action: 'add', username: row.username })} tone="primary" />}
+                  action={<RowAction accessibilityLabel={`Add ${row.username}`} disabled={isCommandPending} label="Add" onPress={() => runCommand({ action: 'add', username: row.username })} tone="primary" />}
                   key={row.username.toLocaleLowerCase()}
                   light={light}
                   onOpen={() => onOpenProfile(row.username)}
@@ -458,7 +493,7 @@ export const NativeFriendsScreen = ({
               <View style={styles.peopleList}>
                 {overview.blocked.map((row) => (
                   <TrainerRow
-                    action={<RowAction accessibilityLabel={`Unblock ${row.username}`} disabled={isCommandPending} label="Unblock" onPress={() => onCommand({ action: 'unblock', userId: row.userId })} />}
+                    action={<RowAction accessibilityLabel={`Unblock ${row.username}`} disabled={isCommandPending} label="Unblock" onPress={() => runCommand({ action: 'unblock', userId: row.userId })} />}
                     key={row.userId}
                     light={light}
                     row={row}
@@ -478,7 +513,7 @@ export const NativeFriendsScreen = ({
         onCancel={() => setConfirmation(null)}
         onConfirm={() => {
           if (!confirmation) return;
-          onCommand({ action: 'remove-friend', userId: confirmation.userId });
+          runCommand({ action: 'remove-friend', userId: confirmation.userId });
           setConfirmation(null);
         }}
         title={confirmation ? `Remove ${confirmation.username}?` : 'Remove friend?'}

@@ -15,7 +15,7 @@ const INITIAL_SECURITY: AccountSecuritySummary = {
   activeSessions: 2,
   email: 'demo@pokegonexus.local',
   hasPassword: true,
-  providers: (['google', 'discord'] as OAuthProvider[]).map((provider) => ({
+  providers: (['google'] as OAuthProvider[]).map((provider) => ({
     email: 'demo@pokegonexus.local',
     emailVerified: true,
     linkedAt: provider === 'google' ? '2026-07-01T00:00:00.000Z' : '2026-07-02T00:00:00.000Z',

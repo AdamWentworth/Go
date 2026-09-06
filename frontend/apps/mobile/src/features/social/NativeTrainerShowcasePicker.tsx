@@ -1,19 +1,16 @@
 import {
-  FlatList,
   Image,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { useDeferredValue, useMemo, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import type { NativeCollectionRow } from '../collection/collectionModel';
 import { NativePokemonLocationBackdrop } from '../collection/parity/NativePokemonLocationBackdrop';
-import { useNativeModalAnimation } from '../settings/useNativeMotion';
 import { useNativeColorScheme } from '../settings/useNativeColorScheme';
+import { runNativeUiWorkAfterPaint } from '../../observability/nativeUiInteractionTiming';
 
 type Props = {
   assetBaseUrl: string;
@@ -26,6 +23,10 @@ type Props = {
   visible: boolean;
 };
 
+const INITIAL_VISIBLE_CANDIDATES = 48;
+const INITIAL_PAINT_CANDIDATES = 12;
+const CANDIDATE_RENDER_BATCH = 6;
+
 export const NativeTrainerShowcasePicker = ({
   assetBaseUrl,
   candidates,
@@ -37,8 +38,9 @@ export const NativeTrainerShowcasePicker = ({
   visible,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
-  const animationType = useNativeModalAnimation('slide');
   const [query, setQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_CANDIDATES);
+  const [renderedCount, setRenderedCount] = useState(INITIAL_PAINT_CANDIDATES);
   const deferredQuery = useDeferredValue(query);
   const filtered = useMemo(() => {
     const normalized = deferredQuery.trim().toLocaleLowerCase();
@@ -54,65 +56,69 @@ export const NativeTrainerShowcasePicker = ({
     [selectedIds],
   );
   const currentId = selectedIds[slotIndex] ?? '';
+  const targetRenderedCount = Math.min(visibleCount, filtered.length);
+  const visibleCandidates = filtered.slice(0, Math.min(renderedCount, targetRenderedCount));
+
+  useEffect(() => {
+    if (!visible || renderedCount >= targetRenderedCount) return;
+    let mounted = true;
+    runNativeUiWorkAfterPaint(() => {
+      if (!mounted) return;
+      setRenderedCount((current) => Math.min(
+        current + CANDIDATE_RENDER_BATCH,
+        targetRenderedCount,
+      ));
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [renderedCount, targetRenderedCount, visible]);
+
+  if (!visible) return null;
 
   return (
-    <Modal
-      animationType={animationType}
-      hardwareAccelerated
-      onRequestClose={onClose}
-      presentationStyle="fullScreen"
-      visible={visible}
+    <View
+      accessibilityLabel={`Choose Pokémon for featured slot ${slotIndex + 1}`}
+      style={[styles.screen, light && styles.screenLight]}
+      testID="native-trainer-showcase-picker"
     >
-      <SafeAreaView
-        edges={['top', 'bottom']}
-        style={[styles.screen, light && styles.screenLight]}
-        testID="native-trainer-showcase-picker"
-      >
-        <View style={[styles.header, light && styles.dividerLight]}>
-          <View style={styles.headerCopy}>
-            <Text style={styles.eyebrow}>PROFILE SHOWCASE · SLOT {slotIndex + 1}</Text>
-            <Text style={[styles.title, light && styles.textLight]}>Choose a caught Pokémon</Text>
-            <Text style={[styles.copy, light && styles.mutedLight]}>
-              Featured Pokémon keep their current details and collection status.
-            </Text>
-          </View>
-          <Pressable accessibilityLabel="Close showcase picker" accessibilityRole="button" onPress={onClose} style={[styles.close, light && styles.closeLight]}>
-            <Text style={[styles.closeText, light && styles.textLight]}>×</Text>
-          </Pressable>
+      <View style={[styles.header, light && styles.dividerLight]}>
+        <View style={styles.headerCopy}>
+          <Text style={styles.eyebrow}>FEATURED SLOT {slotIndex + 1}</Text>
+          <Text style={[styles.title, light && styles.textLight]}>Choose a caught Pokémon</Text>
         </View>
-
-        <View style={styles.searchRow}>
-          <TextInput
-            accessibilityLabel="Search caught Pokémon"
-            onChangeText={setQuery}
-            placeholder="Search Pokémon, Pokédex number, or CP"
-            placeholderTextColor={light ? '#718083' : '#7f9495'}
-            selectionColor="#35a8ff"
-            style={[styles.search, light && styles.searchLight, light && styles.textLight]}
-            value={query}
-          />
+        <View style={styles.headerActions}>
           {currentId ? (
             <Pressable accessibilityRole="button" onPress={onClear} style={[styles.clearButton, light && styles.clearButtonLight]}>
               <Text style={[styles.clearText, light && styles.textLight]}>Clear slot</Text>
             </Pressable>
           ) : null}
+          <Pressable accessibilityLabel="Close showcase picker" accessibilityRole="button" onPress={onClose} style={[styles.close, light && styles.closeLight]}>
+            <Text style={[styles.closeText, light && styles.textLight]}>×</Text>
+          </Pressable>
         </View>
+      </View>
 
-        <Text style={[styles.resultCount, light && styles.mutedLight]}>
-          {filtered.length.toLocaleString('en-US')} caught Pokémon
-        </Text>
-        <FlatList
-          columnWrapperStyle={styles.gridRow}
-          contentContainerStyle={styles.grid}
-          data={filtered}
-          initialNumToRender={18}
-          keyboardShouldPersistTaps="handled"
-          keyExtractor={(row) => row.id}
-          maxToRenderPerBatch={18}
-          numColumns={3}
-          removeClippedSubviews
-          testID="native-trainer-showcase-grid"
-          renderItem={({ item: row }) => {
+      <View style={styles.searchRow}>
+        <TextInput
+          accessibilityLabel="Search caught Pokémon"
+          onChangeText={(value) => {
+            setQuery(value);
+            setVisibleCount(INITIAL_VISIBLE_CANDIDATES);
+            setRenderedCount(INITIAL_PAINT_CANDIDATES);
+          }}
+          placeholder="Search caught Pokémon"
+          placeholderTextColor={light ? '#718083' : '#7f9495'}
+          selectionColor="#35a8ff"
+          style={[styles.search, light && styles.searchLight, light && styles.textLight]}
+          value={query}
+        />
+        <Text style={[styles.resultCount, light && styles.mutedLight]}>{filtered.length.toLocaleString('en-US')}</Text>
+      </View>
+
+      {visibleCandidates.length ? (
+        <View style={styles.grid} testID="native-trainer-showcase-grid">
+          {visibleCandidates.map((row) => {
             const isCurrent = row.id === currentId;
             const usedElsewhere = !isCurrent && selected.has(row.id);
             return (
@@ -120,6 +126,7 @@ export const NativeTrainerShowcasePicker = ({
                 accessibilityLabel={`${row.name}${isCurrent ? ', selected in this slot' : usedElsewhere ? ', already featured' : ''}`}
                 accessibilityRole="button"
                 disabled={usedElsewhere}
+                key={row.id}
                 onPress={() => onSelect(row.id)}
                 style={[
                   styles.card,
@@ -149,26 +156,33 @@ export const NativeTrainerShowcasePicker = ({
                 ) : null}
               </Pressable>
             );
-          }}
-          updateCellsBatchingPeriod={24}
-          windowSize={7}
-          ListEmptyComponent={(
-            <View style={styles.empty}>
-              <Text style={[styles.emptyTitle, light && styles.textLight]}>No caught Pokémon match</Text>
-              <Text style={[styles.copy, light && styles.mutedLight]}>Try another name, number, or CP.</Text>
-            </View>
-          )}
-        />
-      </SafeAreaView>
-    </Modal>
+          })}
+        </View>
+      ) : (
+        <View style={styles.empty}>
+          <Text style={[styles.emptyTitle, light && styles.textLight]}>No caught Pokémon match</Text>
+          <Text style={[styles.copy, light && styles.mutedLight]}>Try another name, number, or CP.</Text>
+        </View>
+      )}
+      {visibleCount < filtered.length ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setVisibleCount((current) => Math.min(current + INITIAL_VISIBLE_CANDIDATES, filtered.length))}
+          style={[styles.moreButton, light && styles.clearButtonLight]}
+        >
+          <Text style={[styles.clearText, light && styles.textLight]}>Show more</Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, paddingTop: 18, backgroundColor: '#081012' },
-  screenLight: { backgroundColor: '#f8fff9' },
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 16, paddingBottom: 14, borderBottomWidth: 1, borderColor: '#315052' },
+  screen: { overflow: 'hidden', marginVertical: 12, borderWidth: 1, borderColor: '#315052', borderRadius: 9, backgroundColor: '#081012' },
+  screenLight: { borderColor: '#bdc8ca', backgroundColor: '#f8fff9' },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 12, borderBottomWidth: 1, borderColor: '#315052' },
   headerCopy: { flex: 1, minWidth: 0 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   eyebrow: { color: '#35a8ff', fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
   title: { color: '#f7fbfa', fontSize: 23, lineHeight: 29, fontWeight: '900' },
   copy: { color: '#9db5b4', fontSize: 12, lineHeight: 17 },
@@ -176,15 +190,14 @@ const styles = StyleSheet.create({
   closeLight: { borderColor: '#aababc', backgroundColor: '#ffffff' },
   closeText: { color: '#ffffff', fontSize: 28, lineHeight: 30 },
   dividerLight: { borderColor: '#bdc8ca' },
-  searchRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 },
   search: { flex: 1, minHeight: 48, paddingHorizontal: 13, borderWidth: 1, borderColor: '#456265', borderRadius: 10, backgroundColor: '#171f20', color: '#f7fbfa', fontSize: 14, fontWeight: '700' },
   searchLight: { borderColor: '#aababc', backgroundColor: '#ffffff' },
   clearButton: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 11, borderWidth: 1, borderColor: '#a9434d', borderRadius: 10, backgroundColor: '#3b1d22' },
   clearButtonLight: { backgroundColor: '#fff2f3' },
   clearText: { color: '#ff9ba8', fontSize: 11, fontWeight: '900' },
-  resultCount: { paddingHorizontal: 17, paddingVertical: 9, color: '#9db5b4', fontSize: 11, fontWeight: '800' },
-  grid: { flexGrow: 1, gap: 8, paddingHorizontal: 14, paddingBottom: 40 },
-  gridRow: { gap: 8 },
+  resultCount: { minWidth: 30, color: '#9db5b4', fontSize: 11, fontWeight: '800', textAlign: 'center' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 12, paddingBottom: 12 },
   card: { position: 'relative', width: '31.5%', minWidth: 0, minHeight: 144, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end', padding: 7, borderWidth: 1, borderColor: '#315052', borderRadius: 9, backgroundColor: '#11191a' },
   cardLight: { borderColor: '#bdc8ca', backgroundColor: '#ffffff' },
   cardSelected: { borderWidth: 2, borderColor: '#35a8ff', backgroundColor: '#12324b' },
@@ -198,6 +211,7 @@ const styles = StyleSheet.create({
   badgeUsed: { backgroundColor: '#9db5b4' },
   empty: { width: '100%', alignItems: 'center', gap: 3, paddingVertical: 50 },
   emptyTitle: { color: '#f7fbfa', fontSize: 17, fontWeight: '900' },
+  moreButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginHorizontal: 12, marginBottom: 12, borderWidth: 1, borderColor: '#456265', borderRadius: 8, backgroundColor: '#171f20' },
   textLight: { color: '#172124' },
   mutedLight: { color: '#5e6c6f' },
 });

@@ -1,35 +1,46 @@
 import {
   ActivityIndicator,
+  Animated,
   Image,
   Keyboard,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
+import {
+  PanGestureHandler,
+  State,
+  type PanGestureHandlerStateChangeEvent,
+} from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeBackIcon } from '../components/NativeBackIcon';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import type { NativeCollectionRow } from '../features/collection/collectionModel';
 import {
   NativePokemonLocationBackdrop,
 } from '../features/collection/parity/NativePokemonLocationBackdrop';
 import type { NativeTrainerProfileModel } from '../features/social/nativeTrainerProfileModel';
 import type { NativeTrainerProfileDraft } from '../features/social/nativeTrainerProfileEditorModel';
-import {
-  NativeTrainerProfileEditorPanel,
-} from '../features/social/NativeTrainerProfileEditorPanel';
 import { NativeTrainerShowcasePicker } from '../features/social/NativeTrainerShowcasePicker';
 import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog';
+import { NativeOptionPicker } from '../components/NativeOptionPicker';
 import { NativeTrainerWorkspaceNav } from '../components/NativeTrainerWorkspaceNav';
 import { NativeUiIcon, type NativeUiIconName } from '../components/NativeUiIcon';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import {
+  TRAINER_TITLE_OPTIONS,
   TRAINER_TITLE_VISUALS,
   type TrainerTitle,
 } from '@pokemongonexus/shared-contracts/users';
+import {
+  captureNativeUiInteractionStart,
+  markNativeUiPerformanceAfterPaint,
+  runNativeUiWorkAfterPaint,
+} from '../observability/nativeUiInteractionTiming';
 
 export type NativeTrainerProfileAction =
   | 'add'
@@ -76,6 +87,13 @@ const LIGHT_TEAM_COLORS = {
   neutral: { accent: '#006a61', soft: '#173739' },
 } as const;
 
+const TEAM_OPTIONS = [
+  { key: '', label: 'Unaffiliated' },
+  { key: 'Mystic', label: 'Mystic' },
+  { key: 'Valor', label: 'Valor' },
+  { key: 'Instinct', label: 'Instinct' },
+];
+
 const trainerTitleFallbackIcon = {
   medal: 'medal',
   ruler: 'ruler',
@@ -119,6 +137,133 @@ const NativeTrainerTitleVisual = ({
       )}
     </View>
   );
+};
+
+const NativeTrainerTitleChoice = memo(function NativeTrainerTitleChoice({
+  assetBaseUrl,
+  disabled,
+  light,
+  onToggle,
+  option,
+  selected,
+  teamColor,
+}: {
+  assetBaseUrl: string;
+  disabled: boolean;
+  light: boolean;
+  onToggle: (title: TrainerTitle) => void;
+  option: (typeof TRAINER_TITLE_OPTIONS)[number];
+  selected: boolean;
+  teamColor: string;
+}) {
+  return (
+    <Pressable
+    accessibilityLabel={`${option.label}. ${option.description}`}
+    accessibilityRole="button"
+    accessibilityState={{ selected, disabled }}
+    aria-pressed={selected}
+    disabled={disabled}
+    onPress={() => onToggle(option.id)}
+    style={[
+      styles.titleChoice,
+      light && styles.titleChoiceLight,
+      selected && styles.titleChoiceSelected,
+      disabled && styles.titleChoiceDisabled,
+    ]}
+  >
+    <NativeTrainerTitleVisual assetBaseUrl={assetBaseUrl} color={selected ? '#dff3ff' : teamColor} title={option.id} />
+    <Text numberOfLines={2} style={[styles.titleChoiceText, light && styles.textLight, selected && styles.titleChoiceTextSelected]}>
+      {option.label}
+    </Text>
+    </Pressable>
+  );
+});
+
+const NativeTrainerTitlePicker = ({
+  assetBaseUrl,
+  light,
+  onChange,
+  teamColor,
+  titles,
+}: {
+  assetBaseUrl: string;
+  light: boolean;
+  onChange: (titles: TrainerTitle[]) => void;
+  teamColor: string;
+  titles: TrainerTitle[];
+}) => {
+  const [selectedTitles, setSelectedTitles] = useState(() => titles);
+  const [limitReached, setLimitReached] = useState(() => titles.length >= 3);
+  const selectedTitlesRef = useRef(selectedTitles);
+
+  const toggleTitle = useCallback((title: TrainerTitle) => {
+    const startedAt = captureNativeUiInteractionStart();
+    const currentTitles = selectedTitlesRef.current;
+    const nextTitles = currentTitles.includes(title)
+      ? currentTitles.filter((entry) => entry !== title)
+      : currentTitles.length >= 3 ? currentTitles : [...currentTitles, title];
+    if (nextTitles === currentTitles) return;
+    selectedTitlesRef.current = nextTitles;
+    setSelectedTitles(nextTitles);
+    markNativeUiPerformanceAfterPaint('profile_title_result_painted', startedAt);
+    runNativeUiWorkAfterPaint(() => {
+      setLimitReached(nextTitles.length >= 3);
+      onChange(nextTitles);
+    });
+  }, [onChange]);
+
+  return (
+    <>
+      <View style={styles.titlesHeading}>
+        <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>PLAY STYLES</Text>
+        <Text style={[styles.selectionCount, light && styles.mutedLight]}>{selectedTitles.length}/3 selected</Text>
+      </View>
+      <View accessibilityLabel="Trainer titles" style={styles.titlePicker}>
+        {TRAINER_TITLE_OPTIONS.map((option) => {
+          const selected = selectedTitles.includes(option.id);
+          const disabled = !selected && limitReached;
+          return (
+            <NativeTrainerTitleChoice
+              assetBaseUrl={assetBaseUrl}
+              disabled={disabled}
+              key={option.id}
+              light={light}
+              onToggle={toggleTitle}
+              option={option}
+              selected={selected}
+              teamColor={teamColor}
+            />
+          );
+        })}
+      </View>
+    </>
+  );
+};
+
+const NativeDeferredTrainerTitlePicker = (
+  props: ComponentProps<typeof NativeTrainerTitlePicker>,
+) => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    runNativeUiWorkAfterPaint(() => {
+      if (mounted) setReady(true);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!ready) {
+    return (
+      <View style={styles.titlesHeading}>
+        <Text style={[styles.eyebrow, props.light && styles.eyebrowLight]}>PLAY STYLES</Text>
+        <Text style={[styles.selectionCount, props.light && styles.mutedLight]}>{props.titles.length}/3 selected</Text>
+      </View>
+    );
+  }
+  return <NativeTrainerTitlePicker {...props} />;
 };
 
 const relationshipLabel = (relationship: NativeTrainerProfileModel['relationship']): string | null => ({
@@ -170,6 +315,100 @@ const HighlightCard = ({
   </View>
 );
 
+export const resolveNativeProfileShowcaseDragTarget = ({
+  columns,
+  fromIndex,
+  selectedCount,
+  slotHeight,
+  slotWidth,
+  translationX,
+  translationY,
+}: {
+  columns: number;
+  fromIndex: number;
+  selectedCount: number;
+  slotHeight: number;
+  slotWidth: number;
+  translationX: number;
+  translationY: number;
+}): number => {
+  if (selectedCount <= 1 || columns <= 0 || slotHeight <= 0 || slotWidth <= 0) return fromIndex;
+  const rows = Math.ceil(selectedCount / columns);
+  const fromColumn = fromIndex % columns;
+  const fromRow = Math.floor(fromIndex / columns);
+  const targetColumn = Math.max(
+    0,
+    Math.min(columns - 1, Math.round(fromColumn + translationX / slotWidth)),
+  );
+  const targetRow = Math.max(
+    0,
+    Math.min(rows - 1, Math.round(fromRow + translationY / slotHeight)),
+  );
+  return Math.min(selectedCount - 1, targetRow * columns + targetColumn);
+};
+
+const NativeProfileShowcaseDragSlot = ({
+  children,
+  columns,
+  enabled,
+  index,
+  onReorder,
+  selectedCount,
+}: {
+  children: ReactNode;
+  columns: number;
+  enabled: boolean;
+  index: number;
+  onReorder: (fromIndex: number, toIndex: number) => void;
+  selectedCount: number;
+}) => {
+  const [translationX] = useState(() => new Animated.Value(0));
+  const [translationY] = useState(() => new Animated.Value(0));
+  const slotSizeRef = useRef({ height: 1, width: 1 });
+  const onGestureEvent = useMemo(() => Animated.event(
+    [{ nativeEvent: { translationX, translationY } }],
+    { useNativeDriver: true },
+  ), [translationX, translationY]);
+  const onHandlerStateChange = useCallback((event: PanGestureHandlerStateChangeEvent) => {
+    if (event.nativeEvent.oldState !== State.ACTIVE) return;
+    const target = resolveNativeProfileShowcaseDragTarget({
+      columns,
+      fromIndex: index,
+      selectedCount,
+      slotHeight: slotSizeRef.current.height,
+      slotWidth: slotSizeRef.current.width,
+      translationX: event.nativeEvent.translationX,
+      translationY: event.nativeEvent.translationY,
+    });
+    translationX.setValue(0);
+    translationY.setValue(0);
+    if (event.nativeEvent.state === State.END && target !== index) onReorder(index, target);
+  }, [columns, index, onReorder, selectedCount, translationX, translationY]);
+
+  return (
+    <PanGestureHandler
+      enabled={enabled}
+      minDist={7}
+      onGestureEvent={onGestureEvent}
+      onHandlerStateChange={onHandlerStateChange}
+    >
+      <Animated.View
+        onLayout={(event) => {
+          slotSizeRef.current = event.nativeEvent.layout;
+        }}
+        style={{
+          transform: [{ translateX: translationX }, { translateY: translationY }],
+          width: columns === 3 ? '33.3333%' : '16.6667%',
+          zIndex: enabled ? 1 : 0,
+        }}
+        testID={`native-profile-showcase-drag-slot-${index + 1}`}
+      >
+        {children}
+      </Animated.View>
+    </PanGestureHandler>
+  );
+};
+
 export const NativeTrainerProfileScreen = ({
   assetBaseUrl,
   error = null,
@@ -199,6 +438,9 @@ export const NativeTrainerProfileScreen = ({
   const scrollRef = useRef<ScrollView>(null);
   const [confirmation, setConfirmation] = useState<'cancel-request' | 'remove-friend' | 'block' | null>(null);
   const [editingHighlightSlot, setEditingHighlightSlot] = useState<number | null>(null);
+  const [pendingHighlightIds, setPendingHighlightIds] = useState<string[] | null>(null);
+  const [teamPickerOpen, setTeamPickerOpen] = useState(false);
+  const feedbackPerformanceRef = useRef<{ event: string; startedAt: number } | null>(null);
 
   const clearTextInputFocus = () => {
     Keyboard.dismiss();
@@ -207,6 +449,9 @@ export const NativeTrainerProfileScreen = ({
   useEffect(() => {
     if (!feedback) return;
     scrollRef.current?.scrollTo({ y: 0, animated: true });
+    const pending = feedbackPerformanceRef.current;
+    feedbackPerformanceRef.current = null;
+    if (pending) markNativeUiPerformanceAfterPaint(pending.event, pending.startedAt);
   }, [feedback]);
 
   if (isLoading) {
@@ -234,7 +479,15 @@ export const NativeTrainerProfileScreen = ({
     );
   }
 
-  const team = (light ? LIGHT_TEAM_COLORS : TEAM_COLORS)[model.team];
+  const editingTeam = editorDraft?.team.toLocaleLowerCase();
+  const cardTeam = editingTeam === 'mystic' || editingTeam === 'valor' || editingTeam === 'instinct'
+    ? editingTeam
+    : editorDraft ? 'neutral' : model.team;
+  const team = (light ? LIGHT_TEAM_COLORS : TEAM_COLORS)[cardTeam];
+  const editingTrainerLevel = Number(editorDraft?.trainerLevel);
+  const cardTrainerLevel = editorDraft && Number.isFinite(editingTrainerLevel)
+    ? editingTrainerLevel
+    : model.trainerLevel;
   const relationship = relationshipLabel(model.relationship);
   const relationshipAction = model.relationship === 'none'
     ? { action: 'add' as const, label: 'Add friend', tone: 'primary' as const }
@@ -265,12 +518,19 @@ export const NativeTrainerProfileScreen = ({
   const requestAction = (action: NativeTrainerProfileAction) => {
     clearTextInputFocus();
     if (action === 'cancel-request' || action === 'remove-friend' || action === 'block') {
+      const startedAt = Date.now();
       setConfirmation(action);
+      markNativeUiPerformanceAfterPaint('profile_relationship_confirmation_painted', startedAt);
       return;
     }
+    feedbackPerformanceRef.current = {
+      event: 'profile_relationship_result_painted',
+      startedAt: Date.now(),
+    };
     onRelationshipAction?.(action);
   };
-  const selectedHighlightIds = editorDraft?.highlightInstanceIds ?? [];
+  const selectedHighlightIds = pendingHighlightIds ?? editorDraft?.highlightInstanceIds ?? [];
+  const selectedHighlightCount = selectedHighlightIds.filter(Boolean).length;
   const highlightById = new Map([
     ...highlights,
     ...highlightCandidates,
@@ -282,28 +542,54 @@ export const NativeTrainerProfileScreen = ({
     if (!editorDraft || !onChangeEditorDraft) return;
     onChangeEditorDraft({ ...editorDraft, highlightInstanceIds: nextIds });
   };
+  const stageHighlightIds = (nextIds: string[]) => {
+    if (!editorDraft || !onChangeEditorDraft) return;
+    setPendingHighlightIds(nextIds);
+    runNativeUiWorkAfterPaint(() => {
+      onChangeEditorDraft({ ...editorDraft, highlightInstanceIds: nextIds });
+      setPendingHighlightIds(null);
+    });
+  };
+  const updateEditorField = <K extends keyof NativeTrainerProfileDraft>(
+    field: K,
+    value: NativeTrainerProfileDraft[K],
+  ) => {
+    if (!editorDraft || !onChangeEditorDraft) return;
+    onChangeEditorDraft({ ...editorDraft, [field]: value });
+  };
   const chooseHighlight = (instanceId: string) => {
     if (editingHighlightSlot === null) return;
+    const startedAt = Date.now();
     clearTextInputFocus();
     const nextIds = Array.from({ length: 6 }, (_, index) => selectedHighlightIds[index] ?? '');
     nextIds[editingHighlightSlot] = instanceId;
-    updateHighlightIds(nextIds);
+    stageHighlightIds(nextIds);
     setEditingHighlightSlot(null);
+    markNativeUiPerformanceAfterPaint('profile_showcase_selection_result_painted', startedAt);
   };
   const clearHighlight = () => {
     if (editingHighlightSlot === null) return;
+    const startedAt = Date.now();
     clearTextInputFocus();
-    const nextIds = Array.from({ length: 6 }, (_, index) => selectedHighlightIds[index] ?? '');
-    nextIds[editingHighlightSlot] = '';
-    updateHighlightIds(nextIds);
+    const compactIds = selectedHighlightIds.filter((id, index) => (
+      index !== editingHighlightSlot && Boolean(id)
+    ));
+    const nextIds = Array.from({ length: 6 }, (_, index) => compactIds[index] ?? '');
+    stageHighlightIds(nextIds);
     setEditingHighlightSlot(null);
+    markNativeUiPerformanceAfterPaint('profile_showcase_selection_result_painted', startedAt);
+  };
+  const reorderHighlight = (index: number, destination: number) => {
+    if (destination < 0 || destination >= selectedHighlightCount || destination === index) return;
+    const startedAt = Date.now();
+    const nextIds = Array.from({ length: 6 }, (_, slot) => selectedHighlightIds[slot] ?? '');
+    const [moved] = nextIds.splice(index, 1);
+    nextIds.splice(destination, 0, moved ?? '');
+    updateHighlightIds(nextIds);
+    markNativeUiPerformanceAfterPaint('profile_showcase_reorder_result_painted', startedAt);
   };
   const moveHighlight = (index: number, direction: -1 | 1) => {
-    const destination = index + direction;
-    if (destination < 0 || destination > 5) return;
-    const nextIds = Array.from({ length: 6 }, (_, slot) => selectedHighlightIds[slot] ?? '');
-    [nextIds[index], nextIds[destination]] = [nextIds[destination], nextIds[index]];
-    updateHighlightIds(nextIds);
+    reorderHighlight(index, index + direction);
   };
   const profileFacts: { icon: NativeUiIconName; label: string; value: string }[] = [
     { icon: 'calendar', label: 'STARTED', value: model.startedLabel },
@@ -317,6 +603,15 @@ export const NativeTrainerProfileScreen = ({
     wanted: 'heart',
     favorites: 'star',
   };
+  const needsProfileSetup = isOwner
+    && model.team === 'neutral'
+    && model.trainerLevel === null
+    && model.totalXpLabel === 'XP not shared'
+    && model.startedLabel === 'Not shared'
+    && model.locationLabel === 'Not shared'
+    && model.trainerCodeLabel === 'Not shared'
+    && model.titles.length === 0
+    && highlights.length === 0;
 
   return (
     <View style={[styles.screenRoot, light && styles.screenLight]}>
@@ -342,15 +637,16 @@ export const NativeTrainerProfileScreen = ({
           ) : null}
         </View>
         <View style={[styles.headerActions, compactHeader && styles.headerActionsCompact]}>
-          {isOwner && onBeginEdit ? (
+          {isOwner && onBeginEdit && !editorDraft ? (
             <Pressable
-              accessibilityLabel={editorDraft ? 'Cancel' : 'Edit'}
+              accessibilityLabel="Edit"
               accessibilityRole="button"
               disabled={isProfileSaving}
               onPress={() => {
+                const startedAt = Date.now();
                 clearTextInputFocus();
-                if (editorDraft) onCancelEdit?.();
-                else onBeginEdit();
+                onBeginEdit();
+                markNativeUiPerformanceAfterPaint('profile_edit_result_painted', startedAt);
               }}
               style={[
                 styles.headerAction,
@@ -358,16 +654,14 @@ export const NativeTrainerProfileScreen = ({
                 light && styles.backButtonLight,
               ]}
             >
-              {!editorDraft ? (
-                <Image fadeDuration={0}
-                  accessibilityElementsHidden
-                  resizeMode="contain"
-                  source={{ uri: `${assetBaseUrl.replace(/\/$/, '')}/images/edit-icon.png` }}
-                  style={[styles.headerActionIcon, { tintColor: light ? '#172124' : '#f7fbfa' }]}
-                />
-              ) : null}
+              <Image fadeDuration={0}
+                accessibilityElementsHidden
+                resizeMode="contain"
+                source={{ uri: `${assetBaseUrl.replace(/\/$/, '')}/images/edit-icon.png` }}
+                style={[styles.headerActionIcon, { tintColor: light ? '#172124' : '#f7fbfa' }]}
+              />
               <Text style={[styles.headerActionText, light && styles.textLight]}>
-                {editorDraft ? 'Cancel' : 'Edit'}
+                Edit
               </Text>
             </Pressable>
           ) : null}
@@ -409,7 +703,10 @@ export const NativeTrainerProfileScreen = ({
         </View>
       ) : null}
 
-      <View style={[styles.card, { borderColor: team.accent }, light && styles.cardLight]}>
+      <View
+        style={[styles.card, { borderColor: team.accent }, light && styles.cardLight]}
+        testID={editorDraft ? 'native-profile-editor' : undefined}
+      >
         <View style={[styles.identity, { backgroundColor: light ? `${team.accent}18` : team.soft, borderColor: `${team.accent}88` }]}>
           <Text style={[styles.cardLabel, { color: team.accent }]}>TRAINER CARD</Text>
           <View style={styles.identityMain}>
@@ -419,20 +716,75 @@ export const NativeTrainerProfileScreen = ({
               </View>
               <View style={[styles.levelBadge, { backgroundColor: team.accent }, light && styles.levelBadgeLight]}>
                 <Text style={[styles.levelLabel, light && styles.primaryButtonTextLight]}>LEVEL</Text>
-                <Text style={[styles.levelValue, light && styles.primaryButtonTextLight]}>{model.trainerLevel ?? '–'}</Text>
+                {editorDraft && onChangeEditorDraft ? (
+                  <TextInput
+                    accessibilityLabel="Trainer level"
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    onChangeText={(value) => updateEditorField('trainerLevel', value)}
+                    selectionColor="#071516"
+                    style={styles.levelInput}
+                    value={editorDraft.trainerLevel}
+                  />
+                ) : (
+                  <Text style={[styles.levelValue, light && styles.primaryButtonTextLight]}>{model.trainerLevel ?? '–'}</Text>
+                )}
               </View>
             </View>
             <View style={styles.identityCopy}>
-              <Text numberOfLines={1} style={[styles.pogoName, light && styles.textLight]}>{model.pokemonGoName}</Text>
+              {editorDraft && onChangeEditorDraft ? (
+                <TextInput
+                  accessibilityLabel="Pokemon GO name"
+                  autoCapitalize="none"
+                  maxLength={64}
+                  onChangeText={(value) => updateEditorField('pokemonGoName', value)}
+                  placeholder={model.username}
+                  placeholderTextColor={light ? '#52666a' : '#8da4a5'}
+                  selectionColor="#35a8ff"
+                  style={[styles.identityInput, light && styles.identityInputLight]}
+                  value={editorDraft.pokemonGoName}
+                />
+              ) : (
+                <Text numberOfLines={1} style={[styles.pogoName, light && styles.textLight]}>{model.pokemonGoName}</Text>
+              )}
               <Text numberOfLines={1} style={[styles.username, light && styles.mutedLight]}>@{model.username}</Text>
               <View style={styles.teamBlock}>
-                <Text style={[styles.teamName, { color: team.accent }]}>{model.teamLabel.toLocaleUpperCase()}</Text>
-                <Text style={[styles.xp, light && styles.textLight]}>{model.totalXpLabel}</Text>
+                {editorDraft && onChangeEditorDraft ? (
+                  <>
+                    <Pressable
+                      accessibilityLabel={`Team, ${editorDraft.team || 'Unaffiliated'}`}
+                      accessibilityRole="button"
+                      onPress={() => {
+                        clearTextInputFocus();
+                        setTeamPickerOpen(true);
+                      }}
+                      style={[styles.teamSelect, light && styles.teamSelectLight]}
+                    >
+                      <Text style={[styles.teamName, { color: team.accent }]}>{(editorDraft.team || 'Unaffiliated').toLocaleUpperCase()}</Text>
+                      <Text style={[styles.teamSelectCue, light && styles.mutedLight]}>⌄</Text>
+                    </Pressable>
+                    <TextInput
+                      accessibilityLabel="Total XP"
+                      keyboardType="number-pad"
+                      onChangeText={(value) => updateEditorField('totalXp', value)}
+                      placeholder="Total XP"
+                      placeholderTextColor={light ? '#52666a' : '#8da4a5'}
+                      selectionColor="#35a8ff"
+                      style={[styles.xpInput, light && styles.identityInputLight]}
+                      value={editorDraft.totalXp}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Text style={[styles.teamName, { color: team.accent }]}>{model.teamLabel.toLocaleUpperCase()}</Text>
+                    <Text style={[styles.xp, light && styles.textLight]}>{model.totalXpLabel}</Text>
+                  </>
+                )}
               </View>
             </View>
           </View>
           <View style={[styles.levelTrack, light && styles.levelTrackLight]}>
-            <View style={[styles.levelTrackFill, { backgroundColor: team.accent, width: `${Math.min(100, Math.max(0, ((model.trainerLevel ?? 0) / 80) * 100))}%` }]} />
+            <View style={[styles.levelTrackFill, { backgroundColor: team.accent, width: `${Math.min(100, Math.max(0, ((cardTrainerLevel ?? 0) / 80) * 100))}%` }]} />
           </View>
         </View>
 
@@ -448,23 +800,18 @@ export const NativeTrainerProfileScreen = ({
             </View>
           </View>
 
-          {editorDraft && onChangeEditorDraft && onCancelEdit && onSaveProfile ? (
-            <NativeTrainerProfileEditorPanel
-              draft={editorDraft}
-              isSaving={isProfileSaving}
-              onCancel={() => { clearTextInputFocus(); onCancelEdit(); }}
-              onChange={onChangeEditorDraft}
-              onSave={() => { clearTextInputFocus(); onSaveProfile(); }}
-            />
-          ) : null}
-
           <View accessibilityLabel="Featured Pokémon" style={styles.showcase}>
             {Array.from({ length: 6 }, (_, index) => (
-              <View
+              <NativeProfileShowcaseDragSlot
+                columns={compactHeader ? 3 : 6}
+                enabled={Boolean(editorDraft && displayedHighlights[index])}
+                index={index}
                 key={`highlight-${index + 1}`}
+                onReorder={reorderHighlight}
+                selectedCount={selectedHighlightCount}
+              >
+              <View
                 style={[
-                  styles.highlightSlot,
-                  compactHeader && styles.highlightSlotCompact,
                   compactHeader && index % 3 !== 2 && styles.gridRightBorder,
                   compactHeader && index < 3 && styles.gridBottomBorder,
                   !compactHeader && index < 5 && styles.gridRightBorder,
@@ -476,8 +823,10 @@ export const NativeTrainerProfileScreen = ({
                     accessibilityLabel={`${displayedHighlights[index]?.name ?? 'Open slot'}, edit showcase slot ${index + 1}`}
                     accessibilityRole="button"
                     onPress={() => {
+                      const startedAt = Date.now();
                       clearTextInputFocus();
                       setEditingHighlightSlot(index);
+                      markNativeUiPerformanceAfterPaint('profile_showcase_picker_painted', startedAt);
                     }}
                     style={styles.highlightEditButton}
                     testID={`native-profile-showcase-slot-${index + 1}`}
@@ -502,17 +851,31 @@ export const NativeTrainerProfileScreen = ({
                     <Pressable
                       accessibilityLabel={`Move showcase slot ${index + 1} right`}
                       accessibilityRole="button"
-                      disabled={index === 5}
+                      disabled={index >= selectedHighlightCount - 1}
                       onPress={() => moveHighlight(index, 1)}
-                      style={[styles.highlightOrderButton, index === 5 && styles.highlightOrderDisabled]}
+                      style={[styles.highlightOrderButton, index >= selectedHighlightCount - 1 && styles.highlightOrderDisabled]}
                     >
                       <Text style={styles.highlightOrderText}>›</Text>
                     </Pressable>
                   </View>
                 ) : null}
               </View>
+              </NativeProfileShowcaseDragSlot>
             ))}
           </View>
+
+          {editingHighlightSlot !== null ? (
+            <NativeTrainerShowcasePicker
+              assetBaseUrl={assetBaseUrl}
+              candidates={highlightCandidates}
+              onClear={clearHighlight}
+              onClose={() => { clearTextInputFocus(); setEditingHighlightSlot(null); }}
+              onSelect={chooseHighlight}
+              selectedIds={selectedHighlightIds}
+              slotIndex={editingHighlightSlot}
+              visible
+            />
+          ) : null}
 
           <View style={[styles.facts, compactHeader && styles.factsCompact, light && styles.dividerLight]}>
             {profileFacts.map(({ icon, label, value }, index) => (
@@ -529,7 +892,26 @@ export const NativeTrainerProfileScreen = ({
                 <NativeUiIcon color={team.accent} name={icon} size={18} />
                 <View style={styles.factCopy}>
                   <Text style={[styles.factLabel, light && styles.mutedLight]}>{label}</Text>
-                  <Text numberOfLines={2} style={[styles.factValue, light && styles.textLight]}>{value}</Text>
+                  {editorDraft && onChangeEditorDraft ? (
+                    <TextInput
+                      accessibilityLabel={label === 'STARTED' ? 'Started playing' : label === 'LOCATION' ? 'Location' : 'Trainer code'}
+                      autoCapitalize={label === 'LOCATION' ? 'words' : 'none'}
+                      keyboardType={label === 'TRAINER CODE' ? 'number-pad' : 'default'}
+                      maxLength={label === 'TRAINER CODE' ? 14 : label === 'STARTED' ? 10 : 255}
+                      onChangeText={(nextValue) => {
+                        if (label === 'STARTED') updateEditorField('startedOn', nextValue);
+                        else if (label === 'LOCATION') updateEditorField('location', nextValue);
+                        else updateEditorField('trainerCode', nextValue);
+                      }}
+                      placeholder={label === 'STARTED' ? 'YYYY-MM-DD' : label === 'LOCATION' ? 'City or region' : '0000 0000 0000'}
+                      placeholderTextColor={light ? '#66777d' : '#718087'}
+                      selectionColor="#35a8ff"
+                      style={[styles.factInput, light && styles.factInputLight]}
+                      value={label === 'STARTED' ? editorDraft.startedOn : label === 'LOCATION' ? editorDraft.location : editorDraft.trainerCode}
+                    />
+                  ) : (
+                    <Text numberOfLines={2} style={[styles.factValue, light && styles.textLight]}>{value}</Text>
+                  )}
                 </View>
               </View>
             ))}
@@ -538,7 +920,7 @@ export const NativeTrainerProfileScreen = ({
           <View accessibilityLabel="Collection summary" style={[styles.stats, light && styles.dividerLight]}>
             {model.stats.map((stat, index) => {
               const filter = stat.key === 'registered' ? undefined : stat.key;
-              const canOpen = model.canViewCollection && filter !== undefined;
+              const canOpen = !editorDraft && model.canViewCollection && filter !== undefined;
               const compactBottomRow = compactHeader && index >= 3;
               const hasRightDivider = compactHeader
                 ? (index < 2 || index === 3)
@@ -570,32 +952,74 @@ export const NativeTrainerProfileScreen = ({
 
           <View style={styles.footer}>
             <View style={styles.titlesBlock}>
-              <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>PLAY STYLES</Text>
-              <View style={styles.titles}>
-                {model.titles.length ? model.titles.map((title) => (
-                  <View key={title.id} style={[styles.titleBadge, light && styles.titleBadgeLight, { borderColor: `${team.accent}88` }]}>
-                    <NativeTrainerTitleVisual
-                      assetBaseUrl={assetBaseUrl}
-                      color={team.accent}
-                      title={title.id}
-                    />
-                    <Text style={[styles.titleBadgeText, light && styles.textLight]}>{title.label}</Text>
+              {editorDraft && onChangeEditorDraft ? (
+                <NativeDeferredTrainerTitlePicker
+                  assetBaseUrl={assetBaseUrl}
+                  light={light}
+                  onChange={(trainerTitles) => updateEditorField('trainerTitles', trainerTitles)}
+                  teamColor={team.accent}
+                  titles={editorDraft.trainerTitles}
+                />
+              ) : (
+                <>
+                  <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>PLAY STYLES</Text>
+                  <View style={styles.titles}>
+                    {model.titles.length ? model.titles.map((title) => (
+                      <View key={title.id} style={[styles.titleBadge, light && styles.titleBadgeLight, { borderColor: `${team.accent}88` }]}>
+                        <NativeTrainerTitleVisual
+                          assetBaseUrl={assetBaseUrl}
+                          color={team.accent}
+                          title={title.id}
+                        />
+                        <Text style={[styles.titleBadgeText, light && styles.textLight]}>{title.label}</Text>
+                      </View>
+                    )) : <Text style={[styles.noTitles, light && styles.mutedLight]}>No play styles selected</Text>}
                   </View>
-                )) : <Text style={[styles.noTitles, light && styles.mutedLight]}>No play styles selected</Text>}
-              </View>
+                </>
+              )}
             </View>
-            {relationship ? (
+            {!editorDraft && relationship ? (
               <View style={[styles.relationship, { borderColor: `${team.accent}88` }]}>
                 <Text style={[styles.relationshipText, { color: team.accent }]}>{relationship}</Text>
               </View>
             ) : null}
+            <View style={styles.profileCommands}>
+              {editorDraft && onCancelEdit && onSaveProfile ? (
+                <>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={isProfileSaving}
+                    onPress={() => {
+                      clearTextInputFocus();
+                      onCancelEdit();
+                    }}
+                    style={[styles.cancelButton, light && styles.cancelButtonLight]}
+                  >
+                    <Text style={[styles.cancelButtonText, light && styles.textLight]}>Cancel</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={isProfileSaving}
+                    onPress={() => {
+                      clearTextInputFocus();
+                      feedbackPerformanceRef.current = {
+                        event: 'profile_save_result_painted',
+                        startedAt: Date.now(),
+                      };
+                      onSaveProfile();
+                    }}
+                    style={[styles.saveButton, isProfileSaving && styles.titleChoiceDisabled]}
+                  >
+                    <Text style={styles.saveButtonText}>{isProfileSaving ? 'Saving…' : 'Save profile'}</Text>
+                  </Pressable>
+                </>
+              ) : model.canViewCollection ? (
+                <Pressable accessibilityRole="button" onPress={() => onOpenCollection()} style={[styles.primaryButton, styles.footerPrimaryButton, { backgroundColor: team.accent }]}>
+                  <Text style={[styles.primaryButtonText, light && styles.primaryButtonTextLight]}>View Pokémon</Text>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
-
-          {model.canViewCollection ? (
-            <Pressable accessibilityRole="button" onPress={() => onOpenCollection()} style={[styles.primaryButton, { backgroundColor: team.accent }]}>
-              <Text style={[styles.primaryButtonText, light && styles.primaryButtonTextLight]}>View Pokémon</Text>
-            </Pressable>
-          ) : null}
           {!isOwner && model.relationship !== 'blocked' && onRelationshipAction ? (
             <Pressable
               accessibilityLabel="Block trainer"
@@ -608,6 +1032,28 @@ export const NativeTrainerProfileScreen = ({
               <Text style={styles.blockButtonText}>Block trainer</Text>
             </Pressable>
           ) : null}
+          {needsProfileSetup && !editorDraft && onBeginEdit ? (
+            <View style={[styles.setup, light && styles.setupLight]}>
+              <View style={styles.setupCopy}>
+                <Text style={styles.eyebrow}>START HERE</Text>
+                <Text style={[styles.setupTitle, light && styles.textLight]}>Make this trainer profile yours</Text>
+                <Text style={[styles.stateCopy, styles.setupBody, light && styles.mutedLight]}>
+                  Add your trainer details and choose Pokémon from your collection to feature.
+                </Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  const startedAt = Date.now();
+                  onBeginEdit();
+                  markNativeUiPerformanceAfterPaint('profile_edit_result_painted', startedAt);
+                }}
+                style={styles.primaryButton}
+              >
+                <Text style={styles.primaryButtonText}>Customize profile</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
       </View>
       </ScrollView>
@@ -618,21 +1064,26 @@ export const NativeTrainerProfileScreen = ({
         onCancel={() => setConfirmation(null)}
         onConfirm={() => {
           if (!confirmation) return;
+          feedbackPerformanceRef.current = {
+            event: 'profile_relationship_result_painted',
+            startedAt: Date.now(),
+          };
           onRelationshipAction?.(confirmation);
           setConfirmation(null);
         }}
         title={confirmationCopy.title}
         visible={Boolean(confirmation)}
       />
-      <NativeTrainerShowcasePicker
-        assetBaseUrl={assetBaseUrl}
-        candidates={highlightCandidates}
-        onClear={clearHighlight}
-        onClose={() => { clearTextInputFocus(); setEditingHighlightSlot(null); }}
-        onSelect={chooseHighlight}
-        selectedIds={selectedHighlightIds}
-        slotIndex={editingHighlightSlot ?? 0}
-        visible={editingHighlightSlot !== null}
+      <NativeOptionPicker
+        onClose={() => setTeamPickerOpen(false)}
+        onSelect={(entry) => {
+          updateEditorField('team', entry.key as NativeTrainerProfileDraft['team']);
+          setTeamPickerOpen(false);
+        }}
+        options={TEAM_OPTIONS}
+        selectedKey={editorDraft?.team ?? ''}
+        title="Team"
+        visible={teamPickerOpen && Boolean(editorDraft)}
       />
     </View>
   );
@@ -671,11 +1122,18 @@ const styles = StyleSheet.create({
   levelBadgeLight: { borderColor: '#f3faf5' },
   levelLabel: { color: '#071516', fontSize: 8, lineHeight: 10, fontWeight: '900' },
   levelValue: { color: '#071516', fontSize: 16, lineHeight: 18, fontWeight: '900' },
+  levelInput: { width: 34, height: 22, padding: 0, color: '#071516', fontSize: 16, lineHeight: 18, fontWeight: '900', textAlign: 'center' },
   pogoName: { maxWidth: '100%', color: '#f7fbfa', fontSize: 21, lineHeight: 25, fontWeight: '900' },
+  identityInput: { width: '100%', minHeight: 39, paddingHorizontal: 9, paddingVertical: 5, borderWidth: 1, borderColor: '#6f9295', borderRadius: 7, backgroundColor: '#132427', color: '#f7fbfa', fontSize: 17, lineHeight: 21, fontWeight: '900' },
+  identityInputLight: { borderColor: '#77979b', backgroundColor: '#ffffff', color: '#172124' },
   username: { color: '#9db5b4', fontSize: 13 },
   teamBlock: { alignItems: 'flex-start', gap: 2, marginTop: 6 },
   teamName: { fontSize: 13, fontWeight: '900' },
+  teamSelect: { minHeight: 32, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 8, borderWidth: 1, borderColor: '#6f9295', borderRadius: 6, backgroundColor: '#132427' },
+  teamSelectLight: { borderColor: '#77979b', backgroundColor: '#ffffff' },
+  teamSelectCue: { color: '#9db5b4', fontSize: 14, fontWeight: '900' },
   xp: { color: '#f7fbfa', fontSize: 13, fontWeight: '800' },
+  xpInput: { minWidth: 108, minHeight: 32, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: '#6f9295', borderRadius: 6, backgroundColor: '#132427', color: '#f7fbfa', fontSize: 12, fontWeight: '800' },
   levelTrack: { width: '100%', height: 6, overflow: 'hidden', marginTop: 9, borderRadius: 3, backgroundColor: '#52626366' },
   levelTrackLight: { backgroundColor: '#aebbbc66' },
   levelTrackFill: { height: '100%', borderRadius: 3 },
@@ -686,8 +1144,6 @@ const styles = StyleSheet.create({
   memberLabel: { color: '#9db5b4', fontSize: 9, fontWeight: '900', letterSpacing: 0.7 },
   memberValue: { color: '#f7fbfa', fontSize: 12, fontWeight: '800', textAlign: 'right' },
   showcase: { minHeight: 112, flexDirection: 'row', flexWrap: 'wrap', borderBottomWidth: 1, borderColor: '#315052' },
-  highlightSlot: { width: '16.6667%' },
-  highlightSlotCompact: { width: '33.3333%' },
   gridRightBorder: { borderRightWidth: 1, borderRightColor: '#315052' },
   gridBottomBorder: { borderBottomWidth: 1, borderBottomColor: '#315052' },
   gridBorderLight: { borderColor: '#9bb8b1' },
@@ -712,6 +1168,8 @@ const styles = StyleSheet.create({
   factCopy: { flex: 1, minWidth: 0, gap: 2 },
   factLabel: { color: '#9db5b4', fontSize: 10, fontWeight: '900', letterSpacing: 0.6 },
   factValue: { color: '#f7fbfa', fontSize: 12, lineHeight: 16, fontWeight: '800' },
+  factInput: { width: '100%', minHeight: 39, paddingHorizontal: 9, paddingVertical: 5, borderWidth: 1, borderColor: '#456265', borderRadius: 7, backgroundColor: '#11191a', color: '#f7fbfa', fontSize: 12, fontWeight: '800' },
+  factInputLight: { borderColor: '#91a5a8', backgroundColor: '#ffffff', color: '#172124' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', borderBottomWidth: 1, borderColor: '#315052' },
   stat: { minHeight: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 6, paddingVertical: 10 },
   statWide: { width: '20%' },
@@ -729,7 +1187,16 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 19, lineHeight: 21, fontWeight: '900' },
   footer: { gap: 10, paddingTop: 13 },
   titlesBlock: { gap: 7 },
+  titlesHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  selectionCount: { color: '#9db5b4', fontSize: 10, fontWeight: '900' },
   titles: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  titlePicker: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  titleChoice: { width: '48.8%', minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 9, paddingVertical: 7, borderWidth: 1, borderColor: '#456265', borderRadius: 7, backgroundColor: '#11191a' },
+  titleChoiceLight: { borderColor: '#aababc', backgroundColor: '#ffffff' },
+  titleChoiceSelected: { borderColor: '#35a8ff', backgroundColor: '#153b5c' },
+  titleChoiceDisabled: { opacity: 0.44 },
+  titleChoiceText: { flex: 1, color: '#f7fbfa', fontSize: 11, lineHeight: 14, fontWeight: '900' },
+  titleChoiceTextSelected: { color: '#dff3ff' },
   titleBadge: { minHeight: 30, flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingHorizontal: 9, borderWidth: 1, borderRadius: 6, backgroundColor: '#11191a' },
   titleBadgeLight: { backgroundColor: '#e3efe8' },
   titleBadgeText: { color: '#f7fbfa', fontSize: 11, fontWeight: '800' },
@@ -738,11 +1205,23 @@ const styles = StyleSheet.create({
   noTitles: { color: '#9db5b4', fontSize: 12 },
   relationship: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderRadius: 16 },
   relationshipText: { fontSize: 11, fontWeight: '900' },
+  profileCommands: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
+  cancelButton: { minHeight: 46, flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#536467', borderRadius: 8, backgroundColor: '#171c1d' },
+  cancelButtonLight: { borderColor: '#acbabc', backgroundColor: '#ffffff' },
+  cancelButtonText: { color: '#f7fbfa', fontSize: 13, fontWeight: '900' },
+  saveButton: { minHeight: 46, flex: 1.35, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: '#2f9cff' },
+  saveButtonText: { color: '#061617', fontSize: 13, fontWeight: '900' },
   primaryButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: 14, paddingHorizontal: 18, borderRadius: 8, backgroundColor: '#2f9cff' },
+  footerPrimaryButton: { flexGrow: 0, marginTop: 0 },
   primaryButtonText: { color: '#061617', fontSize: 14, fontWeight: '900' },
   primaryButtonTextLight: { color: '#ffffff' },
   blockButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 10, borderWidth: 1, borderColor: '#a9434d', borderRadius: 8, backgroundColor: '#6c252d' },
   blockButtonText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
+  setup: { gap: 10, marginTop: 14, padding: 14, borderWidth: 1, borderColor: '#315052', borderRadius: 9, backgroundColor: '#11191a' },
+  setupLight: { borderColor: '#9bb8b1', backgroundColor: '#eaf4ed' },
+  setupCopy: { gap: 3 },
+  setupTitle: { color: '#f7fbfa', fontSize: 18, lineHeight: 23, fontWeight: '900' },
+  setupBody: { maxWidth: undefined, textAlign: 'left' },
   feedback: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 11, borderWidth: 1, borderRadius: 10 },
   feedbackSuccess: { borderColor: '#2fbd79', backgroundColor: '#13372b' },
   feedbackError: { borderColor: '#ef5b72', backgroundColor: '#3a1820' },

@@ -1,5 +1,7 @@
 import { markNativeUiPerformance } from './nativeUiPerformanceTrace';
 
+export const captureNativeUiInteractionStart = (): number => Date.now();
+
 export const markNativeUiPerformanceAfterPaint = (
   event: string,
   startedAt: number,
@@ -11,5 +13,15 @@ export const markNativeUiPerformanceAfterPaint = (
         interactionLatencyMs: Math.max(0, Date.now() - startedAt),
       });
     });
+  });
+};
+
+export const runNativeUiWorkAfterPaint = (work: () => void): void => {
+  if (process.env.NODE_ENV === 'test') {
+    work();
+    return;
+  }
+  requestAnimationFrame(() => {
+    requestAnimationFrame(work);
   });
 };

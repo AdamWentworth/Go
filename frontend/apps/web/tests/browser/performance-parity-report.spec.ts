@@ -331,6 +331,44 @@ const performanceSearchResults = [{
   date_caught: '2026-06-18',
   wanted_list: {},
 }];
+const performanceProfileHighlights = Object.entries(performanceInstances).slice(0, 3).map(
+  ([instanceId, instance]) => ({
+    ...instance,
+    disabled: false,
+    instance_id: instanceId,
+    is_caught: true,
+  }),
+);
+const performanceTrainerProfile = {
+  user: {
+    user_id: signedInUser.user_id,
+    username: signedInUser.username,
+    pokemonGoName: signedInUser.pokemonGoName,
+    team: 'Mystic',
+    trainer_level: 50,
+    total_xp: 88_000_000,
+    pogo_started_on: '2016-07-06T00:00:00Z',
+    app_joined_at: '2026-01-01T00:00:00Z',
+  },
+  trainer_titles: ['raid-regular', 'shiny-hunter'],
+  location: signedInUser.location,
+  trainer_code: signedInUser.trainerCode,
+  stats: { caught: 120, for_trade: 18, wanted: 9, favorites: 24, registered: 846 },
+  highlights: performanceProfileHighlights,
+  viewer: {
+    relationship: 'self',
+    can_view_profile: true,
+    can_view_collection: true,
+  },
+};
+const performanceFriend = {
+  user_id: 'performance-friend',
+  username: 'NexusFriend',
+  pokemonGoName: 'NexusFriendGO',
+  team: 'Valor',
+  trainer_level: 48,
+  friendship_id: 'performance-friendship',
+};
 const performanceRouteOptions = {
   baseUrl: webBaseUrl,
   communityRankings: performanceCommunityRankings,
@@ -341,6 +379,12 @@ const performanceRouteOptions = {
     boundary: null,
   }],
   mockImages: false,
+  friendsOverview: {
+    blocked: [],
+    friends: [performanceFriend],
+    incoming: [{ ...performanceFriend, friendship_id: 'performance-incoming', username: 'IncomingTrainer' }],
+    outgoing: [],
+  },
   pvpData: performancePvpData,
   searchResults: performanceSearchResults,
   syncInstances: performanceInstances,
@@ -350,6 +394,18 @@ const performanceRouteOptions = {
     team: 'Mystic',
     trainer_level: 50,
   }],
+  trainerPreferences: {
+    profile_visibility: 'public',
+    collection_visibility: 'public',
+    friend_request_permission: 'everyone',
+    trainer_code_visibility: 'friends',
+    coordination_method: 'campfire',
+    coordination_handle: 'PerformanceTrainer',
+    share_trade_contact: true,
+    show_location: true,
+    show_pokemon_go_name: true,
+  },
+  trainerProfile: performanceTrainerProfile,
   trades: performanceTrades,
   userOverview: {
     related_instances: performanceTradeRelatedInstances,
@@ -396,6 +452,9 @@ const installBrowserProbe = async (page: Page) => {
       state.lastInputAt = performance.now();
     }, { capture: true });
     document.addEventListener('input', () => {
+      state.lastInputAt = performance.now();
+    }, { capture: true });
+    document.addEventListener('keydown', () => {
       state.lastInputAt = performance.now();
     }, { capture: true });
     try {
@@ -861,6 +920,240 @@ const collectAuthInteractions = async (
   }
 };
 
+const waitForTrainerPageSlide = async (page: Page) => {
+  await page.locator('.trainer-page-slider .horizontal-page-slider__track').evaluate(
+    (track) => new Promise<void>((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        track.removeEventListener('transitionend', finish);
+        resolve();
+      };
+      track.addEventListener('transitionend', finish, { once: true });
+      window.setTimeout(finish, 360);
+    }),
+  );
+};
+
+const collectTrainerWorkspaceInteractions = async (
+  context: BrowserContext,
+  sampleIndex: number,
+) => {
+  const profile = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    for (const pattern of ['**/api/auth/update/*', '**/__e2e/auth/update/*']) {
+      await profile.route(pattern, async (route) => {
+        await route.fulfill({ body: '{}', contentType: 'application/json', status: 200 });
+      });
+    }
+    await profile.goto(`${webBaseUrl}/profile`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(profile);
+    const card = profile.getByRole('region', {
+      name: `${signedInUser.username}'s trainer card`,
+    });
+    await card.waitFor({ state: 'visible' });
+
+    await activateMeasuredControl(profile.getByRole('button', { name: 'Edit', exact: true }));
+    await card.getByLabel('Pokemon GO name').waitFor({ state: 'visible' });
+    await recordInteraction(profile, 'interaction.profile.edit-result', sampleIndex);
+
+    const maxBattler = card.getByRole('button', { name: /Max Battler/i });
+    await activateMeasuredControl(maxBattler);
+    await expect(maxBattler).toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(profile, 'interaction.profile.title-result', sampleIndex);
+
+    await activateMeasuredControl(card.getByRole('button', {
+      name: 'Choose featured Pokemon for slot 4',
+    }));
+    const picker = card.getByLabel('Choose Pokemon for featured slot 4');
+    await picker.waitFor({ state: 'visible' });
+    await recordInteraction(profile, 'interaction.profile.showcase-picker', sampleIndex);
+
+    const candidate = picker.getByRole('button', {
+      name: /^Choose .* for featured slot 4$/,
+    }).first();
+    const candidateLabel = await candidate.getAttribute('aria-label');
+    const candidateName = candidateLabel?.match(/^Choose (.*) for featured slot 4$/)?.[1];
+    if (!candidateName) throw new Error('Profile performance fixture exposed no unassigned showcase candidate.');
+    await activateMeasuredControl(candidate);
+    const selectedSlot = card.getByRole('button', {
+      name: `Change featured Pokemon in slot 4, currently ${candidateName}`,
+    });
+    await selectedSlot.waitFor({ state: 'visible' });
+    await recordInteraction(profile, 'interaction.profile.showcase-selection-result', sampleIndex);
+
+    await selectedSlot.focus();
+    await profile.keyboard.press('Alt+ArrowLeft');
+    await card.getByRole('button', {
+      name: `Change featured Pokemon in slot 3, currently ${candidateName}`,
+    }).waitFor({ state: 'visible' });
+    await recordInteraction(profile, 'interaction.profile.showcase-reorder-result', sampleIndex);
+
+    await activateMeasuredControl(card.getByRole('button', { name: 'Save profile' }));
+    const profileSaveFeedback = profile.locator('.feedback-card').last();
+    await profileSaveFeedback.waitFor({ state: 'visible' });
+    await expect(profileSaveFeedback).toContainText('Profile updated');
+    await profile.getByRole('button', { name: 'Edit', exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(profile, 'interaction.profile.save-result', sampleIndex);
+    await captureWorkflowScreenshot(profile, sampleIndex, 'trainer-profile-saved');
+  } finally {
+    await closeMeasuredPage(profile);
+  }
+
+  const relationshipProfile = await createMeasuredPage(context, 'signed-in', 'dark', {
+    ...performanceRouteOptions,
+    trainerProfile: {
+      ...performanceTrainerProfile,
+      user: {
+        ...performanceTrainerProfile.user,
+        user_id: performanceFriend.user_id,
+        username: performanceFriend.username,
+        pokemonGoName: performanceFriend.pokemonGoName,
+      },
+      viewer: {
+        relationship: 'friend',
+        friendship_id: performanceFriend.friendship_id,
+        can_view_profile: true,
+        can_view_collection: true,
+      },
+    },
+  });
+  try {
+    for (const pattern of ['**/api/users/friends/*', '**/__e2e/users/friends/*']) {
+      await relationshipProfile.route(pattern, async (route) => {
+        if (route.request().method() === 'DELETE') {
+          await route.fulfill({ status: 204 });
+          return;
+        }
+        await route.fallback();
+      });
+    }
+    await relationshipProfile.goto(`${webBaseUrl}/profile/${performanceFriend.username}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await waitUntilVisuallyReady(relationshipProfile);
+    await activateMeasuredControl(relationshipProfile.getByRole('button', { name: 'Friends', exact: true }));
+    const confirmation = relationshipProfile.getByRole('dialog', { name: 'Confirm action' });
+    await confirmation.waitFor({ state: 'visible' });
+    await recordInteraction(relationshipProfile, 'interaction.profile.relationship-confirmation', sampleIndex);
+    await activateMeasuredControl(confirmation.getByRole('button', { name: 'OK', exact: true }));
+    await relationshipProfile.getByText('Friend removed', { exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(relationshipProfile, 'interaction.profile.relationship-result', sampleIndex);
+  } finally {
+    await closeMeasuredPage(relationshipProfile);
+  }
+
+  const friends = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    for (const pattern of ['**/api/users/friends/requests/**', '**/__e2e/users/friends/requests/**']) {
+      await friends.route(pattern, async (route) => {
+        await route.fulfill({ body: '{}', contentType: 'application/json', status: 200 });
+      });
+    }
+    await friends.goto(`${webBaseUrl}/profile/friends`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(friends);
+
+    await activateMeasuredControl(friends.getByRole('button', { name: /Requests\s*1/ }));
+    await waitForTrainerPageSlide(friends);
+    await expect(friends.locator('.trainer-tabs button.active')).toContainText('Requests');
+    await recordInteraction(friends, 'interaction.friends.view-result', sampleIndex);
+
+    await activateMeasuredControl(friends.getByRole('button', { name: 'Accept IncomingTrainer' }));
+    await friends.getByText('Friend request accepted', { exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(friends, 'interaction.friends.command-result', sampleIndex);
+
+    await activateMeasuredControl(friends.getByRole('button', { name: /^Find$/ }));
+    await waitForTrainerPageSlide(friends);
+    await friends.getByPlaceholder('Username or Pokemon GO name').fill('Other');
+    await activateMeasuredControl(friends.getByRole('button', { name: 'Search', exact: true }));
+    await friends.getByText('OtherPogoName', { exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(friends, 'interaction.friends.search-result', sampleIndex);
+
+    await activateMeasuredControl(friends.getByRole('button', { name: /Friends\s*1/ }));
+    await waitForTrainerPageSlide(friends);
+    await activateMeasuredControl(friends.getByRole('button', { name: `Remove ${performanceFriend.username}` }));
+    await friends.getByRole('dialog', { name: 'Confirm action' }).waitFor({ state: 'visible' });
+    await recordInteraction(friends, 'interaction.friends.confirmation', sampleIndex);
+  } finally {
+    await closeMeasuredPage(friends);
+  }
+
+  const settings = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    await settings.goto(`${webBaseUrl}/settings`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(settings);
+    const profileVisibility = settings.getByLabel('Profile visibility');
+    await profileVisibility.selectOption('friends');
+    await expect(profileVisibility).toHaveValue('friends');
+    await recordInteraction(settings, 'interaction.settings.selection-result', sampleIndex);
+
+    const location = settings.getByRole('checkbox', { name: 'Show profile location' });
+    await activateMeasuredControl(location);
+    await expect(location).not.toBeChecked();
+    await recordInteraction(settings, 'interaction.settings.toggle-result', sampleIndex);
+
+    await activateMeasuredControl(settings.getByRole('button', { name: 'Save privacy' }));
+    await settings.getByText('Privacy settings saved', { exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(settings, 'interaction.settings.save-result', sampleIndex);
+    await captureWorkflowScreenshot(settings, sampleIndex, 'trainer-settings-saved');
+  } finally {
+    await closeMeasuredPage(settings);
+  }
+
+  const account = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    let googleConnected = true;
+    const accountSecurity = () => ({
+      email: signedInUser.email,
+      hasPassword: true,
+      activeSessions: 2,
+      providers: googleConnected ? [{
+        provider: 'google',
+        email: signedInUser.email,
+        emailVerified: true,
+        linkedAt: '2026-07-01T00:00:00.000Z',
+      }] : [],
+    });
+    for (const pattern of ['**/api/auth/**', '**/__e2e/auth/**']) {
+      await account.route(pattern, async (route) => {
+        const request = route.request();
+        const pathname = new URL(request.url()).pathname.replace(/^\/(?:api|__e2e)\/auth/, '');
+        if (request.method() === 'GET' && pathname === '/account/security') {
+          await route.fulfill({ body: JSON.stringify(accountSecurity()), contentType: 'application/json', status: 200 });
+          return;
+        }
+        if (request.method() === 'DELETE' && pathname === '/account/identities/google') {
+          googleConnected = false;
+          await route.fulfill({ body: '{}', contentType: 'application/json', status: 200 });
+          return;
+        }
+        await route.fallback();
+      });
+    }
+    await account.goto(`${webBaseUrl}/settings/account`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(account);
+
+    await account.getByLabel('New password', { exact: true }).fill('Valid_password_42!');
+    await account.getByLabel('Confirm new password', { exact: true }).fill('Different_password_42!');
+    await activateMeasuredControl(account.getByRole('button', { name: 'Update account' }));
+    await account.getByText('Passwords do not match.', { exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(account, 'interaction.account.update-result', sampleIndex);
+
+    const googleRow = account.locator('.trainer-connected-account').filter({ hasText: 'Google' });
+    await activateMeasuredControl(googleRow.getByRole('button', { name: 'Disconnect' }));
+    const confirmation = account.getByRole('dialog', { name: 'Confirm action' });
+    await confirmation.waitFor({ state: 'visible' });
+    await recordInteraction(account, 'interaction.account.confirmation', sampleIndex);
+    await activateMeasuredControl(confirmation.getByRole('button', { name: 'OK', exact: true }));
+    await account.getByText('Google disconnected', { exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(account, 'interaction.account.provider-result', sampleIndex);
+    await captureWorkflowScreenshot(account, sampleIndex, 'trainer-account-provider-result');
+  } finally {
+    await closeMeasuredPage(account);
+  }
+};
+
 const collectSharedInteractions = async (
   context: BrowserContext,
   sampleIndex: number,
@@ -899,6 +1192,10 @@ const collectSharedInteractions = async (
   }
   if (workflowFilter === 'auth') {
     await collectAuthInteractions(context, sampleIndex);
+    return;
+  }
+  if (workflowFilter === 'trainer') {
+    await collectTrainerWorkspaceInteractions(context, sampleIndex);
     return;
   }
   if (workflowFilter !== 'collection') {

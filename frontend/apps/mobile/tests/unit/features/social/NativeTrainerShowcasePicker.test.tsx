@@ -1,5 +1,4 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import { FlatList } from 'react-native';
 import type { NativeCollectionRow } from '../../../../src/features/collection/collectionModel';
 import { NativeTrainerShowcasePicker } from '../../../../src/features/social/NativeTrainerShowcasePicker';
 
@@ -43,16 +42,7 @@ describe('NativeTrainerShowcasePicker', () => {
       />,
     );
 
-    expect(view.getByTestId('native-trainer-showcase-picker').props.edges).toMatchObject({
-      bottom: 'additive',
-      top: 'additive',
-    });
-    expect(view.UNSAFE_getByType(FlatList).props).toMatchObject({
-      initialNumToRender: 18,
-      maxToRenderPerBatch: 18,
-      numColumns: 3,
-      removeClippedSubviews: true,
-    });
+    expect(view.getByLabelText('Choose Pokémon for featured slot 1')).toBeTruthy();
     expect(view.getByRole('button', { name: 'Shiny Charizard, selected in this slot' })).toBeTruthy();
     expect(view.getByRole('button', { name: 'Shiny Suicune, already featured' }).props.accessibilityState.disabled).toBe(true);
     fireEvent.changeText(view.getByLabelText('Search caught Pokémon'), 'meta');
@@ -63,5 +53,31 @@ describe('NativeTrainerShowcasePicker', () => {
     expect(onClear).toHaveBeenCalledTimes(1);
     fireEvent.press(view.getByRole('button', { name: 'Close showcase picker' }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('matches Vite by revealing large candidate sets in 48-row batches', () => {
+    const candidates = Array.from({ length: 50 }, (_, index) => row(
+      `candidate-${index + 1}`,
+      `Candidate ${index + 1}`,
+      index + 1,
+    ));
+    const view = render(
+      <NativeTrainerShowcasePicker
+        assetBaseUrl="https://pokegonexus.com"
+        candidates={candidates}
+        onClear={jest.fn()}
+        onClose={jest.fn()}
+        onSelect={jest.fn()}
+        selectedIds={[]}
+        slotIndex={0}
+        visible
+      />,
+    );
+
+    expect(view.getByText('Candidate 48')).toBeTruthy();
+    expect(view.queryByText('Candidate 49')).toBeNull();
+    fireEvent.press(view.getByRole('button', { name: 'Show more' }));
+    expect(view.getByText('Candidate 49')).toBeTruthy();
+    expect(view.getByText('Candidate 50')).toBeTruthy();
   });
 });

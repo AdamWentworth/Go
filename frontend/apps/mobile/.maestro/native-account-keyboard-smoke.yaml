@@ -34,7 +34,7 @@ tags:
 - hideKeyboard
 - scrollUntilVisible:
     element:
-      text: trainer@gmail.com
+      text: demo@pokegonexus.local
     direction: DOWN
     speed: 40
     timeout: 15000
