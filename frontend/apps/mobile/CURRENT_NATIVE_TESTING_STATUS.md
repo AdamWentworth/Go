@@ -7,6 +7,9 @@ The canonical Vite application defines user-visible behavior. Native may use
 different implementation details, but it must preserve the same content,
 navigation outcomes, interaction order, terminology, and perceived motion.
 
+The current strong-machine standalone Android build and public-information
+performance handoff is documented in `STRONG_MACHINE_ANDROID_HANDOFF.md`.
+
 ## Which Android workflow to use
 
 | Workflow | What is installed | Where the JavaScript comes from | QR behavior |
