@@ -50,6 +50,10 @@ const eventScenarios = {
   auth_registration_step_painted: 'interaction.auth.registration.step-result',
   auth_registration_same_name_painted: 'interaction.auth.registration.same-name-result',
   auth_password_reset_result_painted: 'interaction.auth.password-reset.result',
+  information_faq_category_result_painted: 'interaction.information.faq.category-result',
+  information_faq_answer_result_painted: 'interaction.information.faq.answer-result',
+  information_faq_search_result_painted: 'interaction.information.faq.search-result',
+  information_faq_clear_result_painted: 'interaction.information.faq.clear-result',
   profile_edit_result_painted: 'interaction.profile.edit-result',
   profile_title_result_painted: 'interaction.profile.title-result',
   profile_showcase_picker_painted: 'interaction.profile.showcase-picker',
@@ -205,6 +209,7 @@ const eventScenarios = {
 };
 const eventSampleSelection = {
   collection_search_menu_painted: 'first',
+  information_faq_search_result_painted: 'last',
   collection_typed_query_result_painted: 'last',
   pokedex_search_result_painted: 'last',
   pokedex_detail_combo_query_result_painted: 'last',

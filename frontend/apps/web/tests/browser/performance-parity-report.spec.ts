@@ -72,6 +72,11 @@ const androidArtifactDirectory = path.resolve(
     || path.resolve(path.dirname(reportPath), 'vite-android-system'),
 );
 const routeFilter = process.env.POKEGONEXUS_PERFORMANCE_ROUTE_FILTER?.trim() ?? '';
+const routeFilters = routeFilter.split(',').map((value) => value.trim()).filter(Boolean);
+const routeMatchesFilter = (id: string, path: string) => (
+  routeFilters.length === 0
+  || routeFilters.some((filter) => id.includes(filter) || path.includes(filter))
+);
 const samples: MetricSample[] = [];
 const androidDeviceId = process.env.POKEGONEXUS_ANDROID_DEVICE_ID?.trim() ?? '';
 const androidChromePackage = process.env.POKEGONEXUS_ANDROID_CHROME_PACKAGE?.trim()
@@ -1195,6 +1200,38 @@ const collectTradeBoardInteractions = async (
   }
 };
 
+const collectInformationInteractions = async (
+  context: BrowserContext,
+  sampleIndex: number,
+) => {
+  const page = await createMeasuredPage(context, 'guest', 'dark');
+  try {
+    await page.goto(`${webBaseUrl}/faq`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(page);
+
+    const trading = page.getByRole('button', { name: 'Browse Trading questions' });
+    await activateMeasuredControl(trading);
+    await expect(page.getByText('7 questions', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.information.faq.category-result', sampleIndex);
+
+    const expand = page.getByRole('button', { name: 'Expand answers', exact: true });
+    await activateMeasuredControl(expand);
+    await expect(page.getByRole('button', { name: 'Collapse answers', exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.information.faq.answer-result', sampleIndex);
+
+    const search = page.getByRole('searchbox', { name: 'Search questions and answers' });
+    await search.fill('Forever Friends');
+    await expect(page.getByText('1 question matching “Forever Friends”', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.information.faq.search-result', sampleIndex);
+
+    await activateMeasuredControl(page.getByRole('button', { name: 'Clear FAQ search' }));
+    await expect(page.getByText('Common questions', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.information.faq.clear-result', sampleIndex);
+  } finally {
+    await closeMeasuredPage(page);
+  }
+};
+
 const collectSharedInteractions = async (
   context: BrowserContext,
   sampleIndex: number,
@@ -1241,6 +1278,10 @@ const collectSharedInteractions = async (
   }
   if (workflowFilter === 'trade-board') {
     await collectTradeBoardInteractions(context, sampleIndex);
+    return;
+  }
+  if (workflowFilter === 'information') {
+    await collectInformationInteractions(context, sampleIndex);
     return;
   }
   if (workflowFilter !== 'collection') {
@@ -2499,7 +2540,7 @@ test.describe('Vite performance parity report', () => {
                 if (auth === 'signed-in') await seedPerformanceInstances(routeContext);
                 for (const [routeIndex, route] of contract.routes.entries()) {
                   if (route.auth !== auth) continue;
-                  if (routeFilter && !route.id.includes(routeFilter) && !route.vite.includes(routeFilter)) {
+                  if (!routeMatchesFilter(route.id, route.vite)) {
                     continue;
                   }
                   const page = await createMeasuredPage(routeContext, route.auth, theme);
@@ -2555,7 +2596,7 @@ test.describe('Vite performance parity report', () => {
       }
     }
     const measuredRouteCount = contract.routes.filter((route) => (
-      !routeFilter || route.id.includes(routeFilter) || route.vite.includes(routeFilter)
+      routeMatchesFilter(route.id, route.vite)
     )).length;
     expect(samples.length).toBeGreaterThan(workflowsOnly
       ? repetitions

@@ -22,6 +22,11 @@ const expoPort = Number(process.env.POKEGONEXUS_NATIVE_ROUTE_PORT || (31_000 + (
 const baseUrl = `http://127.0.0.1:${expoPort}`;
 const refreshTokenKey = 'pokegonexus.mobile.refresh-token';
 const routeFilter = process.env.POKEGONEXUS_REAL_ROUTE_FILTER?.trim() ?? '';
+const routeFilters = routeFilter.split(',').map((value) => value.trim()).filter(Boolean);
+const routeMatchesFilter = (path, scenarioId) => (
+  routeFilters.length === 0
+  || routeFilters.some((filter) => path.includes(filter) || scenarioId?.includes(filter))
+);
 const workflowsOnly = process.env.POKEGONEXUS_REAL_WORKFLOWS_ONLY === 'true';
 const workflowFilter = process.env.POKEGONEXUS_REAL_WORKFLOW_FILTER?.trim() ?? '';
 const performanceMode = process.env.POKEGONEXUS_REAL_ROUTE_PERFORMANCE === 'true';
@@ -951,6 +956,41 @@ const assertGuestHomePerformanceWorkflow = async (context) => {
   }
 };
 
+const assertGuestInformationPerformanceWorkflow = async (context) => {
+  const page = await context.newPage();
+  try {
+    await page.goto(`${baseUrl}/native/info/faq`, {
+      timeout: 60_000,
+      waitUntil: 'domcontentloaded',
+    });
+    await page.getByTestId('native-information-faq').waitFor({
+      state: 'visible',
+      timeout: 25_000,
+    });
+    await waitForRouteToSettle(page);
+
+    await page.getByRole('button', { name: 'Browse Trading questions', exact: true }).click();
+    await page.getByText('7 questions', { exact: true }).waitFor({ state: 'visible' });
+    await recordInteractionPerformance(page, 'interaction.information.faq.category-result');
+
+    await page.getByRole('button', { name: 'Expand answers', exact: true }).click();
+    await page.getByRole('button', { name: 'Collapse answers', exact: true })
+      .waitFor({ state: 'visible' });
+    await recordInteractionPerformance(page, 'interaction.information.faq.answer-result');
+
+    await page.getByLabel('Search questions and answers', { exact: true }).fill('Forever Friends');
+    await page.getByText('1 question matching “Forever Friends”', { exact: true })
+      .waitFor({ state: 'visible' });
+    await recordInteractionPerformance(page, 'interaction.information.faq.search-result');
+
+    await page.getByRole('button', { name: 'Clear FAQ search', exact: true }).click();
+    await page.getByText('Common questions', { exact: true }).waitFor({ state: 'visible' });
+    await recordInteractionPerformance(page, 'interaction.information.faq.clear-result');
+  } finally {
+    await page.close();
+  }
+};
+
 const assertSignedInHomePerformanceWorkflow = async (context) => {
   const page = await context.newPage();
   homePerformanceEmptyState = true;
@@ -1735,11 +1775,7 @@ const runContext = async (browser, { authState, routes, theme }) => {
   try {
     for (const routeCase of routes.filter(([path]) => {
       const scenarioId = routeScenarioId(path, authState);
-      return !workflowsOnly && (
-        !routeFilter
-        || path.includes(routeFilter)
-        || scenarioId?.includes(routeFilter)
-      );
+      return !workflowsOnly && routeMatchesFilter(path, scenarioId);
     })) {
       const page = await context.newPage();
       try {
@@ -1761,6 +1797,10 @@ const runContext = async (browser, { authState, routes, theme }) => {
     if (!routeFilter && performanceMode && authState === 'guest' && theme === 'dark'
         && shouldRunWorkflow('home')) {
       await assertGuestHomePerformanceWorkflow(context);
+    }
+    if (!routeFilter && performanceMode && authState === 'guest' && theme === 'dark'
+        && shouldRunWorkflow('information')) {
+      await assertGuestInformationPerformanceWorkflow(context);
     }
     if (!routeFilter && authState === 'signed-in' && theme === 'dark') {
       if (performanceMode && shouldRunWorkflow('home')) {
@@ -1832,7 +1872,7 @@ const run = async () => {
       for (const theme of workflowsOnly ? ['dark'] : ['dark', 'light']) {
         if (!workflowsOnly) {
           await runContext(browser, { authState: 'guest', routes: guestRoutes, theme });
-        } else if (workflowFilter === 'home') {
+        } else if (workflowFilter === 'home' || workflowFilter === 'information') {
           await runContext(browser, { authState: 'guest', routes: guestRoutes, theme });
         }
         await runContext(browser, { authState: 'signed-in', routes: signedInRoutes, theme });
@@ -1872,7 +1912,7 @@ const run = async () => {
     ...signedInRoutes.map((route) => ({ authState: 'signed-in', route })),
   ].filter(({ authState, route: [path] }) => {
     const scenarioId = routeScenarioId(path, authState);
-    return !routeFilter || path.includes(routeFilter) || scenarioId?.includes(routeFilter);
+    return routeMatchesFilter(path, scenarioId);
   }).length;
   process.stdout.write(workflowsOnly
     ? 'Native real-route workflow smoke passed.\n'

@@ -76,7 +76,7 @@ export default function NativeVerifyEmailChangeRoute() {
             onPress={() => router.replace('/native/login')}
             style={styles.button}
           >
-            <Text style={styles.buttonText}>Continue to sign in</Text>
+            <Text style={styles.buttonText}>Continue to login</Text>
           </Pressable>
         ) : null}
         </View>

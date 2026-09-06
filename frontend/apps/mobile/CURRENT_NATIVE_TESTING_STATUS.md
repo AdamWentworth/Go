@@ -64,7 +64,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 162 suites, 923 tests;
+- native Jest: 162 suites, 926 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 10 tests;
@@ -673,7 +673,7 @@ less, Settings 85 ms or less, Account 141 ms or less, and relationship actions
 numbers use a minified bundle in the installed development client, so they are
 strong same-device diagnostics but not standalone-release authority.
 
-The final checkpoint passes 162 native suites / 923 tests, all 13 focused Vite
+The final checkpoint passes 162 native suites / 926 tests, all 13 focused Vite
 mobile-Chromium auth/lifecycle cases, the complete 1,720-test Vite unit and
 integration suite, 28 focused Vite trainer tests, six focused trainer browser
 lifecycle tests, TypeScript, ESLint, stylelint, and all 21 performance-report
@@ -717,6 +717,45 @@ measurements still include Expo/RNW document and catalog work that Vite has
 already cached. Those proxy failures remain visible and must not be described
 as Android failures or as passing route evidence. A standalone release APK
 remains the final authority for compiled-native route cadence.
+
+The 2026-09-05 public, legal, and edge-route pass covers Getting Started, Help,
+FAQ, About, Safety, Privacy, Terms, Data Deletion, incomplete email verification,
+and unknown-route recovery. Native now uses the canonical Vite copy for every
+audited information page, including the complete four-point proposal workflow
+and independent-project disclosure. The email-verification action uses Vite's
+exact `Continue to login` label. Unknown routes preserve the attempted path and
+offer the same recovery destinations.
+
+FAQ links now preserve `/faq#answer-id` across web URLs and the native URL
+scheme, open the matching category and answer, and scroll directly to it. Every
+answer exposes the canonical self-link. Collapsed answer content stays mounted
+inside a clipped, inaccessible layout surface so expanding a category does not
+construct its answer tree on the input frame. Category, answer, search, and
+clear results are now explicit shared performance-contract interactions.
+
+All 16 information-page route/theme states, both email-verification states, and
+both not-found states passed the deterministic real-route matrix. The focused
+Vite mobile-Chromium suite passed all 16 public-information, FAQ, legal/auth, and
+Home-footer cases. Both physical Pixel workflows passed end to end, including
+FAQ category filtering, answer expansion, direct answer links, self-links,
+legal navigation, path-preserving 404 recovery, and edge-to-edge rendering.
+
+The final ten-sample React Native Web interaction diagnostic passes the strict
+no-slower-at-median-and-p95 gate for all four shared FAQ actions. Native/Vite
+median and p95 were 24.1/31.5 versus 26.95/44.2 ms for topic selection,
+15.45/22.2 versus 17.9/24.5 ms for expanding all seven Trading answers,
+9.75/11.8 versus 16.0/19.1 ms for search, and 16.5/24.8 versus 20.4/26.1 ms for
+clear. Avoiding ordinary FAQ layout-measurement callbacks was material; only a
+direct-answer route now subscribes to the measurements needed for its automatic
+scroll. Static route-startup and frame-gap browser proxies remain mixed because
+they include Expo/RNW document mounting and are not physical-native authority.
+
+One complete minified development-client phone timing sample was captured, but
+repeated samples were interrupted by Maestro's Android text-input device server
+dying while injecting the search phrase. That single sample is diagnostic only
+and is not promoted into parity evidence. A repeated standalone-release phone
+run remains required before public-page physical performance can honestly be
+called complete.
 
 ## Remaining approval gate
 

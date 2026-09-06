@@ -13,6 +13,13 @@ const preserveQuery = (pathname: string, query: string): string => (
   query ? `${pathname}?${query}` : pathname
 );
 
+const preserveFaqAnswer = (pathname: string, query: string, fragment: string): string => {
+  if (!fragment) return preserveQuery(pathname, query);
+  const params = new URLSearchParams(query);
+  params.set('question', fragment);
+  return preserveQuery(pathname, params.toString());
+};
+
 const canonicalSegment = (value: string): string => {
   try {
     return encodeURIComponent(decodeURIComponent(value));
@@ -21,9 +28,9 @@ const canonicalSegment = (value: string): string => {
   }
 };
 
-const pathFromIncomingUrl = (incoming: string): { pathname: string; query: string } => {
+const pathFromIncomingUrl = (incoming: string): { fragment: string; pathname: string; query: string } => {
   const trimmed = incoming.trim();
-  if (!trimmed) return { pathname: '/', query: '' };
+  if (!trimmed) return { fragment: '', pathname: '/', query: '' };
   try {
     const parsed = new URL(trimmed, 'https://pokegonexus.invalid');
     const schemeUsesHostAsPath = parsed.protocol === 'pokegonexus:' && parsed.hostname;
@@ -34,18 +41,25 @@ const pathFromIncomingUrl = (incoming: string): { pathname: string; query: strin
       ? rawPathname.slice(3)
       : rawPathname;
     return {
+      fragment: decodeURIComponent(parsed.hash.replace(/^#/, '')),
       pathname: pathname.replace(/\/{2,}/g, '/').replace(/\/$/, '') || '/',
       query: parsed.searchParams.toString(),
     };
   } catch {
-    const [pathname = '/', query = ''] = trimmed.split('?');
-    return { pathname: pathname.startsWith('/') ? pathname : `/${pathname}`, query };
+    const [pathAndQuery = '/', fragment = ''] = trimmed.split('#');
+    const [pathname = '/', query = ''] = pathAndQuery.split('?');
+    return {
+      fragment,
+      pathname: pathname.startsWith('/') ? pathname : `/${pathname}`,
+      query,
+    };
   }
 };
 
 export const resolveNativeDeepLink = (incoming: string): string => {
-  const { pathname, query } = pathFromIncomingUrl(incoming);
+  const { fragment, pathname, query } = pathFromIncomingUrl(incoming);
   if (pathname === '/native' || pathname.startsWith('/native/')) {
+    if (pathname === '/native/info/faq') return preserveFaqAnswer(pathname, query, fragment);
     return preserveQuery(pathname, query);
   }
   if (pathname === '/device-smoke' || pathname.startsWith('/device-smoke/')) {
@@ -82,6 +96,7 @@ export const resolveNativeDeepLink = (incoming: string): string => {
   if (pathname === '/trade-board') return '/native/trade-board';
   const parts = pathname.split('/').filter(Boolean);
   if (parts.length === 1 && INFORMATION_PATHS.has(parts[0] ?? '')) {
+    if (parts[0] === 'faq') return preserveFaqAnswer('/native/info/faq', query, fragment);
     return `/native/info/${parts[0]}`;
   }
   if (parts.length === 2 && parts[0] === 'profile') {

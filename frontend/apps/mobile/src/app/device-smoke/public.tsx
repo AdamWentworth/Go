@@ -114,14 +114,19 @@ export default function DeviceSmokePublicRoute() {
   const params = useLocalSearchParams<{
     page?: string | string[];
     performance?: string | string[];
+    question?: string | string[];
   }>();
-  const [notice, setNotice] = useState('');
-  const [recoveryOpen, setRecoveryOpen] = useState(true);
   const page = Array.isArray(params.page) ? params.page[0] : params.page;
   const performance = Array.isArray(params.performance)
     ? params.performance[0] === '1'
     : params.performance === '1';
+  const question = Array.isArray(params.question) ? params.question[0] : params.question;
+  const routeKey = `${page ?? 'getting-started'}:${question ?? ''}`;
+  const [noticeState, setNoticeState] = useState({ routeKey: '', value: '' });
+  const [recoveryOpen, setRecoveryOpen] = useState(true);
   const [performanceBoardModel, setPerformanceBoardModel] = useState<NativeTradeBoardModel | null>(null);
+  const notice = noticeState.routeKey === routeKey ? noticeState.value : '';
+  const setNotice = (value: string) => setNoticeState({ routeKey, value });
 
   useEffect(() => {
     if (!performance || (page !== 'trade-board' && page !== 'public-trade-board')) return undefined;
@@ -144,10 +149,13 @@ export default function DeviceSmokePublicRoute() {
         username: boardModel.username,
       }));
     }).catch((error: unknown) => {
-      if (active) setNotice(error instanceof Error ? error.message : 'Performance board failed to load.');
+      if (active) setNoticeState({
+        routeKey,
+        value: error instanceof Error ? error.message : 'Performance board failed to load.',
+      });
     });
     return () => { active = false; };
-  }, [page, performance]);
+  }, [page, performance, routeKey]);
 
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
@@ -251,11 +259,21 @@ export default function DeviceSmokePublicRoute() {
     : NATIVE_INFORMATION_PAGES['getting-started'];
   const legal = page === 'privacy' || page === 'terms' || page === 'data-deletion';
   const informationScreen = (
-    <NativeInformationScreen assetBaseUrl={ASSET_BASE_URL} onBack={noOp} onNavigate={(path) => setNotice(`Navigate ${path}`)} page={informationPage} />
+    <NativeInformationScreen assetBaseUrl={ASSET_BASE_URL} initialFaqId={question} onBack={noOp} onNavigate={(path) => setNotice(`Navigate ${path}`)} page={informationPage} />
   );
-  return legal ? informationScreen : (
-    <WithGlobalMenu currentPath={`/${page ?? 'getting-started'}`}>
+  const informationWithNotice = (
+    <View style={styles.fill}>
       {informationScreen}
+      {notice ? <LiveNotice>{notice}</LiveNotice> : null}
+    </View>
+  );
+  return legal ? informationWithNotice : (
+    <WithGlobalMenu currentPath={`/${page ?? 'getting-started'}`}>
+      {informationWithNotice}
     </WithGlobalMenu>
   );
 }
+
+const styles = StyleSheet.create({
+  fill: { flex: 1 },
+});

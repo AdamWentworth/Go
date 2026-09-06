@@ -3,10 +3,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NATIVE_INFORMATION_PAGES } from '../../../src/features/information/nativeInformationContent';
 import { NativeInformationScreen } from '../../../src/screens/NativeInformationScreen';
 
-const renderPage = (slug: keyof typeof NATIVE_INFORMATION_PAGES, onNavigate = jest.fn()) => render(
+const renderPage = (
+  slug: keyof typeof NATIVE_INFORMATION_PAGES,
+  onNavigate = jest.fn(),
+  initialFaqId?: string,
+) => render(
   <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}>
     <NativeInformationScreen
       assetBaseUrl="https://pokegonexus.com"
+      initialFaqId={initialFaqId}
       onBack={jest.fn()}
       onNavigate={onNavigate}
       page={NATIVE_INFORMATION_PAGES[slug]}
@@ -39,6 +44,16 @@ describe('NativeInformationScreen', () => {
     expect(screen.queryByText('How do custom tags work?')).toBeNull();
     fireEvent.press(screen.getByText('How do I propose a trade?'));
     expect(screen.getByText(/Open another trainer’s For Trade/)).toBeTruthy();
+  });
+
+  it('opens a deep-linked FAQ answer and preserves its canonical self-link', () => {
+    const onNavigate = jest.fn();
+    renderPage('faq', onNavigate, 'remote-trades');
+
+    expect(screen.getAllByText('Trading').length).toBeGreaterThan(0);
+    expect(screen.getByText(/Five hearts represents Forever Friends/)).toBeTruthy();
+    fireEvent.press(screen.getByRole('link', { name: /Link to this answer/ }));
+    expect(onNavigate).toHaveBeenCalledWith('/faq#remote-trades');
   });
 
   it('routes guide actions through the native navigation adapter', () => {

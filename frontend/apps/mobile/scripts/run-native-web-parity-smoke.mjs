@@ -20,7 +20,12 @@ const expoPort = Number(process.env.POKEGONEXUS_NATIVE_WEB_PORT || (10_000 + (pr
 const fixturePort = 8092;
 const baseUrl = `http://127.0.0.1:${expoPort}`;
 const routeFilter = process.env.POKEGONEXUS_PARITY_ROUTE?.trim() ?? '';
-const routeMatches = (route) => !routeFilter || route.includes(routeFilter);
+const routeMatches = (route) => {
+  if (!routeFilter) return true;
+  return routeFilter.startsWith('=')
+    ? route === routeFilter.slice(1)
+    : route.includes(routeFilter);
+};
 
 const routeCases = [
   ['home', 'native-home-screen'],
@@ -677,7 +682,7 @@ const run = async () => {
         if (route === 'verify-email-change') {
           await page.getByText('Email not updated').waitFor({ state: 'visible' });
           await page.getByText('This verification link is incomplete.').waitFor({ state: 'visible' });
-          await page.getByRole('button', { name: 'Continue to sign in' }).waitFor({ state: 'visible' });
+          await page.getByRole('button', { name: 'Continue to login' }).waitFor({ state: 'visible' });
         }
 
         if (route.startsWith('not-found?')) {

@@ -35,5 +35,18 @@ tags:
     visible: Email not updated
     timeout: 15000
 - assertVisible: This verification link is incomplete.
-- assertVisible: Continue to sign in
+- assertVisible: Continue to login
 - takeScreenshot: 02-incomplete-email-verification
+- openLink:
+    link: ${APP_LINK_BASE}/native/info/faq?question=remote-trades
+- extendedWaitUntil:
+    visible: What does the fifth friendship heart mean?
+    timeout: 15000
+- assertVisible: ".*Five hearts represents Forever Friends.*"
+- scrollUntilVisible:
+    element:
+      text: ".*Link to this answer.*"
+    direction: DOWN
+    timeout: 10000
+- assertVisible: ".*Link to this answer.*"
+- takeScreenshot: 03-deep-linked-faq-answer

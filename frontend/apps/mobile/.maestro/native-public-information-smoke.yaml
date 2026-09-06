@@ -29,8 +29,23 @@ name: Native information and legal routes smoke
     timeout: 10000
 - assertVisible: "How do I propose a trade?"
 - tapOn: "How do I propose a trade?"
+- scrollUntilVisible:
+    element:
+      text: ".*Open another trainer’s For Trade.*"
+    direction: DOWN
+    timeout: 10000
 - assertVisible: ".*Open another trainer’s For Trade.*"
 - takeScreenshot: "02b-native-faq-trading"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=faq&question=remote-trades"
+- assertVisible: "What does the fifth friendship heart mean?"
+- assertVisible: ".*Five hearts represents Forever Friends.*"
+- scrollUntilVisible:
+    element:
+      text: ".*Link to this answer.*"
+    direction: DOWN
+    timeout: 10000
+- tapOn: ".*Link to this answer.*"
+- assertVisible: "Navigate /faq#remote-trades"
 - openLink: "${APP_LINK_BASE}/device-smoke/public?page=privacy"
 - assertVisible: "Privacy Policy"
 - assertVisible: "Last updated: July 28, 2026"

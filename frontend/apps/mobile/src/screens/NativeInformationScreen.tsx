@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -20,9 +20,14 @@ import type {
   NativeInformationSection,
 } from '../features/information/nativeInformationContent';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import {
+  captureNativeUiInteractionStart,
+  markNativeUiPerformanceAfterPaint,
+} from '../observability/nativeUiInteractionTiming';
 
 type Props = {
   assetBaseUrl: string;
+  initialFaqId?: string;
   isLoggedIn?: boolean;
   onBack: () => void;
   onNavigate: (path: string) => void;
@@ -273,32 +278,50 @@ const InformationSection = ({
           </View>
         ) : null}
       </Pressable>
-      {bodyVisible ? (
-        <View style={styles.sectionBody}>
-          {section.paragraphs?.map((paragraph) => (
-            <Text key={paragraph} style={[styles.paragraph, light && styles.mutedLight]}>{paragraph}</Text>
-          ))}
-          {section.bullets?.map((bullet) => (
-            <View key={bullet} style={styles.bulletRow}>
-              <Text style={styles.bulletCheck}>✓</Text>
-              <Text style={[styles.bulletText, light && styles.mutedLight]}>{bullet}</Text>
-            </View>
-          ))}
-          {section.links?.length ? (
-            <View style={styles.links}>
-              {section.links.map((link) => (
-                <Pressable
-                  accessibilityRole="button"
-                  key={`${section.id}-${link.path}`}
-                  onPress={() => onNavigate(link.path)}
-                  style={[styles.link, link.primary ? styles.linkPrimary : light ? styles.linkLight : styles.linkDark]}
-                >
-                  <Text style={[styles.linkText, link.primary ? styles.linkTextPrimary : light && styles.textLight]}>{link.label}</Text>
-                  <Text style={[styles.linkArrow, link.primary ? styles.linkTextPrimary : light && styles.textLight]}>›</Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
+      {bodyVisible || isFaq ? (
+        <View
+          accessibilityElementsHidden={!bodyVisible}
+          importantForAccessibility={bodyVisible ? 'auto' : 'no-hide-descendants'}
+          pointerEvents={bodyVisible ? 'auto' : 'none'}
+          style={!bodyVisible ? styles.faqBodyCollapsed : undefined}
+        >
+          <View style={styles.sectionBody}>
+            {section.paragraphs?.map((paragraph) => (
+              <Text key={paragraph} style={[styles.paragraph, light && styles.mutedLight]}>{paragraph}</Text>
+            ))}
+            {section.bullets?.map((bullet) => (
+              <View key={bullet} style={styles.bulletRow}>
+                <Text style={styles.bulletCheck}>✓</Text>
+                <Text style={[styles.bulletText, light && styles.mutedLight]}>{bullet}</Text>
+              </View>
+            ))}
+            {isFaq ? (
+              <Pressable
+                accessibilityRole="link"
+                onPress={() => onNavigate(`/faq#${section.id}`)}
+                style={styles.faqAnswerLink}
+              >
+                <Text style={[styles.faqAnswerLinkText, light && styles.blueTextLight]}>
+                  ⌁  Link to this answer
+                </Text>
+              </Pressable>
+            ) : null}
+            {section.links?.length ? (
+              <View style={styles.links}>
+                {section.links.map((link) => (
+                  <Pressable
+                    accessibilityRole="button"
+                    key={`${section.id}-${link.path}`}
+                    onPress={() => onNavigate(link.path)}
+                    style={[styles.link, link.primary ? styles.linkPrimary : light ? styles.linkLight : styles.linkDark]}
+                  >
+                    <Text style={[styles.linkText, link.primary ? styles.linkTextPrimary : light && styles.textLight]}>{link.label}</Text>
+                    <Text style={[styles.linkArrow, link.primary ? styles.linkTextPrimary : light && styles.textLight]}>›</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </View>
         </View>
       ) : null}
     </View>
@@ -353,7 +376,7 @@ const NativeLegalSection = ({
   </View>
 );
 
-const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack, onNavigate, page }: Props) => {
+const NativeInformationPageScreen = ({ assetBaseUrl, initialFaqId, isLoggedIn = false, onBack, onNavigate, page }: Props) => {
   const light = useNativeColorScheme() === 'light';
   const insets = useSafeAreaInsets();
   const compact = useWindowDimensions().width < 600;
@@ -366,9 +389,20 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
   const categories = useMemo(() => (
     Array.from(new Set(page.sections.map(({ category }) => category).filter(Boolean))) as string[]
   ), [page.sections]);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
+  const initialFaqSection = isFaq
+    ? page.sections.find(({ id }) => id === initialFaqId)
+    : undefined;
+  const [activeCategory, setActiveCategory] = useState<string | null>(
+    initialFaqSection?.category ?? null,
+  );
+  const [openIds, setOpenIds] = useState<Set<string>>(
+    () => new Set(initialFaqSection ? [initialFaqSection.id] : []),
+  );
   const [query, setQuery] = useState('');
+  const faqScrollRef = useRef<ScrollView>(null);
+  const [faqResultsY, setFaqResultsY] = useState<number | null>(null);
+  const [faqListY, setFaqListY] = useState<number | null>(null);
+  const [faqTargetY, setFaqTargetY] = useState<number | null>(null);
   const validActiveCategory = activeCategory && categories.includes(activeCategory)
     ? activeCategory
     : null;
@@ -389,6 +423,24 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
       : page.sections;
   const allVisibleOpen = visibleSections.length > 0
     && visibleSections.every(({ id }) => openIds.has(id));
+  const commitFaqInteraction = (event: string, update: () => void) => {
+    const startedAt = captureNativeUiInteractionStart();
+    update();
+    markNativeUiPerformanceAfterPaint(event, startedAt);
+  };
+
+  useEffect(() => {
+    if (!initialFaqSection || faqResultsY === null || faqListY === null || faqTargetY === null) {
+      return undefined;
+    }
+    const frame = requestAnimationFrame(() => {
+      faqScrollRef.current?.scrollTo({
+        animated: false,
+        y: Math.max(0, faqResultsY + faqListY + faqTargetY - 12),
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [faqListY, faqResultsY, faqTargetY, initialFaqSection]);
 
   if (isGettingStarted) {
     return (
@@ -406,7 +458,7 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
   if (isFaq) {
     return (
       <View style={[styles.root, light && styles.rootLight]} testID="native-information-faq">
-        <ScrollView contentContainerStyle={{ paddingTop: 8 + insets.top, paddingBottom: 96 + insets.bottom, paddingHorizontal: 10 }} keyboardShouldPersistTaps="handled">
+        <ScrollView ref={faqScrollRef} contentContainerStyle={{ paddingTop: 8 + insets.top, paddingBottom: 96 + insets.bottom, paddingHorizontal: 10 }} keyboardShouldPersistTaps="handled">
           <View style={[styles.informationShell, light && styles.informationShellLight]}>
           <View style={[styles.faqHero, light && styles.faqHeroLight]}>
             <View style={[styles.faqHeroIcon, light && styles.faqHeroIconLight]}>
@@ -422,19 +474,19 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
               <NativeUiIcon color={light ? '#53666f' : '#9ba9b0'} name="search" size={20} />
               <TextInput
                 accessibilityLabel="Search questions and answers"
-                onChangeText={(value) => { setQuery(value); if (value.trim()) setActiveCategory(null); }}
+                onChangeText={(value) => commitFaqInteraction('information_faq_search_result_painted', () => { setQuery(value); if (value.trim()) setActiveCategory(null); })}
                 placeholder="Search questions and answers"
                 placeholderTextColor={light ? '#66757d' : '#87959d'}
                 style={[styles.faqSearchInput, light && styles.textLight]}
                 value={query}
               />
-              {query ? <Pressable accessibilityLabel="Clear FAQ search" accessibilityRole="button" onPress={() => setQuery('')} style={styles.faqClear}><Text style={[styles.faqClearText, light && styles.textLight]}>×</Text></Pressable> : null}
+              {query ? <Pressable accessibilityLabel="Clear FAQ search" accessibilityRole="button" onPress={() => commitFaqInteraction('information_faq_clear_result_painted', () => setQuery(''))} style={styles.faqClear}><Text style={[styles.faqClearText, light && styles.textLight]}>×</Text></Pressable> : null}
             </View>
             <View accessibilityLabel="Browse FAQ topics" style={styles.faqCategories}>
               {FAQ_CATEGORIES.map((meta) => {
                 const selected = activeCategory === meta.category;
                 const count = page.sections.filter(({ category }) => category === meta.category).length;
-                return <Pressable accessibilityLabel={`Browse ${meta.countLabel} questions`} accessibilityRole="button" accessibilityState={{ selected }} key={meta.category} onPress={() => { setActiveCategory(meta.category); setQuery(''); }} style={[styles.faqCategory, light && styles.faqCategoryLight, selected && styles.faqCategorySelected, selected && light && styles.faqCategorySelectedLight]}>
+                return <Pressable accessibilityLabel={`Browse ${meta.countLabel} questions`} accessibilityRole="button" accessibilityState={{ selected }} key={meta.category} onPress={() => commitFaqInteraction('information_faq_category_result_painted', () => { setActiveCategory(meta.category); setQuery(''); })} style={[styles.faqCategory, light && styles.faqCategoryLight, selected && styles.faqCategorySelected, selected && light && styles.faqCategorySelectedLight]}>
                   <View style={[styles.faqCategoryIcon, light && styles.faqCategoryIconLight]}>
                     <NativeUiIcon color="#299cf5" name={meta.icon} size={20} />
                   </View>
@@ -446,16 +498,26 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
             </View>
           </View>
 
-          <View style={styles.faqResults}>
+          <View
+            onLayout={initialFaqSection
+              ? ({ nativeEvent }) => setFaqResultsY(nativeEvent.layout.y)
+              : undefined}
+            style={styles.faqResults}
+          >
             <View style={styles.faqResultsHeader}>
               <View style={styles.faqResultsCopy}><Text style={[styles.sectionCategory, light && styles.blueTextLight]}>KNOWLEDGE BASE</Text><Text style={[styles.faqResultsTitle, light && styles.textLight]}>{normalizedQuery ? 'Search results' : validActiveCategory ? faqCategoryLabel(validActiveCategory) : 'Common questions'}</Text><Text style={[styles.faqResultsDetail, light && styles.mutedLight]}>{visibleSections.length} {visibleSections.length === 1 ? 'question' : 'questions'}{normalizedQuery ? ` matching “${query.trim()}”` : ''}</Text></View>
               <View style={styles.faqResultsActions}>
-                {validActiveCategory && !normalizedQuery ? <Pressable accessibilityRole="button" onPress={() => setActiveCategory(null)} style={[styles.faqPill, light && styles.faqPillLight]}><Text style={styles.faqPillAccent}>‹ All topics</Text></Pressable> : null}
-                {visibleSections.length ? <Pressable accessibilityRole="button" onPress={() => setOpenIds((current) => { const next = new Set(current); visibleSections.forEach(({ id }) => { if (allVisibleOpen) next.delete(id); else next.add(id); }); return next; })} style={[styles.faqPill, light && styles.faqPillLight]}><Text style={[styles.faqPillText, light && styles.textLight]}>{allVisibleOpen ? 'Collapse answers' : 'Expand answers'}</Text></Pressable> : null}
+                {validActiveCategory && !normalizedQuery ? <Pressable accessibilityRole="button" onPress={() => commitFaqInteraction('information_faq_category_result_painted', () => setActiveCategory(null))} style={[styles.faqPill, light && styles.faqPillLight]}><Text style={styles.faqPillAccent}>‹ All topics</Text></Pressable> : null}
+                {visibleSections.length ? <Pressable accessibilityRole="button" onPress={() => commitFaqInteraction('information_faq_answer_result_painted', () => setOpenIds((current) => { const next = new Set(current); visibleSections.forEach(({ id }) => { if (allVisibleOpen) next.delete(id); else next.add(id); }); return next; }))} style={[styles.faqPill, light && styles.faqPillLight]}><Text style={[styles.faqPillText, light && styles.textLight]}>{allVisibleOpen ? 'Collapse answers' : 'Expand answers'}</Text></Pressable> : null}
               </View>
             </View>
-            <View style={styles.sections}>
-              {visibleSections.map((section) => <InformationSection expanded={openIds.has(section.id)} isFaq key={section.id} light={light} onNavigate={onNavigate} onToggle={() => setOpenIds((current) => { const next = new Set(current); if (next.has(section.id)) next.delete(section.id); else next.add(section.id); return next; })} section={{ ...section, category: faqCategoryLabel(section.category) }} />)}
+            <View
+              onLayout={initialFaqSection
+                ? ({ nativeEvent }) => setFaqListY(nativeEvent.layout.y)
+                : undefined}
+              style={styles.sections}
+            >
+              {visibleSections.map((section) => <View key={section.id} onLayout={section.id === initialFaqSection?.id ? ({ nativeEvent }) => setFaqTargetY(nativeEvent.layout.y) : undefined}><InformationSection expanded={openIds.has(section.id)} isFaq light={light} onNavigate={onNavigate} onToggle={() => commitFaqInteraction('information_faq_answer_result_painted', () => setOpenIds((current) => { const next = new Set(current); if (next.has(section.id)) next.delete(section.id); else next.add(section.id); return next; }))} section={{ ...section, category: faqCategoryLabel(section.category) }} /></View>)}
               {!visibleSections.length ? <View style={[styles.faqEmpty, light && styles.sectionLight]}><Text style={styles.faqEmptyIcon}>⌕</Text><Text style={[styles.faqEmptyTitle, light && styles.textLight]}>No matching questions</Text><Text style={[styles.faqEmptyText, light && styles.mutedLight]}>Try a shorter phrase or search all categories.</Text><Pressable accessibilityRole="button" onPress={() => { setActiveCategory(null); setQuery(''); }} style={[styles.faqPill, light && styles.faqPillLight]}><Text style={[styles.faqPillText, light && styles.textLight]}>Reset FAQ filters</Text></Pressable></View> : null}
             </View>
           </View>
@@ -585,11 +647,12 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
 };
 
 export const NativeInformationScreen = (props: Props) => (
-  <NativeInformationPageScreen key={props.page.slug} {...props} />
+  <NativeInformationPageScreen key={`${props.page.slug}:${props.initialFaqId ?? ''}`} {...props} />
 );
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#090d12' }, rootLight: { backgroundColor: '#f8fff9' },
+  faqBodyCollapsed: { height: 0, overflow: 'hidden', opacity: 0 },
   legalRoot: { backgroundColor: '#222222' },
   legalRootLight: { backgroundColor: '#e0f0e5' },
   informationShell: { overflow: 'hidden', borderWidth: 1, borderColor: '#344149', borderRadius: 18, backgroundColor: '#0d1114' },
@@ -721,6 +784,8 @@ const styles = StyleSheet.create({
   faqSearchInput: { minWidth: 0, flex: 1, height: 50, color: '#fff', fontSize: 14 },
   faqClear: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 19, backgroundColor: '#ffffff10' },
   faqClearText: { color: '#fff', fontSize: 25, lineHeight: 28 },
+  faqAnswerLink: { minHeight: 40, alignSelf: 'flex-start', justifyContent: 'center', marginTop: 2 },
+  faqAnswerLinkText: { color: '#299cf5', fontSize: 12, fontWeight: '900' },
   faqCategories: { gap: 10 },
   faqCategory: { minHeight: 82, flexDirection: 'row', alignItems: 'center', gap: 11, borderWidth: 1, borderColor: '#344149', borderRadius: 15, padding: 13, backgroundColor: '#1a2024' },
   faqCategoryLight: { borderColor: '#9bb8b1', backgroundColor: '#eef6f1' },

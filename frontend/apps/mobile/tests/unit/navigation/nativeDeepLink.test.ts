@@ -6,6 +6,8 @@ describe('resolveNativeDeepLink', () => {
     ['https://pokegonexus.com/getting-started', '/native/info/getting-started'],
     ['https://pokegonexus.com/help', '/native/info/help'],
     ['https://pokegonexus.com/faq', '/native/info/faq'],
+    ['https://pokegonexus.com/faq#remote-trades', '/native/info/faq?question=remote-trades'],
+    ['pokegonexus://native/info/faq#custom-tags', '/native/info/faq?question=custom-tags'],
     ['https://pokegonexus.com/about', '/native/info/about'],
     ['https://pokegonexus.com/safety', '/native/info/safety'],
     ['https://pokegonexus.com/pokedex?region=kanto', '/native/pokedex?region=kanto'],

@@ -20,8 +20,15 @@ describe('native information content', () => {
   });
 
   it('retains the complete six-step collection-to-trade guide', () => {
-    expect(NATIVE_INFORMATION_PAGES['getting-started'].sections.map(({ id }) => id)).toEqual([
+    const guide = NATIVE_INFORMATION_PAGES['getting-started'];
+    expect(guide.sections.map(({ id }) => id)).toEqual([
       'collection', 'wanted', 'for-trade', 'discovery', 'proposal', 'sharing',
+    ]);
+    expect(guide.sections.find(({ id }) => id === 'proposal')?.bullets).toEqual([
+      'Your Pokémon always appears on the left and theirs on the right.',
+      'Set the friendship level and review remote, Lucky, special-trade, and Stardust information.',
+      'The users service validates both participants and Pokémon before accepting the proposal.',
+      'After acceptance, use the opted-in Trainer Code and Campfire, Discord, or another agreed service to arrange the in-game trade.',
     ]);
   });
 

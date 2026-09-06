@@ -51,16 +51,21 @@ export const resolveNativeInformationContextLink = (path: string): {
 export default function NativeInformationRoute() {
   const router = useRouter();
   const session = useNativeSession();
-  const params = useLocalSearchParams<{ slug?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    question?: string | string[];
+    slug?: string | string[];
+  }>();
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
+  const question = Array.isArray(params.question) ? params.question[0] : params.question;
   if (!slug || !isNativeInformationSlug(slug)) return <Redirect href="/native" />;
   const page = NATIVE_INFORMATION_PAGES[slug];
   const showsActionMenu = nativeInformationShowsActionMenu(slug);
 
   const navigate = (path: string) => {
     setActionMenuOpen(false);
-    const [pathname = '/'] = path.split('?');
+    const [pathAndQuery = '/', answerId = ''] = path.split('#');
+    const [pathname = '/'] = pathAndQuery.split('?');
     const contextualDestination = resolveNativeInformationContextLink(path);
     if (contextualDestination) {
       router.push(contextualDestination.params
@@ -76,7 +81,13 @@ export default function NativeInformationRoute() {
       return;
     }
     if (isNativeInformationSlug(pathname.slice(1))) {
-      router.push({ pathname: '/native/info/[slug]', params: { slug: pathname.slice(1) } });
+      router.push({
+        pathname: '/native/info/[slug]',
+        params: {
+          slug: pathname.slice(1),
+          ...(pathname === '/faq' && answerId ? { question: answerId } : {}),
+        },
+      });
       return;
     }
     if (pathname === '/login') {
@@ -104,6 +115,7 @@ export default function NativeInformationRoute() {
     <>
       <NativeInformationScreen
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+        initialFaqId={question}
         isLoggedIn={Boolean(session.user)}
         onBack={() => router.canGoBack() ? router.back() : router.replace('/native')}
         onNavigate={navigate}
