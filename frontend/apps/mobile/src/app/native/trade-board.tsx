@@ -31,7 +31,7 @@ export default function NativeTradeBoardRoute() {
       boardUrl: `${runtimeConfig.api.frontendAppUrl.replace(/\/$/, '')}/trade-board/${encodeURIComponent(username)}`,
       generatedAt,
       instances: snapshotQuery.data.instances,
-      pokemonGoName: profileQuery.data?.user.pokemonGoName,
+      pokemonGoName: profileQuery.data?.user.pokemonGoName ?? session.user.pokemonGoName,
       rows,
       username,
     });
@@ -51,15 +51,17 @@ export default function NativeTradeBoardRoute() {
     return <Redirect href="/native/login?returnTo=%2Fnative%2Ftrade-board" />;
   }
 
-  const error = [snapshotQuery.error, profileQuery.error]
-    .find((value): value is Error => value instanceof Error)?.message ?? null;
+  // The authenticated session already owns the optional Pokémon GO name.
+  // Profile enrichment must not hold up or disable a board built entirely
+  // from the authoritative collection snapshot.
+  const error = snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null;
 
   return (
     <>
       <NativeTradeBoardScreen
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}
         error={error}
-        isLoading={snapshotQuery.isPending || profileQuery.isPending}
+        isLoading={snapshotQuery.isPending}
         model={model}
         onBack={() => {
           if (router.canGoBack()) router.back();

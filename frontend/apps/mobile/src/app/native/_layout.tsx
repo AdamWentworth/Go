@@ -59,13 +59,13 @@ export default function NativeLayout() {
               <Stack.Screen dangerouslySingular name="collection" options={{ animation: 'none' }} />
               <Stack.Screen dangerouslySingular name="search" options={{ animation: 'none' }} />
               <Stack.Screen dangerouslySingular name="trades" options={{ animation: 'none' }} />
-              <Stack.Screen dangerouslySingular name="trade-board" options={{ animation: nativeRouteAnimation('slide_from_right', shouldReduceMotion) }} />
-              <Stack.Screen name="trade-board/[username]" options={{ animation: nativeRouteAnimation('slide_from_right', shouldReduceMotion) }} />
+              <Stack.Screen dangerouslySingular name="trade-board" options={{ animation: 'none' }} />
+              <Stack.Screen name="trade-board/[username]" options={{ animation: 'none' }} />
               <Stack.Screen dangerouslySingular name="settings" options={{ animation: nativeRouteAnimation('slide_from_right', shouldReduceMotion) }} />
               <Stack.Screen dangerouslySingular name="account" options={{ animation: nativeRouteAnimation('slide_from_right', shouldReduceMotion) }} />
               <Stack.Screen dangerouslySingular name="friends" options={{ animation: nativeRouteAnimation('slide_from_right', shouldReduceMotion) }} />
               <Stack.Screen dangerouslySingular name="profile/index" options={{ animation: nativeRouteAnimation('slide_from_right', shouldReduceMotion) }} />
-              <Stack.Screen name="profile/[username]" options={{ animation: nativeRouteAnimation('slide_from_right', shouldReduceMotion) }} />
+              <Stack.Screen name="profile/[username]" options={{ animation: 'none' }} />
               <Stack.Screen
                 name="collection/[instanceId]"
                 options={{ animation: nativeRouteAnimation('slide_from_bottom', shouldReduceMotion), gestureDirection: 'vertical' }}
@@ -76,7 +76,7 @@ export default function NativeLayout() {
               />
               <Stack.Screen
                 name="collection/trainer/[username]/index"
-                options={{ animation: nativeRouteAnimation('slide_from_right', shouldReduceMotion), gestureDirection: 'horizontal' }}
+                options={{ animation: 'none', gestureDirection: 'horizontal' }}
               />
               <Stack.Screen
                 name="collection/trainer/[username]/[instanceId]"

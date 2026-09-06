@@ -39,6 +39,7 @@ const routeCases = [
   ['trade-proposal', 'native-trade-proposal-sheet'],
   ['profile', 'native-trainer-profile'],
   ['profile-relationship', 'native-trainer-profile'],
+  ['public-profile', 'native-trainer-profile'],
   ['friends', 'native-friends-screen'],
   ['settings', 'native-trainer-settings-screen'],
   ['account', 'native-account-security-screen'],
@@ -702,8 +703,25 @@ const run = async () => {
             && await includeWanted.getAttribute('aria-checked') === 'false') {
             throw new Error('Trade Board allowed both collection sections to be disabled.');
           }
+          const errorOverlay = page.locator('#error-overlay');
+          if (await errorOverlay.count() && await errorOverlay.isVisible()) {
+            throw new Error(`Trade Board triggered the Expo error overlay:\n${await errorOverlay.innerText()}`);
+          }
           await page.getByRole('button', { name: 'Copy live link', exact: true }).click();
+          if (await errorOverlay.count() && await errorOverlay.isVisible()) {
+            throw new Error(`Trade Board copy triggered the Expo error overlay:\n${await errorOverlay.innerText()}`);
+          }
           await page.getByRole('button', { name: 'Dismiss Trade Board message' }).click();
+        }
+
+        if (route === 'public-profile') {
+          if (await page.getByRole('button', { name: 'Add friend' }).count()) {
+            throw new Error('Signed-out public profile exposed an authenticated friend action.');
+          }
+          await page.getByRole('button', {
+            name: "View Misty's caught Pokémon",
+          }).click();
+          await page.getByText('Open Misty collection: caught').waitFor({ state: 'visible' });
         }
 
 

@@ -9,6 +9,7 @@ import { NativeProtectedSessionGate } from '../../components/NativeProtectedSess
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { buildNativeCollectionRows } from '../collection/collectionModel';
 import { useNativeCollectionSnapshotQuery } from '../collection/collectionQueries';
+import { useNativeToolCatalogQuery } from '../tools/nativeToolQueries';
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
 import {
   NativeTrainerProfileScreen,
@@ -56,25 +57,40 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
   const [profileDraft, setProfileDraft] = useState<NativeTrainerProfileDraft | null>(null);
   const normalizedUsername = username?.trim() || null;
   const viewerId = session.user?.user_id ?? null;
+  const isOwner = Boolean(session.user) && (
+    !normalizedUsername
+    || normalizedUsername.toLocaleLowerCase() === session.user?.username.toLocaleLowerCase()
+  );
   const profileQuery = useNativeTrainerProfileQuery(viewerId, normalizedUsername);
   const relationshipMutation = useNativeProfileRelationshipMutation(
     viewerId ?? '',
     normalizedUsername ?? '',
   );
   const profileMutation = useNativeTrainerProfileMutation(profileQuery.data ?? null);
-  const collectionQuery = useNativeCollectionSnapshotQuery(viewerId);
+  // Public profiles only need the public catalog to resolve showcase artwork.
+  // Loading the viewer's complete owned collection for another trainer delayed
+  // the public card and made signed-out highlights impossible to render.
+  const collectionQuery = useNativeCollectionSnapshotQuery(viewerId, isOwner);
+  const catalogQuery = useNativeToolCatalogQuery(Boolean(profileQuery.data?.highlights.length));
   const model = useMemo(() => (
     profileQuery.data ? buildNativeTrainerProfileModel(profileQuery.data) : null
   ), [profileQuery.data]);
   const highlights = useMemo(() => {
-    if (!profileQuery.data || !collectionQuery.data) return [];
+    const catalog = catalogQuery.data ?? collectionQuery.data?.catalog;
+    if (!profileQuery.data || !catalog) return [];
     const instances = Object.fromEntries(profileQuery.data.highlights.flatMap((instance, index) => {
       const key = instance.instance_id ?? `profile-highlight-${index}`;
       return [[key, instance] as [string, PokemonInstance]];
     }));
+    const highlightedPokemonIds = new Set(
+      profileQuery.data.highlights.map((instance) => instance.pokemon_id),
+    );
+    const highlightCatalog = catalog.filter((pokemon) => (
+      highlightedPokemonIds.has(pokemon.pokemon_id)
+    ));
     const rows = buildNativeCollectionRows(
       instances,
-      collectionQuery.data.catalog,
+      highlightCatalog,
       runtimeConfig.api.frontendAppUrl,
     );
     const rowById = new Map(rows.map((row) => [row.id, row]));
@@ -83,7 +99,7 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
       const row = rowById.get(key);
       return row ? [row] : [];
     });
-  }, [collectionQuery.data, profileQuery.data]);
+  }, [catalogQuery.data, collectionQuery.data?.catalog, profileQuery.data]);
   const highlightCandidates = useMemo(() => {
     if (!collectionQuery.data) return [];
     const caughtInstances = Object.fromEntries(
@@ -108,15 +124,13 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
     );
   }
 
-  if (session.status !== 'signed-in' || !session.user) {
-    const returnTo = normalizedUsername
-      ? `/native/profile/${encodeURIComponent(normalizedUsername)}`
-      : '/native/profile';
-    return <Redirect href={`/native/login?returnTo=${encodeURIComponent(returnTo)}`} />;
+  // `/profile/:username` is a public Vite route. Only the owner shortcut
+  // `/profile` requires a session; public trainer cards remain readable to a
+  // signed-out visitor and simply omit relationship commands.
+  if ((session.status !== 'signed-in' || !session.user) && !normalizedUsername) {
+    return <Redirect href="/native/login?returnTo=%2Fnative%2Fprofile" />;
   }
 
-  const isOwner = !normalizedUsername
-    || normalizedUsername.toLocaleLowerCase() === session.user.username.toLocaleLowerCase();
   const openCollection = (filter?: 'caught' | 'trade' | 'wanted' | 'favorites') => {
     if (isOwner) {
       router.push(filter ? {
@@ -186,7 +200,7 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
         error={error}
         highlights={highlights}
         highlightCandidates={highlightCandidates}
-        isLoading={profileQuery.isPending || (Boolean(profileQuery.data?.highlights.length) && collectionQuery.isPending)}
+        isLoading={profileQuery.isPending}
         isOwner={isOwner}
         isProfileSaving={profileMutation.isPending}
         isRelationshipPending={relationshipMutation.isPending}
@@ -199,7 +213,7 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
             return;
           }
           if (normalizedUsername) {
-            router.replace('/native/search');
+            router.replace('/native');
             return;
           }
           router.replace('/native');
@@ -212,11 +226,14 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
         onChangeEditorDraft={setProfileDraft}
         onOpenCollection={openCollection}
         onOpenFriends={() => router.push('/native/friends')}
-        onRelationshipAction={isOwner ? undefined : (action) => void updateRelationship(action)}
+        onRelationshipAction={!session.user || isOwner
+          ? undefined
+          : (action) => void updateRelationship(action)}
         onSaveProfile={() => void saveProfile()}
         onRetry={() => {
           void profileQuery.refetch();
-          if (profileQuery.data?.highlights.length) void collectionQuery.refetch();
+          if (profileQuery.data?.highlights.length) void catalogQuery.refetch();
+          if (isOwner) void collectionQuery.refetch();
         }}
       />
       <NativeActionMenuAnchor

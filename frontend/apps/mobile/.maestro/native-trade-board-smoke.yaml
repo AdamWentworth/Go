@@ -34,12 +34,14 @@ name: Native Trade Board smoke
     element:
       text: "Nexus Light"
     direction: UP
+    centerElement: true
     timeout: 10000
 - tapOn: "Nexus Light"
 - scrollUntilVisible:
     element:
       text: "Include Looking For Pokémon"
     direction: UP
+    centerElement: true
     timeout: 10000
 - tapOn: "Include Looking For Pokémon"
 - assertNotVisible: "Gigantamax Blastoise"

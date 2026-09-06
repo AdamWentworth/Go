@@ -1,4 +1,4 @@
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { parseTradeVariantReference } from '@pokemongonexus/shared-domain/trade-proposal-candidates';
 import { useNativeSession } from '../../../../../auth/NativeSessionContext';
@@ -47,7 +47,7 @@ export default function NativeForeignInstanceRoute() {
     userId,
     username,
   );
-  const movesQuery = useNativePokemonMovesQuery(Boolean(session.user));
+  const movesQuery = useNativePokemonMovesQuery(Boolean(username));
   const ownedQuery = useNativeCollectionSnapshotQuery(userId);
   const tradesQuery = useNativeTradesQuery(userId);
   const organizerMutation = useNativePokemonOrganizerMutation(userId ?? 'signed-out');
@@ -168,10 +168,6 @@ export default function NativeForeignInstanceRoute() {
     );
   }
 
-  if (session.status !== 'signed-in' || !session.user) {
-    return <Redirect href="/native" />;
-  }
-
   const navigateToSibling = (nextInstanceId: string) => {
     navigateNativeInstanceSibling(router, nextInstanceId);
   };
@@ -206,14 +202,14 @@ export default function NativeForeignInstanceRoute() {
         : null}
       onBack={returnToCatalog}
       onNext={neighbors.nextId ? () => navigateToSibling(neighbors.nextId!) : undefined}
-      onOpenTarget={setProposalTargetId}
+      onOpenTarget={session.user ? setProposalTargetId : undefined}
       onPrevious={neighbors.previousId ? () => navigateToSibling(neighbors.previousId!) : undefined}
       onRetry={() => void Promise.all([foreignQuery.refetch(), movesQuery.refetch()])}
       onToggleFavorite={() => undefined}
       saveError={null}
       saveNotice={null}
     />
-    <NativeTradeProposalSheet
+    {session.user ? <NativeTradeProposalSheet
       key={`${proposalTargetId ?? 'closed'}:${proposalSelection?.kind ?? 'preparing'}`}
       assetBaseUrl={runtimeConfig.api.frontendAppUrl}
       caughtDetails={caughtDetails}
@@ -231,7 +227,7 @@ export default function NativeForeignInstanceRoute() {
       partnerInstances={success?.instances ?? {}}
       partnerUsername={success?.username ?? username}
       selection={proposalSelection}
-    />
+    /> : null}
     </>
   );
 }

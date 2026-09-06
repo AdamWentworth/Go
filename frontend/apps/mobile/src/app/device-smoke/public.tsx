@@ -1,6 +1,8 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
-import { type ReactNode, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { type ReactNode, useEffect, useState } from 'react';
+import { Platform, StyleSheet, Text, View } from 'react-native';
+import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
+import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { NATIVE_INFORMATION_PAGES } from '../../features/information/nativeInformationContent';
@@ -9,6 +11,8 @@ import {
   raidMethodologyContent,
 } from '../../features/tools/nativeMethodologyContent';
 import type { NativeTradeBoardModel } from '../../features/tradeBoard/nativeTradeBoardModel';
+import { buildNativeTradeBoardModel } from '../../features/tradeBoard/nativeTradeBoardModel';
+import { buildNativeCollectionRows } from '../../features/collection/collectionModel';
 import { NativeInformationScreen } from '../../screens/NativeInformationScreen';
 import { NativeMethodologyScreen } from '../../screens/NativeMethodologyScreen';
 import { NativePasswordResetScreen } from '../../screens/NativePasswordResetScreen';
@@ -18,6 +22,13 @@ import { NativeLoginScreen } from '../../screens/NativeLoginScreen';
 import { NativePasswordResetOverlay } from '../../components/NativePasswordResetOverlay';
 
 const ASSET_BASE_URL = runtimeConfig.api.frontendAppUrl;
+const CATALOG_FIXTURE_URL = Platform.OS === 'web'
+  ? 'http://127.0.0.1:8092/pokemons.json'
+  : `http://${runtimeConfig.mobile.deviceSmokeHost}:8092/pokemons.json`;
+const INSTANCES_FIXTURE_URL = Platform.OS === 'web'
+  ? 'http://127.0.0.1:8092/instances.json'
+  : `http://${runtimeConfig.mobile.deviceSmokeHost}:8092/instances.json`;
+const PERFORMANCE_INSTANCE_LIMIT = 180;
 const noOp = () => undefined;
 const boardModel: NativeTradeBoardModel = {
   boardUrl: 'https://pokegonexus.com/trade-board/VisualTrainer',
@@ -52,6 +63,34 @@ const boardModel: NativeTradeBoardModel = {
   }],
 };
 
+const normalizePerformanceBoardInstances = (
+  value: Record<string, PokemonInstance>,
+): Record<string, PokemonInstance> => Object.fromEntries(
+  Object.entries(value).slice(0, PERFORMANCE_INSTANCE_LIMIT).map(([instanceId, instance], index) => {
+    const normalized = {
+      ...instance,
+      instance_id: instance.instance_id ?? instanceId,
+      variant_id: instance.variant_id ?? instanceId.replace(
+        /_[0-9a-f]{8}-[0-9a-f-]{27}$/i,
+        '',
+      ),
+    };
+    if (index === 0 || index === 2) return [instanceId, {
+      ...normalized,
+      is_caught: true,
+      is_for_trade: true,
+      is_wanted: false,
+    }];
+    if (index === 1 || index === 3) return [instanceId, {
+      ...normalized,
+      is_caught: false,
+      is_for_trade: false,
+      is_wanted: true,
+    }];
+    return [instanceId, normalized];
+  }),
+);
+
 const LiveNotice = ({ children }: { children: string }) => (
   <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: 'rgba(0,0,0,.72)' }]}>
     <Text accessibilityLiveRegion="polite" style={{ width: '100%', maxWidth: 420, borderRadius: 14, padding: 22, color: '#ccfbf1', backgroundColor: '#123b37', fontSize: 18, fontWeight: '900', textAlign: 'center' }}>
@@ -78,11 +117,39 @@ export default function DeviceSmokePublicRoute() {
   }>();
   const [notice, setNotice] = useState('');
   const [recoveryOpen, setRecoveryOpen] = useState(true);
-  if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
   const page = Array.isArray(params.page) ? params.page[0] : params.page;
   const performance = Array.isArray(params.performance)
     ? params.performance[0] === '1'
     : params.performance === '1';
+  const [performanceBoardModel, setPerformanceBoardModel] = useState<NativeTradeBoardModel | null>(null);
+
+  useEffect(() => {
+    if (!performance || (page !== 'trade-board' && page !== 'public-trade-board')) return undefined;
+    let active = true;
+    void Promise.all([
+      fetch(CATALOG_FIXTURE_URL).then((response) => response.json() as Promise<BasePokemon[]>),
+      fetch(INSTANCES_FIXTURE_URL).then(
+        (response) => response.json() as Promise<Record<string, PokemonInstance>>,
+      ),
+    ]).then(([catalog, fixtureInstances]) => {
+      if (!active) return;
+      const instances = normalizePerformanceBoardInstances(fixtureInstances);
+      const rows = buildNativeCollectionRows(instances, catalog, ASSET_BASE_URL);
+      setPerformanceBoardModel(buildNativeTradeBoardModel({
+        boardUrl: boardModel.boardUrl,
+        generatedAt: boardModel.generatedAt,
+        instances,
+        pokemonGoName: boardModel.pokemonGoName,
+        rows,
+        username: boardModel.username,
+      }));
+    }).catch((error: unknown) => {
+      if (active) setNotice(error instanceof Error ? error.message : 'Performance board failed to load.');
+    });
+    return () => { active = false; };
+  }, [page, performance]);
+
+  if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
   if (page === 'register') {
     return (
@@ -144,11 +211,13 @@ export default function DeviceSmokePublicRoute() {
   }
   if (page === 'trade-board' || page === 'public-trade-board') {
     const publicBoard = page === 'public-trade-board';
+    const resolvedBoardModel = performance ? performanceBoardModel : boardModel;
     const board = (
       <NativeTradeBoardScreen
         assetBaseUrl={ASSET_BASE_URL}
         editable={!publicBoard}
-        model={boardModel}
+        isLoading={performance && !resolvedBoardModel}
+        model={resolvedBoardModel}
         onBack={noOp}
         onOpenCreateBoard={publicBoard ? noOp : undefined}
         onOpenHelp={publicBoard ? noOp : undefined}

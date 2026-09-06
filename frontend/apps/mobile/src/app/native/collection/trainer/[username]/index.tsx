@@ -124,11 +124,6 @@ export default function NativeForeignCollectionRoute() {
     );
   }
 
-  if (session.status !== 'signed-in' || !session.user) {
-    const returnTo = encodeURIComponent(`/native/collection/trainer/${encodeURIComponent(username)}`);
-    return <Redirect href={`/native/login?returnTo=${returnTo}`} />;
-  }
-
   if (requestedInstanceId) {
     return (
       <Redirect
@@ -159,6 +154,7 @@ export default function NativeForeignCollectionRoute() {
       onRetry={retryCollection}
       onReturnToContext={returnToContext}
       requireTagSelection
+      signedIn={Boolean(session.user)}
       onContextChange={updateCollectionContext}
       wishlistTags={wishlistTags}
     />

@@ -1154,6 +1154,47 @@ const collectTrainerWorkspaceInteractions = async (
   }
 };
 
+const collectTradeBoardInteractions = async (
+  context: BrowserContext,
+  sampleIndex: number,
+) => {
+  const page = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: { writeText: async () => undefined },
+      });
+    });
+    await page.goto(`${webBaseUrl}/trade-board`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(page);
+    const workspace = page.getByRole('region', { name: 'Share your Trade Board' });
+    await workspace.waitFor({ state: 'visible' });
+
+    const wanted = workspace.locator('.trade-board-composer__section-option--wanted input');
+    await activateMeasuredControl(wanted);
+    await expect(wanted).not.toBeChecked();
+    await recordInteraction(page, 'interaction.trade-board.section-result', sampleIndex);
+
+    const lightTheme = workspace.getByRole('button', { name: /Nexus Light/ });
+    await activateMeasuredControl(lightTheme);
+    await expect(lightTheme).toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.trade-board.theme-result', sampleIndex);
+
+    const identity = workspace.locator('.trade-board-composer__identity-option input');
+    await activateMeasuredControl(identity);
+    await expect(identity).not.toBeChecked();
+    await recordInteraction(page, 'interaction.trade-board.identity-result', sampleIndex);
+
+    await activateMeasuredControl(workspace.getByRole('button', { name: 'Copy live link' }));
+    await page.getByText('Live Trade Board link copied.', { exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.trade-board.copy-result', sampleIndex);
+    await captureWorkflowScreenshot(page, sampleIndex, 'trade-board-owner-result');
+  } finally {
+    await closeMeasuredPage(page);
+  }
+};
+
 const collectSharedInteractions = async (
   context: BrowserContext,
   sampleIndex: number,
@@ -1196,6 +1237,10 @@ const collectSharedInteractions = async (
   }
   if (workflowFilter === 'trainer') {
     await collectTrainerWorkspaceInteractions(context, sampleIndex);
+    return;
+  }
+  if (workflowFilter === 'trade-board') {
+    await collectTradeBoardInteractions(context, sampleIndex);
     return;
   }
   if (workflowFilter !== 'collection') {
@@ -1328,6 +1373,7 @@ const collectSharedInteractions = async (
   await collectPvpInteractions(context, sampleIndex);
   await collectSearchInteractions(context, sampleIndex);
   await collectTradeInteractions(context, sampleIndex);
+  await collectTradeBoardInteractions(context, sampleIndex);
   await collectMaxInteractions(context, sampleIndex);
   await collectRankingsInteractions(context, sampleIndex);
 };

@@ -1,4 +1,13 @@
-import { forwardRef, useCallback, useState, type ComponentProps } from 'react';
+import {
+  forwardRef,
+  memo,
+  useCallback,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type ComponentProps,
+  type Ref,
+} from 'react';
 import { Image, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import type {
@@ -9,8 +18,14 @@ import type {
 
 type Props = {
   assetBaseUrl: string;
+  identityRef?: Ref<NativeTradeBoardIdentityHandle>;
+  initialPokemonGoNameVisible?: boolean;
   model: NativeTradeBoardModel;
   theme: NativeTradeBoardTheme;
+};
+
+export type NativeTradeBoardIdentityHandle = {
+  setPokemonGoNameVisible: (visible: boolean) => void;
 };
 
 export const NATIVE_TRADE_BOARD_WIDTH = 1200;
@@ -52,21 +67,15 @@ const PALETTES = {
   },
 } as const;
 
-const BoardEntry = ({
+const BoardArtworkLayers = memo(function BoardArtworkLayers({
   assetBaseUrl,
   entry,
-  palette,
 }: {
   assetBaseUrl: string;
   entry: NativeTradeBoardEntry;
-  palette: (typeof PALETTES)[NativeTradeBoardTheme];
-}) => (
-  <View style={[
-    styles.entry,
-    { backgroundColor: palette.card, borderColor: `${palette.border}80` },
-    entry.mostWanted && styles.mostWantedEntry,
-  ]}>
-    <View style={styles.artworkStage}>
+}) {
+  return (
+    <>
       {entry.locationBackgroundUri ? (
         <Image fadeDuration={0}
           accessibilityElementsHidden
@@ -103,6 +112,27 @@ const BoardEntry = ({
         />
       ) : null}
       {entry.mostWanted ? <BoardText accessibilityLabel="Most Wanted" style={styles.mostWanted}>★</BoardText> : null}
+    </>
+  );
+});
+
+const BoardEntry = memo(function BoardEntry({
+  assetBaseUrl,
+  entry,
+  palette,
+}: {
+  assetBaseUrl: string;
+  entry: NativeTradeBoardEntry;
+  palette: (typeof PALETTES)[NativeTradeBoardTheme];
+}) {
+  return (
+  <View style={[
+    styles.entry,
+    { backgroundColor: palette.card, borderColor: `${palette.border}80` },
+    entry.mostWanted && styles.mostWantedEntry,
+  ]}>
+    <View style={styles.artworkStage}>
+      <BoardArtworkLayers assetBaseUrl={assetBaseUrl} entry={entry} />
       {entry.quantity > 1 ? (
         <BoardText style={[styles.quantity, { backgroundColor: palette.border }]}>×{entry.quantity}</BoardText>
       ) : null}
@@ -110,9 +140,10 @@ const BoardEntry = ({
     <BoardText numberOfLines={2} style={[styles.entryName, { color: palette.text }]}>{entry.name}</BoardText>
     <BoardText style={[styles.entryNumber, { color: palette.muted }]}>#{String(entry.pokedexNumber).padStart(4, '0')}</BoardText>
   </View>
-);
+  );
+});
 
-const BoardSection = ({
+const BoardSection = memo(function BoardSection({
   accent,
   assetBaseUrl,
   count,
@@ -130,7 +161,8 @@ const BoardSection = ({
   eyebrow: string;
   label: string;
   palette: (typeof PALETTES)[NativeTradeBoardTheme];
-}) => (
+}) {
+  return (
   <View style={[styles.section, { borderColor: `${accent}a6` }]}>
     <View style={styles.sectionHeader}>
       <View style={styles.sectionHeadingCopy}>
@@ -150,10 +182,117 @@ const BoardSection = ({
       <BoardText style={[styles.empty, { color: palette.muted }]}>No Pokémon listed here yet.</BoardText>
     )}
   </View>
-);
+  );
+});
 
-export const NativeTradeBoard = forwardRef<View, Props>(function NativeTradeBoard({
+const BoardBrand = memo(function BoardBrand({
   assetBaseUrl,
+  palette,
+}: {
+  assetBaseUrl: string;
+  palette: (typeof PALETTES)[NativeTradeBoardTheme];
+}) {
+  return (
+    <View style={styles.brandLockup}>
+      <Image fadeDuration={0}
+        accessibilityLabel="Pokémon Go Nexus"
+        resizeMode="contain"
+        source={{ uri: toAssetUrl(assetBaseUrl, '/icons/icon-192x192.png') }}
+        style={styles.logo}
+      />
+      <View style={styles.brandCopy}>
+        <BoardText style={[styles.brandName, { color: palette.muted }]}>POKÉMON GO NEXUS</BoardText>
+        <BoardText style={[styles.brandTitle, { color: palette.text }]}>Community Trade Board</BoardText>
+      </View>
+    </View>
+  );
+});
+
+const BoardIdentity = memo(forwardRef<NativeTradeBoardIdentityHandle, {
+  initialPokemonGoNameVisible: boolean;
+  palette: (typeof PALETTES)[NativeTradeBoardTheme];
+  pokemonGoName: string | null;
+  username: string;
+}>(function BoardIdentity({
+  initialPokemonGoNameVisible,
+  palette,
+  pokemonGoName,
+  username,
+}, ref) {
+  const pokemonGoNameRef = useRef<Text>(null);
+  const [testPokemonGoNameVisible, setTestPokemonGoNameVisible] = useState(
+    initialPokemonGoNameVisible,
+  );
+  useImperativeHandle(ref, () => ({
+    setPokemonGoNameVisible: (visible) => {
+      if (process.env.NODE_ENV === 'test') {
+        setTestPokemonGoNameVisible(visible);
+        return;
+      }
+      pokemonGoNameRef.current?.setNativeProps({
+        style: { display: visible ? 'flex' : 'none' },
+      });
+    },
+  }), []);
+  return (
+    <View style={styles.identity}>
+      <BoardText style={[styles.kicker, { color: palette.muted }]}>TRAINER</BoardText>
+      <BoardText numberOfLines={1} style={[styles.username, { color: palette.text }]}>@{username}</BoardText>
+      {pokemonGoName && (process.env.NODE_ENV !== 'test' || testPokemonGoNameVisible) ? (
+        <Text
+          allowFontScaling={false}
+          ref={pokemonGoNameRef}
+          style={[
+            styles.pogoName,
+            { color: palette.muted },
+            !initialPokemonGoNameVisible && styles.pokemonGoNameHidden,
+          ]}
+        >Pokémon GO: {pokemonGoName}</Text>
+      ) : null}
+    </View>
+  );
+}));
+
+const BoardFooter = memo(function BoardFooter({
+  generatedLabel,
+  model,
+  palette,
+}: {
+  generatedLabel: string;
+  model: Pick<NativeTradeBoardModel, 'boardUrl' | 'username'>;
+  palette: (typeof PALETTES)[NativeTradeBoardTheme];
+}) {
+  return (
+    <View style={[styles.footer, { borderTopColor: `${palette.border}70` }]}>
+      <View style={styles.footerCopy}>
+        <BoardText style={[styles.footerTitle, { color: palette.text }]}>See live listings and exact trade preferences</BoardText>
+        <BoardText style={[styles.footerUrl, { color: palette.border }]} numberOfLines={1}>pokegonexus.com/trade-board/{model.username}</BoardText>
+        <BoardText style={[styles.generated, { color: palette.muted }]}>Generated {generatedLabel} · Unofficial community tool</BoardText>
+      </View>
+      <View style={styles.qrBlock}>
+        <View
+          accessibilityLabel="QR code for this trainer's live trade board"
+          accessibilityRole="image"
+          accessible
+          style={styles.qrShell}
+        >
+          <QRCode backgroundColor="#ffffff" color="#071526" quietZone={4} size={131} value={model.boardUrl} />
+        </View>
+        <BoardText style={[styles.qrLabel, { color: palette.muted }]}>Scan for the live board</BoardText>
+      </View>
+    </View>
+  );
+}, (previous, next) => (
+  previous.generatedLabel === next.generatedLabel
+  && previous.model.boardUrl === next.model.boardUrl
+  && previous.model.username === next.model.username
+  && previous.palette === next.palette
+));
+
+const NativeTradeBoardCanvas = forwardRef<View, Props>(function NativeTradeBoard({
+  assetBaseUrl,
+  identityRef,
+  initialPokemonGoNameVisible = true,
   model,
   theme,
 }, ref) {
@@ -175,25 +314,14 @@ export const NativeTradeBoard = forwardRef<View, Props>(function NativeTradeBoar
     >
       <View style={styles.hero}>
         <View style={styles.heroTop}>
-          <View style={styles.brandLockup}>
-            <Image fadeDuration={0}
-              accessibilityLabel="Pokémon Go Nexus"
-              resizeMode="contain"
-              source={{ uri: toAssetUrl(assetBaseUrl, '/icons/icon-192x192.png') }}
-              style={styles.logo}
-            />
-            <View style={styles.brandCopy}>
-              <BoardText style={[styles.brandName, { color: palette.muted }]}>POKÉMON GO NEXUS</BoardText>
-              <BoardText style={[styles.brandTitle, { color: palette.text }]}>Community Trade Board</BoardText>
-            </View>
-          </View>
-          <View style={styles.identity}>
-            <BoardText style={[styles.kicker, { color: palette.muted }]}>TRAINER</BoardText>
-            <BoardText numberOfLines={1} style={[styles.username, { color: palette.text }]}>@{model.username}</BoardText>
-            {model.pokemonGoName ? (
-              <BoardText style={[styles.pogoName, { color: palette.muted }]}>Pokémon GO: {model.pokemonGoName}</BoardText>
-            ) : null}
-          </View>
+          <BoardBrand assetBaseUrl={assetBaseUrl} palette={palette} />
+          <BoardIdentity
+            initialPokemonGoNameVisible={initialPokemonGoNameVisible}
+            palette={palette}
+            pokemonGoName={model.pokemonGoName}
+            ref={identityRef}
+            username={model.username}
+          />
         </View>
         <View style={styles.summary}>
           {model.includeTrade ? (
@@ -232,29 +360,19 @@ export const NativeTradeBoard = forwardRef<View, Props>(function NativeTradeBoar
           />
         ) : null}
       </View>
-      <View style={[styles.footer, { borderTopColor: `${palette.border}70` }]}>
-        <View style={styles.footerCopy}>
-          <BoardText style={[styles.footerTitle, { color: palette.text }]}>See live listings and exact trade preferences</BoardText>
-          <BoardText style={[styles.footerUrl, { color: palette.border }]} numberOfLines={1}>pokegonexus.com/trade-board/{model.username}</BoardText>
-          <BoardText style={[styles.generated, { color: palette.muted }]}>Generated {generatedLabel} · Unofficial community tool</BoardText>
-        </View>
-        <View style={styles.qrBlock}>
-          <View style={styles.qrShell}>
-            <QRCode backgroundColor="#ffffff" color="#071526" quietZone={4} size={131} value={model.boardUrl} />
-          </View>
-          <BoardText style={[styles.qrLabel, { color: palette.muted }]}>Scan for the live board</BoardText>
-        </View>
-      </View>
+      <BoardFooter generatedLabel={generatedLabel} model={model} palette={palette} />
     </View>
   );
 });
+
+export const NativeTradeBoard = memo(NativeTradeBoardCanvas);
 
 /**
  * The canonical Trade Board is a fixed 1200px export canvas. Its in-app
  * preview scales that exact canvas down instead of reflowing it, so the user
  * sees the same eight-column image that will be shared.
  */
-export const NativeTradeBoardViewport = forwardRef<View, Props>(function NativeTradeBoardViewport(
+const NativeTradeBoardViewportCanvas = forwardRef<View, Props>(function NativeTradeBoardViewport(
   props,
   ref,
 ) {
@@ -284,6 +402,8 @@ export const NativeTradeBoardViewport = forwardRef<View, Props>(function NativeT
   );
 });
 
+export const NativeTradeBoardViewport = memo(NativeTradeBoardViewportCanvas);
+
 const styles = StyleSheet.create({
   viewport: { position: 'relative', width: '100%', minWidth: 0, minHeight: 1, overflow: 'hidden' },
   scaler: { position: 'absolute', top: 0, left: 0, width: NATIVE_TRADE_BOARD_WIDTH, transformOrigin: 'top left' },
@@ -299,6 +419,7 @@ const styles = StyleSheet.create({
   kicker: { fontSize: 16, fontWeight: '900', letterSpacing: 2.56 },
   username: { maxWidth: 470, marginTop: 4, fontSize: 38, lineHeight: 40, fontWeight: '900', textAlign: 'right' },
   pogoName: { marginTop: 7, fontSize: 19, fontWeight: '700' },
+  pokemonGoNameHidden: { display: 'none' },
   summary: { flexDirection: 'row', gap: 14 },
   tradeSummary: { minHeight: 46, borderWidth: 1, borderColor: '#36ce83', borderRadius: 999, paddingHorizontal: 17, paddingVertical: 9, overflow: 'hidden', backgroundColor: '#36ce8314', color: '#36ce83', fontSize: 18, fontWeight: '800' },
   wantedSummary: { minHeight: 46, borderWidth: 1, borderColor: '#ff6678', borderRadius: 999, paddingHorizontal: 17, paddingVertical: 9, overflow: 'hidden', backgroundColor: '#ff667814', color: '#ff6678', fontSize: 18, fontWeight: '800' },

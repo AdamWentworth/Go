@@ -29,13 +29,14 @@ export default function NativePublicTradeBoardRoute() {
   ) : [], [success]);
   const model = useMemo(() => {
     if (!success || !username) return null;
+    const canonicalUsername = success.username || username;
     return buildNativeTradeBoardModel({
-      boardUrl: `${runtimeConfig.api.frontendAppUrl.replace(/\/$/, '')}/trade-board/${encodeURIComponent(username)}`,
+      boardUrl: `${runtimeConfig.api.frontendAppUrl.replace(/\/$/, '')}/trade-board/${encodeURIComponent(canonicalUsername)}`,
       generatedAt,
       instances: success.instances,
       pokemonGoName: profileQuery.data?.user.pokemonGoName,
       rows,
-      username: success.username || username,
+      username: canonicalUsername,
     });
   }, [generatedAt, profileQuery.data?.user.pokemonGoName, rows, success, username]);
   const resultError = collectionQuery.error instanceof Error
@@ -59,7 +60,7 @@ export default function NativePublicTradeBoardRoute() {
       errorKind={errorKind}
       isLoading={collectionQuery.isPending}
       model={model}
-      onBack={() => router.canGoBack() ? router.back() : router.replace('/native/search')}
+      onBack={() => router.replace('/native')}
       onOpenCreateBoard={() => router.push(session.user ? '/native/search' : '/native/register')}
       onOpenHelp={() => router.push('/native/info/help')}
       onOpenProfile={() => router.push({

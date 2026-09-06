@@ -51,6 +51,25 @@ describe('NativeTradeBoardScreen', () => {
     expect(screen.getByText('Share board image')).toBeTruthy();
   });
 
+  it('matches the owner identity, theme, section-invariant, and QR controls from Vite', () => {
+    renderBoard();
+    expect(screen.getByText('Pokémon GO: MistyGO')).toBeTruthy();
+    expect(screen.getByLabelText("QR code for this trainer's live trade board")).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText('Show my Pokémon GO name'));
+    expect(screen.queryByText('Pokémon GO: MistyGO')).toBeNull();
+
+    fireEvent.press(screen.getByText('Nexus Light'));
+    expect(screen.getByTestId('native-trade-board-theme-brand-light').props.accessibilityState)
+      .toMatchObject({ checked: true });
+
+    fireEvent.press(screen.getByLabelText('Include Looking For Pokémon'));
+    fireEvent.press(screen.getByLabelText('Include For Trade Pokémon'));
+    expect(screen.getByText('Keep at least one Trade Board section selected.')).toBeTruthy();
+    expect(screen.getByLabelText('Include For Trade Pokémon').props.accessibilityState)
+      .toMatchObject({ checked: true });
+  });
+
   it('renders a useful empty state for a board without listings', () => {
     render(
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}>

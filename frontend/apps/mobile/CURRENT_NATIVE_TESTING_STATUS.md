@@ -64,7 +64,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 162 suites, 921 tests;
+- native Jest: 162 suites, 923 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 10 tests;
@@ -673,7 +673,7 @@ less, Settings 85 ms or less, Account 141 ms or less, and relationship actions
 numbers use a minified bundle in the installed development client, so they are
 strong same-device diagnostics but not standalone-release authority.
 
-The final checkpoint passes 162 native suites / 921 tests, all 13 focused Vite
+The final checkpoint passes 162 native suites / 923 tests, all 13 focused Vite
 mobile-Chromium auth/lifecycle cases, the complete 1,720-test Vite unit and
 integration suite, 28 focused Vite trainer tests, six focused trainer browser
 lifecycle tests, TypeScript, ESLint, stylelint, and all 21 performance-report
@@ -682,6 +682,41 @@ without an app crash; timing-only fixtures pre-seed valid text so repeated
 measurements do not depend on Maestro's intermittent Android keyboard injection.
 The ordinary functional workflows continue to exercise real typing and form
 validation.
+
+The 2026-09-05 public-profile and Trade Board pass restores signed-out access
+to `/profile/:username`, keeps owner-only relationship and editing actions
+private, resolves public showcase artwork without loading another trainer's
+collection as viewer-owned data, and carries public collection links through
+to read-only filtered collection and instance routes. Read-only showcase slots
+no longer mount six unnecessary pan handlers. Profile facts, collection stats,
+play-style icons, and commands paint progressively without an artificial
+below-fold delay. The signed-out physical flow passed trainer identity,
+showcase, play styles, collection navigation, guest action-menu labels, and
+edge-to-edge presentation on the Pixel 8 Pro.
+
+Trade Board now matches Vite's owner/public headers, privacy and empty states,
+section rules, Pokémon GO identity option, three export themes, live links,
+QR semantics, canonical filenames, collection/profile destinations, and guest
+calls to action. Theme canvases and artwork are retained and memoized so theme
+selection is an immediate compositor operation; the identity option updates
+only its trainer-name native node; and copy acknowledgement paints before the
+clipboard bridge completes. Five physical repetitions on the same 120 Hz
+Pixel put Native ahead of Vite for every bounded Trade Board interaction at
+both median and p95: section visibility measured 49/53 ms versus 59.5/100.9
+ms, theme selection 39/53 versus 92/119.7 ms, identity visibility 43/52 versus
+49.1/116.9 ms, and copy feedback 23/25 versus 107/139.5 ms. Native frame-time
+p95 had a 10.71 ms median and median Android-classified jank was 0.83%.
+
+The Vite Trade Board and trainer-profile browser suites pass all six focused
+cases. Native phone/desktop, light/dark, accessibility, deterministic API-route,
+owner/public, and physical functional flows also pass. The React Native Web
+diagnostic remains stricter than the Android evidence: its latest Trade Board
+run beats Vite for section, theme, and identity but its synthetic copy median
+is about 3 ms slower, while public-profile and public-board route-settle
+measurements still include Expo/RNW document and catalog work that Vite has
+already cached. Those proxy failures remain visible and must not be described
+as Android failures or as passing route evidence. A standalone release APK
+remains the final authority for compiled-native route cadence.
 
 ## Remaining approval gate
 

@@ -1,4 +1,12 @@
-import { useMemo, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -16,13 +24,20 @@ import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import { NativeActionMenuAnchor } from '../components/NativeActionMenuAnchor';
-import { NativeTradeBoardViewport } from '../features/tradeBoard/NativeTradeBoard';
+import {
+  NativeTradeBoardViewport,
+  type NativeTradeBoardIdentityHandle,
+} from '../features/tradeBoard/NativeTradeBoard';
 import type {
   NativeTradeBoardModel,
   NativeTradeBoardTheme,
 } from '../features/tradeBoard/nativeTradeBoardModel';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import { NativeUiIcon } from '../components/NativeUiIcon';
+import {
+  captureNativeUiInteractionStart,
+  markNativeUiPerformanceAfterPaint,
+} from '../observability/nativeUiInteractionTiming';
 
 type Props = {
   assetBaseUrl: string;
@@ -52,6 +67,340 @@ const THEMES: { id: NativeTradeBoardTheme; label: string; description: string }[
   { id: 'minimal', label: 'Minimal', description: 'Neutral and easy to print.' },
 ];
 
+type NativeTradeBoardNoticeHandle = {
+  clear: () => void;
+  show: (message: string) => void;
+};
+
+const NativeTradeBoardNotice = forwardRef<NativeTradeBoardNoticeHandle, {
+  editable: boolean;
+  light: boolean;
+}>(function NativeTradeBoardNotice({ editable, light }, ref) {
+  const [notice, setNotice] = useState<string | null>(null);
+  const [copySuccessVisible, setCopySuccessVisible] = useState(false);
+  const copySuccessRef = useRef<View>(null);
+  const copyVisibilityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const updateCopySuccessVisibility = useCallback((visible: boolean) => {
+    if (process.env.NODE_ENV === 'test') {
+      setCopySuccessVisible(visible);
+      return;
+    }
+    if (Platform.OS === 'web') {
+      const element = copySuccessRef.current as unknown as HTMLElement | null;
+      if (!element) return;
+      element.style.opacity = visible ? '1' : '0';
+      if (!visible) element.style.pointerEvents = 'none';
+      if (copyVisibilityTimeoutRef.current) clearTimeout(copyVisibilityTimeoutRef.current);
+      copyVisibilityTimeoutRef.current = setTimeout(() => {
+        element.style.pointerEvents = visible ? 'auto' : 'none';
+        element.setAttribute('aria-hidden', visible ? 'false' : 'true');
+      }, 50);
+      return;
+    }
+    copySuccessRef.current?.setNativeProps({
+      accessibilityElementsHidden: !visible,
+      importantForAccessibility: visible ? 'auto' : 'no-hide-descendants',
+      pointerEvents: visible ? 'auto' : 'none',
+      style: { opacity: visible ? 1 : 0 },
+    });
+  }, []);
+  const hideCopySuccess = useCallback(
+    () => updateCopySuccessVisibility(false),
+    [updateCopySuccessVisibility],
+  );
+  useEffect(() => () => {
+    if (copyVisibilityTimeoutRef.current) clearTimeout(copyVisibilityTimeoutRef.current);
+  }, []);
+  useImperativeHandle(ref, () => ({
+    clear: () => {
+      hideCopySuccess();
+      setNotice(null);
+    },
+    show: (message) => {
+      if (editable && message === 'Live Trade Board link copied.') {
+        if (notice !== null) setNotice(null);
+        updateCopySuccessVisibility(true);
+        return;
+      }
+      hideCopySuccess();
+      setNotice(message);
+    },
+  }), [editable, hideCopySuccess, notice, updateCopySuccessVisibility]);
+  if (!editable) {
+    return notice
+      ? <Text accessibilityLiveRegion="polite" style={[styles.notice, light && styles.textLight]}>{notice}</Text>
+      : null;
+  }
+  return (
+    <>
+      <View
+        accessibilityElementsHidden={!copySuccessVisible}
+        accessibilityLiveRegion="polite"
+        accessibilityRole="alert"
+        importantForAccessibility={copySuccessVisible ? 'auto' : 'no-hide-descendants'}
+        pointerEvents={copySuccessVisible ? 'auto' : 'none'}
+        ref={copySuccessRef}
+        style={[
+          styles.noticeOverlay,
+          light && styles.noticeOverlayLight,
+          !copySuccessVisible && styles.noticeOverlayHidden,
+        ]}
+      >
+        <Text style={[styles.noticeOverlayText, light && styles.textLight]}>Live Trade Board link copied.</Text>
+        <Pressable accessibilityLabel="Dismiss Trade Board message" accessibilityRole="button" onPress={hideCopySuccess} style={styles.noticeDismiss}>
+          <Text style={[styles.noticeDismissText, light && styles.textLight]}>×</Text>
+        </Pressable>
+      </View>
+      {notice ? (
+        <View accessibilityLiveRegion="polite" accessibilityRole="alert" style={[styles.noticeOverlay, light && styles.noticeOverlayLight]}>
+          <Text style={[styles.noticeOverlayText, light && styles.textLight]}>{notice}</Text>
+          <Pressable accessibilityLabel="Dismiss Trade Board message" accessibilityRole="button" onPress={() => setNotice(null)} style={styles.noticeDismiss}>
+            <Text style={[styles.noticeDismissText, light && styles.textLight]}>×</Text>
+          </Pressable>
+        </View>
+      ) : null}
+    </>
+  );
+});
+
+type NativeTradeBoardThemePreviewHandle = {
+  getBoardRef: () => { current: View | null };
+  setPokemonGoNameVisible: (visible: boolean) => void;
+  selectTheme: (theme: NativeTradeBoardTheme) => void;
+};
+
+const NativeTradeBoardThemePreview = forwardRef<NativeTradeBoardThemePreviewHandle, {
+  assetBaseUrl: string;
+  model: NativeTradeBoardModel;
+}>(function NativeTradeBoardThemePreview({ assetBaseUrl, model }, ref) {
+  const activeThemeRef = useRef<NativeTradeBoardTheme>('brand-dark');
+  const [renderTheme, setRenderTheme] = useState<NativeTradeBoardTheme>('brand-dark');
+  const pokemonGoNameVisibleRef = useRef(true);
+  const [renderPokemonGoNameVisible, setRenderPokemonGoNameVisible] = useState(true);
+  const [preparedModel, setPreparedModel] = useState(model);
+  const [preparedThemes, setPreparedThemes] = useState<NativeTradeBoardTheme[]>(
+    () => process.env.NODE_ENV === 'test'
+      ? ['brand-dark']
+      : ['brand-dark', 'brand-light'],
+  );
+  const darkBoardRef = useRef<View>(null);
+  const lightBoardRef = useRef<View>(null);
+  const minimalBoardRef = useRef<View>(null);
+  const darkWrapperRef = useRef<View>(null);
+  const lightWrapperRef = useRef<View>(null);
+  const minimalWrapperRef = useRef<View>(null);
+  const accessibilityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const identityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const darkIdentityRef = useRef<NativeTradeBoardIdentityHandle>(null);
+  const lightIdentityRef = useRef<NativeTradeBoardIdentityHandle>(null);
+  const minimalIdentityRef = useRef<NativeTradeBoardIdentityHandle>(null);
+  const boardRefs = useMemo(() => ({
+    'brand-dark': darkBoardRef,
+    'brand-light': lightBoardRef,
+    minimal: minimalBoardRef,
+  } as const), []);
+  const wrapperRefs = useMemo(() => ({
+    'brand-dark': darkWrapperRef,
+    'brand-light': lightWrapperRef,
+    minimal: minimalWrapperRef,
+  } as const), []);
+  const identityRefs = useMemo(() => ({
+    'brand-dark': darkIdentityRef,
+    'brand-light': lightIdentityRef,
+    minimal: minimalIdentityRef,
+  } as const), []);
+
+  useImperativeHandle(ref, () => ({
+    getBoardRef: () => boardRefs[activeThemeRef.current],
+    setPokemonGoNameVisible: (visible) => {
+      pokemonGoNameVisibleRef.current = visible;
+      identityRefs[activeThemeRef.current].current?.setPokemonGoNameVisible(visible);
+      if (identityTimeoutRef.current) clearTimeout(identityTimeoutRef.current);
+      identityTimeoutRef.current = setTimeout(() => {
+        setRenderPokemonGoNameVisible(visible);
+        for (const option of THEMES) {
+          if (option.id !== activeThemeRef.current) {
+            identityRefs[option.id].current?.setPokemonGoNameVisible(visible);
+          }
+        }
+      }, 150);
+    },
+    selectTheme: (nextTheme) => {
+      const previousTheme = activeThemeRef.current;
+      if (nextTheme === previousTheme) return;
+      activeThemeRef.current = nextTheme;
+      const previousWrapper = wrapperRefs[previousTheme].current;
+      const nextWrapper = wrapperRefs[nextTheme].current;
+      identityRefs[nextTheme].current?.setPokemonGoNameVisible(pokemonGoNameVisibleRef.current);
+      previousWrapper?.setNativeProps({
+        style: { opacity: 0 },
+      });
+      if (nextWrapper) {
+        nextWrapper.setNativeProps({
+          style: { opacity: 1 },
+        });
+      } else {
+        setPreparedThemes((current) => current.includes(nextTheme)
+          ? current
+          : [...current, nextTheme]);
+        setRenderTheme(nextTheme);
+      }
+      if (accessibilityTimeoutRef.current) clearTimeout(accessibilityTimeoutRef.current);
+      accessibilityTimeoutRef.current = setTimeout(() => {
+        if (activeThemeRef.current !== nextTheme) return;
+        setRenderTheme(nextTheme);
+        previousWrapper?.setNativeProps({
+          accessibilityElementsHidden: true,
+          importantForAccessibility: 'no-hide-descendants',
+        });
+        wrapperRefs[nextTheme].current?.setNativeProps({
+          accessibilityElementsHidden: false,
+          importantForAccessibility: 'auto',
+        });
+      }, 150);
+    },
+  }), [boardRefs, identityRefs, wrapperRefs]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setPreparedModel(model), 80);
+    return () => clearTimeout(timeout);
+  }, [model]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'test') return undefined;
+    const minimalTimeout = setTimeout(() => {
+      setPreparedThemes((current) => current.includes('minimal')
+        ? current
+        : [...current, 'minimal']);
+    }, 80);
+    return () => {
+      clearTimeout(minimalTimeout);
+      if (accessibilityTimeoutRef.current) clearTimeout(accessibilityTimeoutRef.current);
+      if (identityTimeoutRef.current) clearTimeout(identityTimeoutRef.current);
+    };
+  }, []);
+
+  return (
+    <View style={styles.themeCanvasStack}>
+      {THEMES.map((option) => (
+        preparedThemes.includes(option.id) || option.id === renderTheme ? (
+          <View
+            accessibilityElementsHidden={option.id !== renderTheme}
+            importantForAccessibility={option.id === renderTheme ? 'auto' : 'no-hide-descendants'}
+            key={option.id}
+            pointerEvents="none"
+            ref={wrapperRefs[option.id]}
+            style={[
+              option.id === 'brand-dark' ? styles.themeCanvasBase : styles.themeCanvasOverlay,
+              option.id === renderTheme ? styles.themeCanvasActive : styles.themeCanvasHidden,
+            ]}
+          >
+            <NativeTradeBoardViewport
+              assetBaseUrl={assetBaseUrl}
+              identityRef={identityRefs[option.id]}
+              initialPokemonGoNameVisible={renderPokemonGoNameVisible}
+              model={option.id === renderTheme ? model : preparedModel}
+              ref={boardRefs[option.id]}
+              theme={option.id}
+            />
+          </View>
+        ) : null
+      ))}
+    </View>
+  );
+});
+
+const NativeTradeBoardThemePicker = ({
+  light,
+  onSelect,
+}: {
+  light: boolean;
+  onSelect: (theme: NativeTradeBoardTheme) => void;
+}) => {
+  const [theme, setTheme] = useState<NativeTradeBoardTheme>('brand-dark');
+  return (
+    <View style={styles.themeList}>
+      {THEMES.map((option) => (
+        <Pressable
+          aria-checked={theme === option.id}
+          accessibilityRole="radio"
+          accessibilityState={{ checked: theme === option.id }}
+          key={option.id}
+          onPress={() => {
+            if (option.id === theme) return;
+            const startedAt = captureNativeUiInteractionStart();
+            setTheme(option.id);
+            onSelect(option.id);
+            markNativeUiPerformanceAfterPaint('trade_board_theme_result_painted', startedAt);
+          }}
+          style={[styles.themeButton, light && styles.controlLight, theme === option.id && styles.themeButtonActive]}
+          testID={`native-trade-board-theme-${option.id}`}
+        >
+          <View style={[styles.themeSwatch, option.id === 'brand-light' && styles.themeSwatchLight, option.id === 'minimal' && styles.themeSwatchMinimal]} />
+          <View style={styles.themeCopy}>
+            <Text style={[styles.themeText, light && styles.textLight, theme === option.id && styles.themeTextActive]}>{option.label}</Text>
+            <Text style={[
+              styles.themeDescription,
+              light && styles.mutedLight,
+              theme === option.id && styles.themeDescriptionActive,
+            ]}>{option.description}</Text>
+          </View>
+        </Pressable>
+      ))}
+    </View>
+  );
+};
+
+const NativeTradeBoardIdentityOption = ({
+  light,
+  onChange,
+}: {
+  light: boolean;
+  onChange: (visible: boolean) => void;
+}) => {
+  const [visible, setVisible] = useState(true);
+  const visibleRef = useRef(true);
+  const optionRef = useRef<View>(null);
+  const checkMarkRef = useRef<Text>(null);
+  const commitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (commitTimeoutRef.current) clearTimeout(commitTimeoutRef.current);
+  }, []);
+  return (
+    <Pressable
+      aria-checked={visible}
+      accessibilityLabel="Show my Pokémon GO name"
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: visible }}
+      onPress={() => {
+        const startedAt = captureNativeUiInteractionStart();
+        const nextVisible = !visibleRef.current;
+        visibleRef.current = nextVisible;
+        if (Platform.OS === 'web' || process.env.NODE_ENV === 'test') {
+          setVisible(nextVisible);
+        } else {
+          optionRef.current?.setNativeProps({ accessibilityState: { checked: nextVisible } });
+          checkMarkRef.current?.setNativeProps({
+            style: { opacity: nextVisible ? 1 : 0 },
+          });
+          if (commitTimeoutRef.current) clearTimeout(commitTimeoutRef.current);
+          commitTimeoutRef.current = setTimeout(() => setVisible(nextVisible), 150);
+        }
+        onChange(nextVisible);
+        markNativeUiPerformanceAfterPaint('trade_board_identity_result_painted', startedAt);
+      }}
+      ref={optionRef}
+      style={[styles.identityOption, light && styles.optionGroupLight]}
+      testID="native-trade-board-show-pokemon-go-name"
+    >
+      <View style={[styles.checkBox, styles.identityCheck]}>
+        <Text ref={checkMarkRef} style={[styles.checkMark, !visible && styles.checkMarkHidden]}>✓</Text>
+      </View>
+      <Text style={[styles.switchTitle, light && styles.textLight]}>Show my Pokémon GO name</Text>
+    </Pressable>
+  );
+};
+
 export const NativeTradeBoardScreen = ({
   assetBaseUrl,
   error = null,
@@ -77,29 +426,38 @@ export const NativeTradeBoardScreen = ({
   const insets = useSafeAreaInsets();
   const { width: viewportWidth } = useWindowDimensions();
   const compactPublicHeader = viewportWidth < 620;
-  const boardRef = useRef<View>(null);
+  const publicBoardRef = useRef<View>(null);
+  const themePreviewRef = useRef<NativeTradeBoardThemePreviewHandle>(null);
+  const ownerNoticeRef = useRef<NativeTradeBoardNoticeHandle>(null);
+  const publicNoticeRef = useRef<NativeTradeBoardNoticeHandle>(null);
   const [includeTrade, setIncludeTrade] = useState(true);
   const [includeWanted, setIncludeWanted] = useState(true);
-  const [theme, setTheme] = useState<NativeTradeBoardTheme>('brand-dark');
   const [sharing, setSharing] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const showNotice = (message: string) => {
+    (editable ? ownerNoticeRef : publicNoticeRef).current?.show(message);
+  };
+  const tradeIncluded = Boolean(model?.tradeCount) && includeTrade;
+  const wantedIncluded = Boolean(model?.wantedCount) && includeWanted;
   const visibleModel = useMemo(() => model ? {
     ...model,
-    includeTrade,
-    includeWanted,
-    tradeCount: includeTrade ? model.tradeCount : 0,
-    tradeEntries: includeTrade ? model.tradeEntries : [],
-    wantedCount: includeWanted ? model.wantedCount : 0,
-    wantedEntries: includeWanted ? model.wantedEntries : [],
-  } : null, [includeTrade, includeWanted, model]);
-
+    includeTrade: tradeIncluded,
+    includeWanted: wantedIncluded,
+    pokemonGoName: model.pokemonGoName,
+    tradeCount: tradeIncluded ? model.tradeCount : 0,
+    tradeEntries: tradeIncluded ? model.tradeEntries : [],
+    wantedCount: wantedIncluded ? model.wantedCount : 0,
+    wantedEntries: wantedIncluded ? model.wantedEntries : [],
+  } : null, [model, tradeIncluded, wantedIncluded]);
   const shareBoard = async () => {
-    if (!visibleModel || !boardRef.current || sharing) return;
+    const boardRef = editable
+      ? themePreviewRef.current?.getBoardRef()
+      : publicBoardRef;
+    if (!visibleModel || !boardRef?.current || sharing) return;
     setSharing(true);
-    setNotice(null);
+    ownerNoticeRef.current?.clear();
     try {
       const uri = await captureRef(boardRef, {
-        fileName: `pokegonexus-${visibleModel.username}-trade-board`,
+        fileName: `pokegonexus-${visibleModel.username}-trade-board-${visibleModel.generatedAt.slice(0, 10)}`,
         format: 'png',
         quality: 1,
         result: 'tmpfile',
@@ -111,7 +469,7 @@ export const NativeTradeBoardScreen = ({
         document.body.appendChild(download);
         download.click();
         download.remove();
-        setNotice('Trade Board PNG downloaded.');
+        showNotice('Trade Board PNG downloaded.');
         return;
       }
       if (await Sharing.isAvailableAsync()) {
@@ -123,22 +481,42 @@ export const NativeTradeBoardScreen = ({
       } else {
         await Share.share({ message: visibleModel.boardUrl, title: 'Pokémon Go Nexus Trade Board' });
       }
-      setNotice('Your Trade Board is ready to share.');
+      showNotice('Your Trade Board is ready to share.');
     } catch (caught) {
-      setNotice(caught instanceof Error ? caught.message : 'The Trade Board could not be shared.');
+      showNotice(caught instanceof Error ? caught.message : 'The Trade Board could not be shared.');
     } finally {
       setSharing(false);
     }
   };
 
-  const copyLiveLink = async () => {
+  const copyLiveLink = () => {
     if (!visibleModel) return;
-    try {
-      await Clipboard.setStringAsync(visibleModel.boardUrl);
-      setNotice('Live Trade Board link copied.');
-    } catch (caught) {
-      setNotice(caught instanceof Error ? caught.message : 'The live Trade Board link could not be copied.');
+    const startedAt = Platform.OS === 'web' ? null : captureNativeUiInteractionStart();
+    // A clipboard bridge round trip does not need to hold the interaction
+    // hostage. Paint the acknowledgement with the tap, then replace it only
+    // if the platform reports a real write failure.
+    showNotice('Live Trade Board link copied.');
+    if (startedAt !== null) {
+      markNativeUiPerformanceAfterPaint('trade_board_copy_result_painted', startedAt);
     }
+    void Clipboard.setStringAsync(visibleModel.boardUrl).catch((caught: unknown) => {
+      showNotice(caught instanceof Error ? caught.message : 'The live Trade Board link could not be copied.');
+    });
+  };
+
+  const toggleSection = (section: 'trade' | 'wanted') => {
+    if (!model) return;
+    if ((section === 'trade' ? model.tradeCount : model.wantedCount) === 0) return;
+    const startedAt = captureNativeUiInteractionStart();
+    const nextValue = !(section === 'trade' ? tradeIncluded : wantedIncluded);
+    if (!nextValue && (section === 'trade' ? !wantedIncluded : !tradeIncluded)) {
+      showNotice('Keep at least one Trade Board section selected.');
+    } else if (section === 'trade') {
+      setIncludeTrade(nextValue);
+    } else {
+      setIncludeWanted(nextValue);
+    }
+    markNativeUiPerformanceAfterPaint('trade_board_section_result_painted', startedAt);
   };
 
   return (
@@ -198,7 +576,7 @@ export const NativeTradeBoardScreen = ({
               ) : null}
               {onOpenCreateBoard ? (
                 <Pressable accessibilityRole="link" onPress={onOpenCreateBoard}>
-                  <Text style={[styles.publicHeaderLink, light && styles.textLight]}>{signedIn ? 'Find trainers' : 'Create board'}</Text>
+                  <Text style={[styles.publicHeaderLink, light && styles.textLight]}>{signedIn ? 'Find trainers' : 'Create your board'}</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -208,7 +586,11 @@ export const NativeTradeBoardScreen = ({
         {isLoading ? (
           <View style={[styles.state, light && styles.panelLight]}>
             <ActivityIndicator color="#299cf5" size="large" />
-            <Text style={[styles.stateTitle, light && styles.textLight]}>Preparing your Trade Board…</Text>
+            <Text style={[styles.stateTitle, light && styles.textLight]}>
+              {editable
+                ? 'Preparing your Trade Board…'
+                : `Loading @${ownerUsername ?? 'trainer'}’s Trade Board`}
+            </Text>
           </View>
         ) : error ? (
           <View accessibilityRole="alert" style={[styles.state, styles.errorState, light && styles.panelLight]}>
@@ -271,8 +653,8 @@ export const NativeTradeBoardScreen = ({
                 {!compactPublicHeader ? <Text style={[styles.publicCopyText, light && styles.textLight]}>Copy link</Text> : null}
               </Pressable>
             </View>
-            {notice ? <Text accessibilityLiveRegion="polite" style={[styles.notice, light && styles.textLight]}>{notice}</Text> : null}
-            <NativeTradeBoardViewport assetBaseUrl={assetBaseUrl} model={visibleModel} ref={boardRef} theme="brand-dark" />
+            <NativeTradeBoardNotice editable={false} light={light} ref={publicNoticeRef} />
+            <NativeTradeBoardViewport assetBaseUrl={assetBaseUrl} model={visibleModel} ref={publicBoardRef} theme="brand-dark" />
             <View accessibilityLabel="Explore this trainer" style={styles.publicCatalogLinks}>
               <Pressable accessibilityRole="link" onPress={onOpenTradeListings ?? onOpenCollection} style={[styles.publicCatalogLink, styles.publicTradeLink, light && styles.headerLight]}>
                 <Text style={[styles.publicCatalogText, light && styles.textLight]}><Text style={styles.publicCatalogCount}>{visibleModel.tradeCount}</Text> For Trade</Text>
@@ -307,28 +689,32 @@ export const NativeTradeBoardScreen = ({
               <View style={[styles.optionGroup, light && styles.optionGroupLight]}>
                 <Text style={[styles.optionLegend, light && styles.textLight]}>INCLUDE ON BOARD</Text>
                 <Pressable
-                  aria-checked={includeTrade}
+                  aria-checked={tradeIncluded}
                   accessibilityLabel="Include For Trade Pokémon"
                   accessibilityRole="checkbox"
-                  accessibilityState={{ checked: includeTrade }}
-                  onPress={() => setIncludeTrade(!includeTrade || !includeWanted)}
+                  accessibilityState={{ checked: tradeIncluded, disabled: model.tradeCount === 0 }}
+                  disabled={model.tradeCount === 0}
+                  onPress={() => toggleSection('trade')}
                   style={[styles.sectionOption, styles.tradeOption]}
+                  testID="native-trade-board-section-trade"
                 >
-                  <View style={[styles.checkBox, styles.tradeCheck]}><Text style={styles.checkMark}>{includeTrade ? '✓' : ''}</Text></View>
+                  <View style={[styles.checkBox, styles.tradeCheck]}><Text style={styles.checkMark}>{tradeIncluded ? '✓' : ''}</Text></View>
                   <View style={styles.switchCopy}>
                     <Text style={[styles.switchTitle, light && styles.textLight]}>For Trade</Text>
                     <Text style={[styles.switchDetail, light && styles.mutedLight]}>{model.tradeCount} Pokémon</Text>
                   </View>
                 </Pressable>
                 <Pressable
-                  aria-checked={includeWanted}
+                  aria-checked={wantedIncluded}
                   accessibilityLabel="Include Looking For Pokémon"
                   accessibilityRole="checkbox"
-                  accessibilityState={{ checked: includeWanted }}
-                  onPress={() => setIncludeWanted(!includeWanted || !includeTrade)}
+                  accessibilityState={{ checked: wantedIncluded, disabled: model.wantedCount === 0 }}
+                  disabled={model.wantedCount === 0}
+                  onPress={() => toggleSection('wanted')}
                   style={[styles.sectionOption, styles.wantedOption]}
+                  testID="native-trade-board-section-wanted"
                 >
-                  <View style={[styles.checkBox, styles.wantedCheck]}><Text style={styles.checkMark}>{includeWanted ? '✓' : ''}</Text></View>
+                  <View style={[styles.checkBox, styles.wantedCheck]}><Text style={styles.checkMark}>{wantedIncluded ? '✓' : ''}</Text></View>
                   <View style={styles.switchCopy}>
                     <Text style={[styles.switchTitle, light && styles.textLight]}>Looking For</Text>
                     <Text style={[styles.switchDetail, light && styles.mutedLight]}>{model.wantedCount} Pokémon</Text>
@@ -337,29 +723,18 @@ export const NativeTradeBoardScreen = ({
               </View>
               <View style={[styles.optionGroup, light && styles.optionGroupLight]}>
                 <Text style={[styles.optionLegend, light && styles.textLight]}>BOARD STYLE</Text>
-                <View style={styles.themeList}>
-                  {THEMES.map((option) => (
-                    <Pressable
-                      aria-checked={theme === option.id}
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: theme === option.id }}
-                      key={option.id}
-                      onPress={() => setTheme(option.id)}
-                      style={[styles.themeButton, light && styles.controlLight, theme === option.id && styles.themeButtonActive]}
-                    >
-                      <View style={[styles.themeSwatch, option.id === 'brand-light' && styles.themeSwatchLight, option.id === 'minimal' && styles.themeSwatchMinimal]} />
-                      <View style={styles.themeCopy}>
-                        <Text style={[styles.themeText, light && styles.textLight, theme === option.id && styles.themeTextActive]}>{option.label}</Text>
-                        <Text style={[
-                          styles.themeDescription,
-                          light && styles.mutedLight,
-                          theme === option.id && styles.themeDescriptionActive,
-                        ]}>{option.description}</Text>
-                      </View>
-                    </Pressable>
-                  ))}
-                </View>
+                <NativeTradeBoardThemePicker
+                  light={light}
+                  onSelect={(nextTheme) => themePreviewRef.current?.selectTheme(nextTheme)}
+                />
               </View>
+              {model.pokemonGoName
+                && model.pokemonGoName.toLocaleLowerCase() !== model.username.toLocaleLowerCase() ? (
+                <NativeTradeBoardIdentityOption
+                  light={light}
+                  onChange={(visible) => themePreviewRef.current?.setPokemonGoNameVisible(visible)}
+                />
+              ) : null}
               <View style={[styles.privacyNote, light && styles.privacyNoteLight]}>
                 <Text style={styles.privacyIcon}>◇</Text>
                 <Text style={[styles.privacyCopy, light && styles.mutedLight]}>
@@ -368,21 +743,27 @@ export const NativeTradeBoardScreen = ({
                 </Text>
               </View>
             </View>
-            <NativeTradeBoardViewport assetBaseUrl={assetBaseUrl} model={visibleModel} ref={boardRef} theme={theme} />
+            <View style={[styles.preview, light && styles.panelLight]}>
+              <View style={[styles.previewHeader, light && styles.dividerLight]}>
+                <View>
+                  <Text style={[styles.composerEyebrow, light && styles.accentLight]}>LIVE PREVIEW</Text>
+                  <Text style={[styles.previewTitle, light && styles.textLight]}>Exactly what gets exported</Text>
+                </View>
+                <Text style={[styles.previewMeta, light && styles.mutedLight]}>High-resolution PNG</Text>
+              </View>
+              <NativeTradeBoardThemePreview
+                assetBaseUrl={assetBaseUrl}
+                model={visibleModel}
+                ref={themePreviewRef}
+              />
+            </View>
           </>
         ) : null}
       </ScrollView>
-      {editable && notice ? (
-        <View accessibilityLiveRegion="polite" accessibilityRole="alert" style={[styles.noticeOverlay, light && styles.noticeOverlayLight]}>
-          <Text style={[styles.noticeOverlayText, light && styles.textLight]}>{notice}</Text>
-          <Pressable accessibilityLabel="Dismiss Trade Board message" accessibilityRole="button" onPress={() => setNotice(null)} style={styles.noticeDismiss}>
-            <Text style={[styles.noticeDismissText, light && styles.textLight]}>×</Text>
-          </Pressable>
-        </View>
-      ) : null}
+      {editable ? <NativeTradeBoardNotice editable light={light} ref={ownerNoticeRef} /> : null}
       {editable && visibleModel ? (
         <View style={[styles.actions, styles.actionDock, { bottom: 82 }, light && styles.actionDockLight]}>
-          <Pressable accessibilityLabel="Copy live link" accessibilityRole="button" onPress={() => void copyLiveLink()} style={[styles.secondaryButton, styles.copyDockButton, light && styles.controlLight]}>
+              <Pressable accessibilityLabel="Copy live link" accessibilityRole="button" onPress={() => void copyLiveLink()} style={[styles.secondaryButton, styles.copyDockButton, light && styles.controlLight]}>
             <NativeUiIcon color={light ? '#102025' : '#eaf2f4'} name="link" size={18} />
             <Text style={styles.copyDockLabel}>Copy live link</Text>
           </Pressable>
@@ -473,10 +854,13 @@ const styles = StyleSheet.create({
   sectionOption: { minHeight: 78, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 11, borderWidth: 1, borderRadius: 9 },
   tradeOption: { borderColor: '#35d48888', backgroundColor: '#35d48812' },
   wantedOption: { borderColor: '#ff617888', backgroundColor: '#ff617812' },
+  identityOption: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 12, margin: 10, marginBottom: 0, padding: 10, borderWidth: 1, borderColor: '#4a5355', borderRadius: 9, backgroundColor: '#303536' },
+  identityCheck: { borderColor: '#2f9cff' },
   checkBox: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderRadius: 7 },
   tradeCheck: { borderColor: '#35d488' },
   wantedCheck: { borderColor: '#ff6178' },
   checkMark: { color: '#ffffff', fontSize: 18, fontWeight: '900' },
+  checkMarkHidden: { opacity: 0 },
   switchCopy: { flex: 1 },
   switchTitle: { color: '#f6fbfc', fontSize: 14, fontWeight: '900' },
   switchDetail: { marginTop: 2, color: '#9db0b5', fontSize: 11 },
@@ -496,6 +880,16 @@ const styles = StyleSheet.create({
   privacyIcon: { color: '#62d2e9', fontSize: 18, fontWeight: '900' },
   privacyCopy: { flex: 1, color: '#9db0b5', fontSize: 10, lineHeight: 14 },
   privacyStrong: { color: '#f6fbfc', fontWeight: '900' },
+  preview: { overflow: 'hidden', borderWidth: 1, borderColor: '#526164', borderRadius: 10, paddingBottom: 10, backgroundColor: '#282d2e' },
+  previewHeader: { minHeight: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderBottomWidth: 1, borderBottomColor: '#4a5355', paddingHorizontal: 12, paddingVertical: 9 },
+  previewTitle: { marginTop: 2, color: '#f6fbfc', fontSize: 14, fontWeight: '900' },
+  previewMeta: { color: '#9db0b5', fontSize: 10, fontWeight: '800' },
+  dividerLight: { borderColor: '#b7c4c8' },
+  themeCanvasStack: { position: 'relative', minHeight: 0 },
+  themeCanvasBase: { minHeight: 0 },
+  themeCanvasOverlay: { position: 'absolute', top: 0, right: 0, left: 0 },
+  themeCanvasActive: { opacity: 1 },
+  themeCanvasHidden: { opacity: 0 },
   state: { minHeight: 260, alignItems: 'center', justifyContent: 'center', gap: 10, borderWidth: 1, borderColor: '#34484c', borderRadius: 18, padding: 24, backgroundColor: '#141d20' },
   errorState: { borderColor: '#ef6077' },
   stateGlyph: { color: '#2f9cff', fontSize: 36, fontWeight: '900' },
@@ -522,6 +916,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: { color: '#eaf2f4', fontSize: 13, fontWeight: '800' },
   notice: { color: '#b9d1d7', fontSize: 12, textAlign: 'center' },
   noticeOverlay: { position: 'absolute', zIndex: 22, right: 12, bottom: 148, left: 12, minHeight: 48, maxWidth: 736, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 14, borderWidth: 1, borderColor: '#2fbd79', borderRadius: 11, backgroundColor: '#13372b' },
+  noticeOverlayHidden: { opacity: 0 },
   noticeOverlayLight: { borderColor: '#168f58', backgroundColor: '#e8f8ef' },
   noticeOverlayText: { minWidth: 0, flex: 1, color: '#ffffff', fontSize: 13, lineHeight: 18, fontWeight: '800' },
   noticeDismiss: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },

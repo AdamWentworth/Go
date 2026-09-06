@@ -157,6 +157,27 @@ describe('NativeTrainerProfileScreen', () => {
     expect(onOpenCollection).toHaveBeenCalledWith();
   });
 
+  it('keeps the signed-out public card readable without authenticated relationship commands', () => {
+    const onOpenCollection = jest.fn();
+    const view = renderScreen({
+      isOwner: false,
+      model: { ...model, relationship: 'none' },
+      onOpenCollection,
+      onRelationshipAction: undefined,
+    });
+
+    expect(view.getByText('TRAINER PROFILE')).toBeTruthy();
+    expect(view.getByText('Shiny Gigantamax Charizard')).toBeTruthy();
+    expect(view.queryByRole('button', { name: 'Add friend' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'Block trainer' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'Edit' })).toBeNull();
+
+    fireEvent.press(view.getByRole('button', {
+      name: "View AdamZilla's caught Pokémon",
+    }));
+    expect(onOpenCollection).toHaveBeenCalledWith('caught');
+  });
+
   it('opens Friends from the shared trainer workspace navigation', () => {
     const onBack = jest.fn();
     const onOpenFriends = jest.fn();

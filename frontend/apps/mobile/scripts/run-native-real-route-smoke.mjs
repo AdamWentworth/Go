@@ -199,7 +199,7 @@ const trainerProfile = (username = session.user.username) => ({
   trainer_titles: ['shiny-hunter', 'lucky-trader'],
   user: {
     app_joined_at: '2025-01-15T12:00:00.000Z',
-    pokemonGoName: username,
+    pokemonGoName: username === session.user.username ? `${username}GO` : username,
     pogo_started_on: '2016-07-06',
     team: 'Mystic',
     total_xp: 125_000_000,
@@ -427,6 +427,9 @@ const guestRoutes = [
   ['/native/pvp-methodology', 'native-methodology-screen', true],
   ['/native/raid-methodology', 'native-methodology-screen', true],
   ['/native/rankings', 'native-rankings-screen', true],
+  ['/native/profile/NexusFriend', 'native-trainer-profile', true],
+  ['/native/collection/trainer/NexusFriend?filter=trade', 'native-collection-hub', true],
+  [`/native/collection/trainer/NexusFriend/${encodeURIComponent(firstInstanceId)}`, 'native-instance-overlay', false],
   ['/native/trade-board/NexusFriend', 'native-trade-board-screen', false],
   ['/native/not-found?path=%2Fnative%2Fmissing', 'native-not-found-screen', true],
 ];
@@ -684,12 +687,20 @@ const waitForRouteToSettle = async (page) => {
   // deterministic fixture traffic to settle prevents a fast empty shell from
   // being compared with Vite's fully populated destination (or vice versa).
   await page.waitForLoadState('networkidle', { timeout: 30_000 });
-  for (const label of routeLoadingLabels) {
-    const loading = page.getByText(label, { exact: true });
-    if (await loading.count()) {
-      await loading.first().waitFor({ state: 'hidden', timeout: 25_000 });
-    }
-  }
+  // Keep the observer itself out of the measurement. Sequential locator
+  // round trips added latency even when none of these labels existed.
+  await page.waitForFunction((labels) => {
+    const normalizedLabels = new Set(labels);
+    return !Array.from(document.querySelectorAll('body *')).some((element) => {
+      if (element.children.length > 0) return false;
+      const text = element.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+      if (!normalizedLabels.has(text)) return false;
+      const style = getComputedStyle(element);
+      return style.display !== 'none'
+        && style.visibility !== 'hidden'
+        && Number(style.opacity || 1) !== 0;
+    });
+  }, routeLoadingLabels, { timeout: 25_000 });
   await page.evaluate(() => new Promise((resolvePaint) => {
     requestAnimationFrame(() => requestAnimationFrame(resolvePaint));
   }));
@@ -1607,6 +1618,63 @@ const assertSignedInSettingsAccountWorkflow = async (context) => {
   }
 };
 
+const assertSignedInTradeBoardWorkflow = async (context) => {
+  const page = await context.newPage();
+  try {
+    await page.goto(`${baseUrl}/native/trade-board`, {
+      timeout: 60_000,
+      waitUntil: 'domcontentloaded',
+    });
+    const screen = page.getByTestId('native-trade-board-screen');
+    await screen.waitFor({ state: 'visible', timeout: 25_000 });
+    await page.getByText('Share your Trade Board', { exact: true }).waitFor({
+      state: 'visible',
+      timeout: 25_000,
+    });
+
+    const wanted = page.getByTestId('native-trade-board-section-wanted');
+    await wanted.click();
+    if (await wanted.getAttribute('aria-checked') !== 'false') {
+      throw new Error('Trade Board did not hide the requested Looking For section.');
+    }
+    await recordInteractionPerformance(page, 'interaction.trade-board.section-result');
+
+    const lightTheme = page.getByTestId('native-trade-board-theme-brand-light');
+    await lightTheme.click();
+    if (await lightTheme.getAttribute('aria-checked') !== 'true') {
+      throw new Error('Trade Board did not commit the Nexus Light theme.');
+    }
+    await recordInteractionPerformance(page, 'interaction.trade-board.theme-result');
+
+    const identity = page.getByTestId('native-trade-board-show-pokemon-go-name');
+    await identity.click();
+    if (await identity.getAttribute('aria-checked') !== 'false') {
+      throw new Error('Trade Board did not hide the Pokémon GO name.');
+    }
+    await recordInteractionPerformance(page, 'interaction.trade-board.identity-result');
+
+    await page.getByRole('button', { name: 'Copy live link', exact: true }).click();
+    await page.getByText('Live Trade Board link copied.', { exact: true }).waitFor({
+      state: 'visible',
+      timeout: 10_000,
+    });
+    await recordInteractionPerformance(page, 'interaction.trade-board.copy-result');
+    await page.screenshot({
+      fullPage: true,
+      path: join(artifactDirectory, 'dark-signed-in-trade-board-workflow.png'),
+    });
+  } catch (error) {
+    await page.screenshot({
+      fullPage: true,
+      path: join(artifactDirectory, 'dark-signed-in-trade-board-workflow-failure.png'),
+    }).catch(() => undefined);
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`[trade-board workflow] ${message}`);
+  } finally {
+    await page.close();
+  }
+};
+
 const runContext = async (browser, { authState, routes, theme }) => {
   const context = await browser.newContext({
     colorScheme: theme,
@@ -1705,6 +1773,7 @@ const runContext = async (browser, { authState, routes, theme }) => {
       if (shouldRunWorkflow('trades')) await assertSignedInTradesWorkflow(context);
       if (shouldRunWorkflow('friends')) await assertSignedInFriendsWorkflow(context);
       if (shouldRunWorkflow('profile')) await assertSignedInProfileWorkflow(context);
+      if (shouldRunWorkflow('trade-board')) await assertSignedInTradeBoardWorkflow(context);
       if (shouldRunWorkflow('settings-account')) {
         await assertSignedInSettingsAccountWorkflow(context);
       }

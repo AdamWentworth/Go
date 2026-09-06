@@ -801,67 +801,74 @@ export const NativeTrainerProfileScreen = ({
           </View>
 
           <View accessibilityLabel="Featured Pokémon" style={styles.showcase}>
-            {Array.from({ length: 6 }, (_, index) => (
-              <NativeProfileShowcaseDragSlot
-                columns={compactHeader ? 3 : 6}
-                enabled={Boolean(editorDraft && displayedHighlights[index])}
-                index={index}
-                key={`highlight-${index + 1}`}
-                onReorder={reorderHighlight}
-                selectedCount={selectedHighlightCount}
-              >
-              <View
-                style={[
-                  compactHeader && index % 3 !== 2 && styles.gridRightBorder,
-                  compactHeader && index < 3 && styles.gridBottomBorder,
-                  !compactHeader && index < 5 && styles.gridRightBorder,
-                  light && styles.gridBorderLight,
-                ]}
-              >
-                {editorDraft ? (
-                  <Pressable
-                    accessibilityLabel={`${displayedHighlights[index]?.name ?? 'Open slot'}, edit showcase slot ${index + 1}`}
-                    accessibilityRole="button"
-                    onPress={() => {
-                      const startedAt = Date.now();
-                      clearTextInputFocus();
-                      setEditingHighlightSlot(index);
-                      markNativeUiPerformanceAfterPaint('profile_showcase_picker_painted', startedAt);
-                    }}
-                    style={styles.highlightEditButton}
-                    testID={`native-profile-showcase-slot-${index + 1}`}
-                  >
+            {Array.from({ length: 6 }, (_, index) => {
+              const slot = (
+                <View
+                  key={!editorDraft ? `highlight-${index + 1}` : undefined}
+                  style={[
+                    compactHeader && index % 3 !== 2 && styles.gridRightBorder,
+                    compactHeader && index < 3 && styles.gridBottomBorder,
+                    !compactHeader && index < 5 && styles.gridRightBorder,
+                    light && styles.gridBorderLight,
+                  ]}
+                >
+                  {editorDraft ? (
+                    <Pressable
+                      accessibilityLabel={`${displayedHighlights[index]?.name ?? 'Open slot'}, edit showcase slot ${index + 1}`}
+                      accessibilityRole="button"
+                      onPress={() => {
+                        const startedAt = Date.now();
+                        clearTextInputFocus();
+                        setEditingHighlightSlot(index);
+                        markNativeUiPerformanceAfterPaint('profile_showcase_picker_painted', startedAt);
+                      }}
+                      style={styles.highlightEditButton}
+                      testID={`native-profile-showcase-slot-${index + 1}`}
+                    >
+                      <HighlightCard assetBaseUrl={assetBaseUrl} compact={compactHeader} light={light} row={displayedHighlights[index]} />
+                      <Text style={styles.highlightEditCue}>EDIT · SLOT {index + 1}</Text>
+                    </Pressable>
+                  ) : (
                     <HighlightCard assetBaseUrl={assetBaseUrl} compact={compactHeader} light={light} row={displayedHighlights[index]} />
-                    <Text style={styles.highlightEditCue}>EDIT · SLOT {index + 1}</Text>
-                  </Pressable>
-                ) : (
-                  <HighlightCard assetBaseUrl={assetBaseUrl} compact={compactHeader} light={light} row={displayedHighlights[index]} />
-                )}
-                {editorDraft && displayedHighlights[index] ? (
-                  <View style={styles.highlightOrderActions}>
-                    <Pressable
-                      accessibilityLabel={`Move showcase slot ${index + 1} left`}
-                      accessibilityRole="button"
-                      disabled={index === 0}
-                      onPress={() => moveHighlight(index, -1)}
-                      style={[styles.highlightOrderButton, index === 0 && styles.highlightOrderDisabled]}
-                    >
-                      <Text style={styles.highlightOrderText}>‹</Text>
-                    </Pressable>
-                    <Pressable
-                      accessibilityLabel={`Move showcase slot ${index + 1} right`}
-                      accessibilityRole="button"
-                      disabled={index >= selectedHighlightCount - 1}
-                      onPress={() => moveHighlight(index, 1)}
-                      style={[styles.highlightOrderButton, index >= selectedHighlightCount - 1 && styles.highlightOrderDisabled]}
-                    >
-                      <Text style={styles.highlightOrderText}>›</Text>
-                    </Pressable>
-                  </View>
-                ) : null}
-              </View>
-              </NativeProfileShowcaseDragSlot>
-            ))}
+                  )}
+                  {editorDraft && displayedHighlights[index] ? (
+                    <View style={styles.highlightOrderActions}>
+                      <Pressable
+                        accessibilityLabel={`Move showcase slot ${index + 1} left`}
+                        accessibilityRole="button"
+                        disabled={index === 0}
+                        onPress={() => moveHighlight(index, -1)}
+                        style={[styles.highlightOrderButton, index === 0 && styles.highlightOrderDisabled]}
+                      >
+                        <Text style={styles.highlightOrderText}>‹</Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityLabel={`Move showcase slot ${index + 1} right`}
+                        accessibilityRole="button"
+                        disabled={index >= selectedHighlightCount - 1}
+                        onPress={() => moveHighlight(index, 1)}
+                        style={[styles.highlightOrderButton, index >= selectedHighlightCount - 1 && styles.highlightOrderDisabled]}
+                      >
+                        <Text style={styles.highlightOrderText}>›</Text>
+                      </Pressable>
+                    </View>
+                  ) : null}
+                </View>
+              );
+              if (!editorDraft) return slot;
+              return (
+                <NativeProfileShowcaseDragSlot
+                  columns={compactHeader ? 3 : 6}
+                  enabled={Boolean(displayedHighlights[index])}
+                  index={index}
+                  key={`highlight-${index + 1}`}
+                  onReorder={reorderHighlight}
+                  selectedCount={selectedHighlightCount}
+                >
+                  {slot}
+                </NativeProfileShowcaseDragSlot>
+              );
+            })}
           </View>
 
           {editingHighlightSlot !== null ? (
@@ -927,6 +934,9 @@ export const NativeTrainerProfileScreen = ({
                 : index < model.stats.length - 1;
               return (
                 <Pressable
+                  accessibilityLabel={canOpen
+                    ? `View ${isOwner ? 'your' : `${model.username}'s`} ${stat.label.toLocaleLowerCase()} Pokémon`
+                    : undefined}
                   accessibilityRole={canOpen ? 'button' : undefined}
                   disabled={!canOpen}
                   key={stat.key}

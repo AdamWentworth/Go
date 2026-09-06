@@ -13,6 +13,8 @@ type Props = {
   onPress: () => void;
 };
 
+const warmedActionMenuAssetOrigins = new Set<string>();
+
 export const NativeActionMenuAnchor = memo(function NativeActionMenuAnchor({
   assetBaseUrl,
   disabled = false,
@@ -21,6 +23,8 @@ export const NativeActionMenuAnchor = memo(function NativeActionMenuAnchor({
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   useEffect(() => {
+    if (warmedActionMenuAssetOrigins.has(assetBaseUrl)) return;
+    warmedActionMenuAssetOrigins.add(assetBaseUrl);
     for (const path of NATIVE_ACTION_MENU_ASSET_PATHS) {
       void Promise.resolve(
         Image.prefetch(toNativeActionMenuAssetUrl(assetBaseUrl, path)),

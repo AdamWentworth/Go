@@ -108,6 +108,7 @@ type Props = {
   initialView?: NativePokemonHubView;
   onContextChange?: (patch: Partial<NativeCollectionSession>) => void;
   syncStatus?: ReactNode;
+  signedIn?: boolean;
 };
 
 export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen({
@@ -143,6 +144,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   initialView = 'pokemon',
   onContextChange,
   syncStatus = null,
+  signedIn = true,
 }: Props) {
   const resolvedInitialTagKey = initialTagKey ?? (requireTagSelection
     ? inventoryTags.find((tag) => tag.key === 'system:caught')?.key
@@ -972,7 +974,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
             if (path === '/pokemon') return;
             if (onActionMenuNavigate) onActionMenuNavigate(path);
           }}
-          signedIn
+          signedIn={signedIn}
           visible={actionMenuOpen}
         />
       ) : null}
