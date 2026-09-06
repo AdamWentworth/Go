@@ -149,6 +149,16 @@ Put only that APK in the handback location for manual testing. The receiving
 workstation should verify its checksum, replace the smoke APK on the phone, and
 confirm from logs that ordinary navigation has no 8,000 ms hold.
 
+Completed on 2026-09-06: the strong machine produced
+`PokeGoNexus-manual-0dad5332-arm64-v8a.apk` with SHA-256
+`01456399139065e1dd28c961a415cdd0a22fc264f46cc0137abdd11db57b0c1c`.
+The receiving workstation verified the embedded `deviceSmokeMode: false`
+configuration, installed it in place while preserving the signed-in session,
+and matched the installed package checksum to the source APK. A signed-in
+Home → Raid → Search sanity flow passed with a two-second visibility guard per
+destination and no eight-second loading overlay. This is the one currently
+installed manual-testing artifact.
+
 ## Collect the matching Vite phone reference
 
 With the same phone still connected, run from `frontend/`:

@@ -47,14 +47,18 @@ unchanged-native-code runs.
 
 ## Current artifact truth
 
-The current phone has the standalone ARM64 performance candidate for commit
-`5c7f025bec6b8f70e520e550d7b0c9d5eef256f9` installed. The retained ignored
-artifact is `PokeGoNexus-information-5c7f025b-arm64.apk`, with SHA-256
-`2dc4b68743319113f30ad3615a72b544394035f3c4975e12c78ea337ea317882`. It uses
-its bundled JavaScript and does not require Metro. Its manifest is
-non-debuggable, but it is locally debug-signed, so it is a performance-test
-candidate rather than a production-distribution artifact. It was compiled with
-device-smoke mode enabled and must **not** be used for ordinary manual testing.
+The current phone has the normal standalone ARM64 manual candidate for commit
+`0dad5332` installed. The retained ignored artifact is
+`PokeGoNexus-manual-0dad5332-arm64-v8a.apk`, with SHA-256
+`01456399139065e1dd28c961a415cdd0a22fc264f46cc0137abdd11db57b0c1c`.
+The checksum of Android's installed `base.apk` matches exactly. Its embedded
+configuration reports `experienceMode: native-preview`, `appEnv: preview`, and
+`deviceSmokeMode: false`; it uses bundled production/minified JavaScript and
+does not require Metro. The in-place install preserved the signed-in session.
+
+The prior `PokeGoNexus-information-5c7f025b-arm64.apk` remains retained only as
+performance evidence. It was compiled with device-smoke mode enabled and must
+not be reinstalled for ordinary manual testing.
 
 An ordinary signed-in check of this smoke candidate found an exact 8,000 ms
 test-only loader hold leaking into `/native/raid` and `/native/search`. The
@@ -63,9 +67,13 @@ destinations committed in under 90 ms, but the overlay remained for another
 candidate was ready for real manual route testing. The source now scopes the
 screenshot hold to `/device-smoke/*`, and
 `scripts/build-android-manual-standalone.sh` creates the replacement with
-`EXPO_PUBLIC_DEVICE_SMOKE_MODE=false`. Until that replacement is built and
-installed, do not use the currently installed APK to judge ordinary route
-performance.
+`EXPO_PUBLIC_DEVICE_SMOKE_MODE=false`. The replacement was installed on
+2026-09-06. A signed-in Home → Raid → Search automation pass completed under a
+two-second route-visibility guard for both destinations, and the final Search
+screen rendered without the eight-second overlay. This closes the configuration
+regression; it is a functional sanity check rather than formal Vite/native
+performance evidence. The current manual APK is now the correct artifact for
+ordinary phone review.
 
 The standalone APK evidence dated 2026-08-29 in
 `DEVICE_VALIDATION_CHECKLIST.md` remains historical evidence for that earlier
